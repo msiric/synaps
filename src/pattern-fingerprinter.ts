@@ -1,8 +1,8 @@
-// src/pattern-fingerprinter.ts — W2-2: Pattern Fingerprinting
+// src/pattern-fingerprinter.ts — W2-2: Pattern Fingerprinting (W5-B3: Simplified)
 // For the top N exports (by import count), analyze the function body AST to
-// extract structural patterns: parameter shapes, return shapes, internal calls,
-// error handling, and async patterns. This produces specific architecture
-// descriptions instead of generic capability summaries.
+// extract concrete patterns: actual parameter names, return value keys, internal calls.
+// W5-B3: Removed abstract shapes (error pattern, async pattern, complexity).
+// Produces 1-line summaries per export with concrete details.
 
 import { readFileSync } from "node:fs";
 import { resolve, extname } from "node:path";
@@ -75,6 +75,7 @@ export function fingerprintTopExports(
 
 /**
  * Analyze a single exported function/hook/component to produce a PatternFingerprint.
+ * W5-B3: Simplified — only extracts params, return shape, internal calls.
  */
 function fingerprintExport(
   sourceFile: ts.SourceFile,
@@ -84,18 +85,15 @@ function fingerprintExport(
   const funcInfo = findExportedFunction(sourceFile, entry.name);
   if (!funcInfo) return null;
 
-  const { params, body, returnType, isAsync } = funcInfo;
+  const { params, body, returnType } = funcInfo;
 
   const parameterShape = analyzeParameterShape(params);
   const returnShape = returnType
     ? returnType.getText()
     : analyzeReturnShape(body);
   const internalCalls = extractInternalCalls(body);
-  const errorPattern = analyzeErrorPattern(body);
-  const asyncPattern = isAsync ? "async/await" : analyzeAsyncPattern(body);
-  const complexity = assessComplexity(body, internalCalls.length);
 
-  const summary = composeSummary(entry, parameterShape, returnShape, internalCalls, errorPattern, asyncPattern);
+  const summary = composeSummary(entry, parameterShape, returnShape, internalCalls);
 
   return {
     exportName: entry.name,
@@ -103,20 +101,20 @@ function fingerprintExport(
     parameterShape,
     returnShape,
     internalCalls,
-    errorPattern,
-    asyncPattern,
-    complexity,
+    // W5-B3: Deprecated fields kept for backward compatibility, set to defaults
+    errorPattern: "none",
+    asyncPattern: "sync",
+    complexity: "simple",
     summary,
   };
 }
 
-// ─── Find exported function in AST ───────────────────────────────────────────
+// ---- Find exported function in AST ----
 
 interface FuncInfo {
   params: ts.NodeArray<ts.ParameterDeclaration>;
   body: ts.Node;
   returnType: ts.TypeNode | undefined;
-  isAsync: boolean;
 }
 
 function findExportedFunction(sourceFile: ts.SourceFile, name: string): FuncInfo | null {
@@ -132,7 +130,6 @@ function findExportedFunction(sourceFile: ts.SourceFile, name: string): FuncInfo
         params: stmt.parameters,
         body: stmt.body,
         returnType: stmt.type,
-        isAsync: modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false,
       };
     }
 
@@ -161,7 +158,6 @@ function findExportedFunction(sourceFile: ts.SourceFile, name: string): FuncInfo
             params: func.parameters,
             body: func.body,
             returnType: func.type,
-            isAsync: func.modifiers?.some((m) => m.kind === ts.SyntaxKind.AsyncKeyword) ?? false,
           };
         }
       }
@@ -170,7 +166,7 @@ function findExportedFunction(sourceFile: ts.SourceFile, name: string): FuncInfo
   return null;
 }
 
-// ─── Parameter Shape Analysis ────────────────────────────────────────────────
+// ---- Parameter Shape Analysis ----
 
 function analyzeParameterShape(params: ts.NodeArray<ts.ParameterDeclaration>): string {
   if (params.length === 0) return "no params";
@@ -180,14 +176,14 @@ function analyzeParameterShape(params: ts.NodeArray<ts.ParameterDeclaration>): s
     // Destructured object: ({ foo, bar })
     if (ts.isObjectBindingPattern(param.name)) {
       const props = param.name.elements.map((e) => e.name.getText());
-      return `config object { ${props.join(", ")} }`;
+      return `{ ${props.join(", ")} }`;
     }
     // Object type annotation
     if (param.type && ts.isTypeLiteralNode(param.type)) {
       const props = param.type.members
         .filter(ts.isPropertySignature)
         .map((m) => m.name?.getText() ?? "?");
-      return `config object { ${props.join(", ")} }`;
+      return `{ ${props.join(", ")} }`;
     }
     // Type reference (e.g., Options, Config)
     if (param.type && ts.isTypeReferenceNode(param.type)) {
@@ -196,10 +192,10 @@ function analyzeParameterShape(params: ts.NodeArray<ts.ParameterDeclaration>): s
     return `${param.name.getText()}: ${param.type?.getText() ?? "unknown"}`;
   }
 
-  return `positional args (${params.length}): ${params.map((p) => p.name.getText()).join(", ")}`;
+  return `(${params.map((p) => p.name.getText()).join(", ")})`;
 }
 
-// ─── Return Shape Analysis ───────────────────────────────────────────────────
+// ---- Return Shape Analysis ----
 
 function analyzeReturnShape(body: ts.Node): string {
   const returnExprs: string[] = [];
@@ -239,12 +235,11 @@ function analyzeReturnShape(body: ts.Node): string {
   walk(body);
 
   if (returnExprs.length === 0) return "void";
-  // Deduplicate
   const unique = [...new Set(returnExprs)];
   return unique[0];
 }
 
-// ─── Internal Calls ──────────────────────────────────────────────────────────
+// ---- Internal Calls ----
 
 function extractInternalCalls(body: ts.Node): string[] {
   const calls = new Set<string>();
@@ -254,11 +249,9 @@ function extractInternalCalls(body: ts.Node): string[] {
       if (ts.isIdentifier(node.expression)) {
         calls.add(node.expression.text);
       } else if (ts.isPropertyAccessExpression(node.expression) && ts.isIdentifier(node.expression.name)) {
-        // Only capture well-known patterns
         const name = node.expression.name.text;
         const obj = node.expression.expression;
         if (ts.isIdentifier(obj)) {
-          // console.log, router.get, etc.
           calls.add(`${obj.text}.${name}`);
         }
       }
@@ -267,92 +260,16 @@ function extractInternalCalls(body: ts.Node): string[] {
   }
   walk(body);
 
-  return [...calls].slice(0, 15); // Cap at 15 to avoid noise
+  return [...calls].slice(0, 15);
 }
 
-// ─── Error Pattern ───────────────────────────────────────────────────────────
-
-function analyzeErrorPattern(body: ts.Node): string {
-  let hasTryCatch = false;
-  let rethrows = false;
-  let logs = false;
-
-  function walk(node: ts.Node): void {
-    if (ts.isTryStatement(node)) {
-      hasTryCatch = true;
-      if (node.catchClause?.block) {
-        const catchText = node.catchClause.block.getText();
-        if (catchText.includes("throw")) rethrows = true;
-        if (catchText.includes("console.") || catchText.includes("log") || catchText.includes("warn")) logs = true;
-      }
-    }
-    ts.forEachChild(node, walk);
-  }
-  walk(body);
-
-  if (!hasTryCatch) return "none";
-  if (rethrows && logs) return "try-catch-log-rethrow";
-  if (rethrows) return "try-catch-rethrow";
-  if (logs) return "try-catch-log";
-  return "try-catch-swallow";
-}
-
-// ─── Async Pattern ───────────────────────────────────────────────────────────
-
-function analyzeAsyncPattern(body: ts.Node): string {
-  let hasAwait = false;
-  let hasPromiseThen = false;
-
-  function walk(node: ts.Node): void {
-    if (ts.isAwaitExpression(node)) hasAwait = true;
-    if (
-      ts.isCallExpression(node) &&
-      ts.isPropertyAccessExpression(node.expression) &&
-      node.expression.name.text === "then"
-    ) {
-      hasPromiseThen = true;
-    }
-    ts.forEachChild(node, walk);
-  }
-  walk(body);
-
-  if (hasAwait) return "async/await";
-  if (hasPromiseThen) return "promise-chain";
-  return "sync";
-}
-
-// ─── Complexity Assessment ───────────────────────────────────────────────────
-
-function assessComplexity(body: ts.Node, callCount: number): "simple" | "moderate" | "complex" {
-  let stmtCount = 0;
-  let condCount = 0;
-
-  function walk(node: ts.Node): void {
-    if (ts.isBlock(node)) {
-      stmtCount += node.statements.length;
-    }
-    if (ts.isIfStatement(node) || ts.isConditionalExpression(node)) condCount++;
-    if (ts.isSwitchStatement(node)) condCount += 2;
-    if (ts.isForStatement(node) || ts.isForInStatement(node) || ts.isForOfStatement(node) || ts.isWhileStatement(node)) condCount++;
-    ts.forEachChild(node, walk);
-  }
-  walk(body);
-
-  const score = stmtCount + condCount * 2 + callCount;
-  if (score <= 5) return "simple";
-  if (score <= 15) return "moderate";
-  return "complex";
-}
-
-// ─── Summary Composition ─────────────────────────────────────────────────────
+// ---- Summary Composition ----
 
 function composeSummary(
   entry: PublicAPIEntry,
   parameterShape: string,
   returnShape: string,
   internalCalls: string[],
-  errorPattern: string,
-  asyncPattern: string,
 ): string {
   const kind = entry.kind === "hook" ? "Custom hook" :
     entry.kind === "component" ? "React component" :
@@ -363,8 +280,6 @@ function composeSummary(
     ? `, uses ${internalCalls.slice(0, 4).join(", ")}`
     : "";
   const returnPart = returnShape !== "void" ? `, returns ${returnShape}` : "";
-  const errorPart = errorPattern !== "none" ? `. Error handling: ${errorPattern}` : "";
-  const asyncPart = asyncPattern !== "sync" ? ` (${asyncPattern})` : "";
 
-  return `${kind}${paramPart}${callPart}${returnPart}${asyncPart}${errorPart}`;
+  return `${kind}${paramPart}${callPart}${returnPart}`;
 }

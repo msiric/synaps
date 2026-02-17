@@ -4,18 +4,16 @@
 
 import type { Convention, AntiPattern, RuleImpact, ConventionCategory } from "./types.js";
 
+// W5-A: Simplified after removing noisy detector categories
 // Categories that represent style rules (linter's job, AI follows unreliably)
 const LOW_IMPACT_CATEGORIES: Set<ConventionCategory> = new Set([
   "file-naming",
-  "imports",
-  "exports",
 ]);
 
 // Categories that represent workflow rules (AI follows reliably)
 const HIGH_IMPACT_CATEGORIES: Set<ConventionCategory> = new Set([
   "testing",
-  "graphql",
-  "telemetry",
+  "ecosystem",
 ]);
 
 // Pattern-based detection for style rules regardless of category
@@ -54,7 +52,7 @@ export function classifyConventionImpact(convention: Convention): RuleImpact {
     return "low";
   }
 
-  // Remaining categories: components, hooks, error-handling, state-management
+  // Remaining categories: hooks
   return "medium";
 }
 
@@ -72,7 +70,7 @@ export function classifyAntiPatternImpact(antiPattern: AntiPattern): RuleImpact 
   }
 
   // Workflow-related anti-patterns (high)
-  if (/test|graphql|telemetry|security|never commit/i.test(text)) {
+  if (/test|security|never commit/i.test(text)) {
     return "high";
   }
 

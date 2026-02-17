@@ -24,7 +24,7 @@ export const webFrameworkDetector: ConventionDetector = (files, _tiers, _warning
     if (framework && !detected.has(framework.name)) {
       detected.add(framework.name);
       conventions.push({
-        category: "imports",
+        category: "ecosystem",
         name: `${framework.name} web framework`,
         description: `Uses ${framework.name} (${fw.version}). Middleware: ${framework.middleware}. Routes: ${framework.router}.`,
         confidence: conf(1, 1),
@@ -42,7 +42,7 @@ export const webFrameworkDetector: ConventionDetector = (files, _tiers, _warning
     if (importCount > 0) {
       detected.add(framework.name);
       conventions.push({
-        category: "imports",
+        category: "ecosystem",
         name: `${framework.name} web framework`,
         description: `Uses ${framework.name}. Middleware: ${framework.middleware}. Routes: ${framework.router}.`,
         confidence: conf(importCount, importCount),

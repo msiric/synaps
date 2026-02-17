@@ -28,7 +28,7 @@ export const buildToolDetector: ConventionDetector = (files, _tiers, _warnings, 
     if (bundler && !detected.has(bundler.name)) {
       detected.add(bundler.name);
       conventions.push({
-        category: "imports",
+        category: "ecosystem",
         name: `${bundler.name} bundler`,
         description: `Built with ${bundler.name} (${b.version}): ${bundler.format}`,
         confidence: conf(1, 1),
@@ -41,7 +41,7 @@ export const buildToolDetector: ConventionDetector = (files, _tiers, _warnings, 
   if (context.config?.buildTool && context.config.buildTool.name !== "none") {
     const bt = context.config.buildTool;
     conventions.push({
-      category: "imports",
+      category: "ecosystem",
       name: `${bt.name} build orchestration`,
       description: `Build orchestration via ${bt.name} (${bt.configFile}). Tasks: ${bt.taskNames.join(", ")}.`,
       confidence: conf(1, 1),
@@ -58,7 +58,7 @@ export const buildToolDetector: ConventionDetector = (files, _tiers, _warnings, 
     if (importCount > 0) {
       detected.add(bundler.name);
       conventions.push({
-        category: "imports",
+        category: "ecosystem",
         name: `${bundler.name} bundler`,
         description: `Uses ${bundler.name}: ${bundler.format}`,
         confidence: conf(importCount, importCount),

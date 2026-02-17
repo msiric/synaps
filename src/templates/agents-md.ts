@@ -28,7 +28,7 @@ export const agentsMdSingleTemplate = {
   systemPrompt: `You are writing an AGENTS.md context file for a TypeScript package. Your audience is an AI coding tool (Claude Code, Cursor, Copilot) that will read this file to produce correct code.
 
 CRITICAL RULES:
-- Target 60-80 lines. Every line must be something an AI tool reliably follows.
+- Target 80-120 lines. Every line must be something an AI tool reliably follows.
 - Be prescriptive: write rules ("Use X") not observations ("The codebase uses X").
 - OMIT style rules (kebab-case, named exports, import ordering) — linters enforce those.
 - Describe CAPABILITIES, not file paths. "Business logic via custom hooks" not "src/hooks/ — 16 files".
@@ -91,7 +91,7 @@ IMPORTANT:
 - Do NOT include directory listings with file counts — they get stale
 - Do NOT include full export lists — keep to top 20 most-imported
 - Mark any low-impact rules with "(enforce via linter)" if you must include them
-- Target: 60-80 lines total`,
+- Target: 80-120 lines total`,
 };
 
 // ─── Multi-package ROOT template (~70 lines) ───────────────────────────────
@@ -100,7 +100,7 @@ export const agentsMdMultiRootTemplate = {
   systemPrompt: `You are writing a ROOT AGENTS.md for a multi-package feature area in a TypeScript monorepo. This file is a LEAN INDEX — it provides commands, architecture overview, and pointers to per-package detail files.
 
 CRITICAL RULES:
-- Target 60-80 lines. This is a compressed index, NOT comprehensive documentation.
+- Target 80-100 lines. This is a compressed index, NOT comprehensive documentation.
 - Commands shown ONCE (not per-package).
 - Architecture described as CAPABILITIES, not file paths.
 - Include a package guide table mapping "I need to do X → touch Y package".
@@ -112,7 +112,7 @@ CRITICAL RULES:
 - Include a Team Knowledge placeholder section.
 ${WAVE1_SYSTEM_ADDENDUM}`,
 
-  formatInstructions: `Generate a LEAN ROOT AGENTS.md (~70 lines) from the multi-package analysis below. Output ONLY markdown.
+  formatInstructions: `Generate a LEAN ROOT AGENTS.md (~80-100 lines) from the multi-package analysis below. Output ONLY markdown.
 
 REQUIRED STRUCTURE:
 
@@ -164,7 +164,7 @@ _Human-maintained context. Add design rationale, known issues, debugging tips he
 IMPORTANT:
 - Do NOT include export lists, public API, or style conventions in this root file
 - Do NOT include directory listings with file counts
-- Target: 60-80 lines total`,
+- Target: 80-100 lines total`,
 };
 
 // ─── Per-package DETAIL template (for hierarchical output) ─────────────────
@@ -175,7 +175,7 @@ export const agentsMdPackageDetailTemplate = {
 The ROOT AGENTS.md already covers commands, architecture overview, and workflow rules. Do NOT repeat those here.
 
 CRITICAL RULES:
-- Focus on package-specific details: role, public API, how to add code, package-specific rules.
+- Target 100-150 lines. Focus on package-specific details: role, public API, how to add code, package-specific rules.
 - Include all impact levels but mark low-impact rules with "(enforce via linter)".
 - Be prescriptive and example-driven.
 - Include signatures for hooks and functions.

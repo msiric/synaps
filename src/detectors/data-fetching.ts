@@ -44,7 +44,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
   if (allSources.has("@apollo/client") || allSources.has("@apollo/react-hooks")) {
     const count = (allSources.get("@apollo/client") ?? 0) + (allSources.get("@apollo/react-hooks") ?? 0);
     conventions.push({
-      category: "graphql",
+      category: "ecosystem",
       name: "Apollo Client (GraphQL)",
       description: `Uses Apollo Client for GraphQL data fetching (useQuery/useMutation from @apollo/client)`,
       confidence: conf(count, totalUsages),
@@ -55,7 +55,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
   if (allSources.has("@tanstack/react-query") || allSources.has("react-query")) {
     const count = (allSources.get("@tanstack/react-query") ?? 0) + (allSources.get("react-query") ?? 0);
     conventions.push({
-      category: "state-management",
+      category: "ecosystem",
       name: "TanStack Query data fetching",
       description: `Uses TanStack Query (NOT GraphQL) for data fetching. useQuery/useMutation are from @tanstack/react-query.`,
       confidence: conf(count, totalUsages),
@@ -66,7 +66,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
   if (allSources.has("@trpc/react-query") || allSources.has("@trpc/client")) {
     const count = (allSources.get("@trpc/react-query") ?? 0) + (allSources.get("@trpc/client") ?? 0);
     conventions.push({
-      category: "state-management",
+      category: "ecosystem",
       name: "tRPC data fetching",
       description: `Uses tRPC + TanStack Query for type-safe data fetching (NOT GraphQL)`,
       confidence: conf(count, totalUsages),
@@ -77,7 +77,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
   if (allSources.has("swr")) {
     const count = allSources.get("swr") ?? 0;
     conventions.push({
-      category: "state-management",
+      category: "ecosystem",
       name: "SWR data fetching",
       description: `Uses SWR for data fetching`,
       confidence: conf(count, totalUsages),
@@ -88,7 +88,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
   if (allSources.has("urql") || allSources.has("@urql/core")) {
     const count = (allSources.get("urql") ?? 0) + (allSources.get("@urql/core") ?? 0);
     conventions.push({
-      category: "graphql",
+      category: "ecosystem",
       name: "URQL (GraphQL)",
       description: `Uses URQL for GraphQL data fetching`,
       confidence: conf(count, totalUsages),
@@ -101,7 +101,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
     if (source.includes("orpc") || source.includes("@orpc")) {
       const count = allSources.get(source) ?? 0;
       conventions.push({
-        category: "state-management",
+        category: "ecosystem",
         name: "oRPC data fetching",
         description: `Uses oRPC for type-safe RPC data fetching (NOT GraphQL)`,
         confidence: conf(count, totalUsages),
@@ -123,7 +123,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
 
   if (unknownSources.length > 0 && conventions.length === 0) {
     conventions.push({
-      category: "state-management",
+      category: "ecosystem",
       name: "Custom data fetching hooks",
       description: `Uses useQuery/useMutation hooks from custom or unknown source(s): ${unknownSources.join(", ")}. Do NOT assume GraphQL.`,
       confidence: conf(totalUsages, totalUsages),

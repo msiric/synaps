@@ -18,7 +18,8 @@ export interface StyleRuleWarning {
   suggestion: string;
 }
 
-const MAX_RULES = 100;
+// W5-B2: Increased from 100 — modern LLMs handle 150+ instructions reliably
+const MAX_RULES = 120;
 
 // Patterns that indicate an actionable rule/instruction line
 const RULE_PATTERNS = [

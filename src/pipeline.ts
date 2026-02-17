@@ -27,6 +27,8 @@ import { generateWorkflowRules } from "./workflow-rules.js";
 import { fingerprintTopExports } from "./pattern-fingerprinter.js";
 import { analyzeDependencies } from "./dependency-analyzer.js";
 import { detectExistingDocs } from "./existing-docs.js";
+import { extractExamples } from "./example-extractor.js";
+import { generateDependencyDiagram } from "./mermaid-generator.js";
 
 /** Verbose logger — writes to stderr only when verbose is enabled. */
 function vlog(verbose: boolean, msg: string): void {
@@ -70,6 +72,15 @@ export async function runPipeline(
       vlog(verbose, `  Dependency edges: ${crossPackage.dependencyGraph.length}`);
       vlog(verbose, `  Shared conventions: ${crossPackage.sharedConventions.length}`);
       vlog(verbose, `  Divergent conventions: ${crossPackage.divergentConventions.length}`);
+    }
+
+    // W5-C3: Generate Mermaid dependency diagram
+    if (crossPackage && crossPackage.dependencyGraph.length > 0) {
+      const mermaidDiagram = generateDependencyDiagram(packageAnalyses, crossPackage.dependencyGraph);
+      if (mermaidDiagram) {
+        crossPackage.mermaidDiagram = mermaidDiagram;
+        vlog(verbose, `  Mermaid diagram: ${crossPackage.dependencyGraph.length} edges rendered`);
+      }
     }
 
     // W3-1: Workspace-wide command scanning
@@ -267,6 +278,12 @@ function analyzePackage(
     vlog(verbose, `  Pattern fingerprints: ${patternFingerprints.length} exports analyzed`);
   }
 
+  // W5-C1: Extract usage examples from test files
+  const examples = extractExamples(publicAPI, parsed, pkgPath, 10, warnings);
+  if (examples.length > 0) {
+    vlog(verbose, `  Usage examples: ${examples.length} extracted from test files`);
+  }
+
   const pkgMs = Math.round(performance.now() - pkgStart);
   vlog(verbose, `  Analysis time: ${pkgMs}ms`);
 
@@ -281,6 +298,7 @@ function analyzePackage(
     existingDocs,
     callGraph: symbolGraph.callGraph.length > 0 ? symbolGraph.callGraph : undefined,
     patternFingerprints: patternFingerprints.length > 0 ? patternFingerprints : undefined,
+    examples: examples.length > 0 ? examples : undefined,
   };
 }
 

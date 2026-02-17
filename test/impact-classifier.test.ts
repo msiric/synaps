@@ -38,34 +38,14 @@ describe("impact-classifier", () => {
       expect(classifyConventionImpact(conv)).toBe("low");
     });
 
-    it("classifies imports as low impact", () => {
-      const conv = makeConvention({ category: "imports", name: "barrel imports" });
-      expect(classifyConventionImpact(conv)).toBe("low");
-    });
-
-    it("classifies exports as low impact", () => {
-      const conv = makeConvention({ category: "exports", name: "named exports only" });
-      expect(classifyConventionImpact(conv)).toBe("low");
-    });
-
     it("classifies testing as high impact", () => {
       const conv = makeConvention({ category: "testing", name: "co-located tests" });
       expect(classifyConventionImpact(conv)).toBe("high");
     });
 
-    it("classifies graphql as high impact", () => {
-      const conv = makeConvention({ category: "graphql", name: "GraphQL fragments" });
+    it("classifies ecosystem as high impact", () => {
+      const conv = makeConvention({ category: "ecosystem", name: "TanStack Query data fetching" });
       expect(classifyConventionImpact(conv)).toBe("high");
-    });
-
-    it("classifies telemetry as high impact", () => {
-      const conv = makeConvention({ category: "telemetry", name: "scenario logging" });
-      expect(classifyConventionImpact(conv)).toBe("high");
-    });
-
-    it("classifies components as medium impact", () => {
-      const conv = makeConvention({ category: "components", name: "React.memo wrapping" });
-      expect(classifyConventionImpact(conv)).toBe("medium");
     });
 
     it("classifies hooks as medium impact", () => {

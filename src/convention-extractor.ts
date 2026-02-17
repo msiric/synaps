@@ -2,6 +2,7 @@
 // Errata applied: E-26 (report dominant pattern below threshold),
 //                 E-27 (structured confidence), E-28 (filter by tier)
 // W2-3: Added ecosystem-specific detectors with DetectorContext support.
+// W5-A: Removed 6 noisy detectors (import/export/component/error-handling/graphql/telemetry patterns).
 
 import type {
   ParsedFile,
@@ -11,16 +12,11 @@ import type {
   DetectorContext,
   Warning,
 } from "./types.js";
+import type { DetectorPlugin } from "./plugin-loader.js";
 
 import { fileNamingDetector } from "./detectors/file-naming.js";
-import { importPatternDetector } from "./detectors/import-patterns.js";
-import { exportPatternDetector } from "./detectors/export-patterns.js";
-import { componentPatternDetector } from "./detectors/component-patterns.js";
 import { hookPatternDetector } from "./detectors/hook-patterns.js";
 import { testPatternDetector } from "./detectors/test-patterns.js";
-import { errorHandlingDetector } from "./detectors/error-handling.js";
-import { graphqlPatternDetector } from "./detectors/graphql-patterns.js";
-import { telemetryPatternDetector } from "./detectors/telemetry-patterns.js";
 // W2-3: Ecosystem-specific detectors
 import { testFrameworkEcosystemDetector } from "./detectors/test-framework-ecosystem.js";
 import { dataFetchingDetector } from "./detectors/data-fetching.js";
@@ -29,16 +25,11 @@ import { webFrameworkDetector } from "./detectors/web-framework.js";
 import { buildToolDetector } from "./detectors/build-tool.js";
 
 const DETECTOR_REGISTRY: Record<string, ConventionDetector> = {
+  // Core
   fileNaming: fileNamingDetector,
-  importPatterns: importPatternDetector,
-  exportPatterns: exportPatternDetector,
-  componentPatterns: componentPatternDetector,
   hookPatterns: hookPatternDetector,
   testPatterns: testPatternDetector,
-  errorHandling: errorHandlingDetector,
-  graphqlPatterns: graphqlPatternDetector,
-  telemetryPatterns: telemetryPatternDetector,
-  // W2-3: Ecosystem-specific detectors
+  // Ecosystem-specific (Wave 2)
   testFrameworkEcosystem: testFrameworkEcosystemDetector,
   dataFetching: dataFetchingDetector,
   database: databaseDetector,
@@ -49,6 +40,7 @@ const DETECTOR_REGISTRY: Record<string, ConventionDetector> = {
 /**
  * Run all convention detectors and collect results.
  * W2-3: Accepts optional DetectorContext for ecosystem-aware detectors.
+ * W5-C2: Accepts optional plugins for org-specific detectors.
  */
 export function extractConventions(
   parsedFiles: ParsedFile[],
@@ -56,10 +48,12 @@ export function extractConventions(
   disabledDetectors: string[],
   warnings: Warning[] = [],
   context?: DetectorContext,
+  plugins?: DetectorPlugin[],
 ): Convention[] {
   const conventions: Convention[] = [];
   const disabled = new Set(disabledDetectors);
 
+  // Run built-in detectors
   for (const [name, detector] of Object.entries(DETECTOR_REGISTRY)) {
     if (disabled.has(name)) continue;
 
@@ -76,19 +70,23 @@ export function extractConventions(
     }
   }
 
-  // W2-3: If the data-fetching detector found a non-GraphQL source for useQuery,
-  // suppress the old graphql-patterns detector's "GraphQL hooks" convention.
-  const hasDataFetchingConvention = conventions.some(
-    (c) => c.name.includes("TanStack Query") || c.name.includes("tRPC") ||
-           c.name.includes("SWR") || c.name.includes("oRPC") ||
-           c.name.includes("Custom data fetching"),
-  );
-  if (hasDataFetchingConvention) {
-    // Remove the misleading "GraphQL hooks" convention from the old detector
-    const filtered = conventions.filter(
-      (c) => !(c.name === "GraphQL hooks" && c.category === "graphql"),
-    );
-    return filtered;
+  // W5-C2: Run plugin detectors
+  if (plugins && plugins.length > 0) {
+    for (const plugin of plugins) {
+      if (disabled.has(plugin.name)) continue;
+
+      try {
+        const results = plugin.detect(parsedFiles, tiers, warnings, context);
+        conventions.push(...results);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        warnings.push({
+          level: "warn",
+          module: "convention-extractor",
+          message: `Plugin "${plugin.name}" threw: ${msg}`,
+        });
+      }
+    }
   }
 
   return conventions;

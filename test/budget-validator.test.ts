@@ -40,8 +40,8 @@ describe("budget-validator", () => {
     });
 
     it("warns when over budget", () => {
-      // Generate >100 rules
-      const rules = Array.from({ length: 110 }, (_, i) =>
+      // Generate >120 rules (W5-B2: MAX_RULES increased to 120)
+      const rules = Array.from({ length: 130 }, (_, i) =>
         `- Use feature-${i} for all operations`,
       );
       const content = ["# Package", ...rules].join("\n");
@@ -108,7 +108,7 @@ describe("budget-validator", () => {
     });
 
     it("includes over-budget warning", () => {
-      const rules = Array.from({ length: 110 }, (_, i) =>
+      const rules = Array.from({ length: 130 }, (_, i) =>
         `- Use feature-${i} for all operations`,
       );
       const report = validateBudget(["# Pkg", ...rules].join("\n"));

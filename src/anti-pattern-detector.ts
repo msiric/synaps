@@ -3,7 +3,8 @@
 
 import type { Convention, AntiPattern } from "./types.js";
 
-// Inversion rules: convention name pattern → anti-pattern rule
+// W5-A: Removed inversion rules for deleted detectors (named exports, barrel imports,
+// type-only imports, relative imports, displayName). Kept: file naming, testing, hooks.
 const INVERSION_RULES: {
   match: RegExp;
   rule: (conv: Convention) => string;
@@ -20,16 +21,6 @@ const INVERSION_RULES: {
     reason: (c) => `${c.confidence.description} use camelCase — the codebase exclusively uses camelCase filenames`,
   },
   {
-    match: /named exports/i,
-    rule: () => "Do NOT use default exports",
-    reason: (c) => `${c.confidence.description} use named exports — the codebase exclusively uses named exports`,
-  },
-  {
-    match: /barrel import/i,
-    rule: () => "Do NOT use deep imports from external packages (e.g., @pkg/lib/internal/foo)",
-    reason: (c) => `${c.confidence.description} import from barrel exports`,
-  },
-  {
     match: /co.?located tests/i,
     rule: () => "Do NOT put tests in a separate __tests__ directory — co-locate tests with source",
     reason: (c) => `${c.confidence.description} co-locate tests next to source files`,
@@ -38,21 +29,6 @@ const INVERSION_RULES: {
     match: /hooks return objects/i,
     rule: () => "Do NOT return arrays from hooks (use { value, setter } not [value, setter])",
     reason: (c) => `${c.confidence.description} return objects from hooks`,
-  },
-  {
-    match: /type.only import/i,
-    rule: () => "Use `import type` for type-only imports",
-    reason: (c) => `${c.confidence.description} use type-only imports for types`,
-  },
-  {
-    match: /relative import/i,
-    rule: () => "Do NOT use path aliases for internal imports — use relative paths",
-    reason: (c) => `${c.confidence.description} use relative imports`,
-  },
-  {
-    match: /displayName/i,
-    rule: () => "Set displayName on all React components",
-    reason: (c) => `${c.confidence.description} set displayName`,
   },
 ];
 

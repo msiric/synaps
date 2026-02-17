@@ -77,6 +77,7 @@ export interface PackageAnalysis {
   existingDocs?: ExistingDocs;
   callGraph?: CallGraphEdge[];
   patternFingerprints?: PatternFingerprint[];
+  examples?: UsageExample[]; // W5-C1: Usage examples extracted from test files
 }
 
 // ─── Config Analysis (Improvement 1) ────────────────────────────────────────
@@ -224,17 +225,12 @@ export interface Convention {
   impact?: RuleImpact; // Classified by what AI tools reliably follow
 }
 
+// W5-A: Removed unused categories: imports, exports, components, error-handling, graphql, telemetry, state-management
 export type ConventionCategory =
   | "file-naming"
-  | "imports"
-  | "exports"
-  | "components"
   | "hooks"
   | "testing"
-  | "error-handling"
-  | "graphql"
-  | "telemetry"
-  | "state-management";
+  | "ecosystem";
 
 // ─── Commands ────────────────────────────────────────────────────────────────
 
@@ -319,6 +315,7 @@ export interface CrossPackageAnalysis {
   sharedAntiPatterns: AntiPattern[];
   workspaceCommands?: WorkspaceCommand[]; // W3-1: commands from all workspace packages
   workflowRules?: WorkflowRule[]; // W3-2: technology-aware workflow rules
+  mermaidDiagram?: string; // W5-C3: Mermaid dependency diagram
 }
 
 export interface PackageDependency {
@@ -458,6 +455,15 @@ export interface PatternFingerprint {
   asyncPattern: string;
   complexity: "simple" | "moderate" | "complex";
   summary: string;
+}
+
+// ─── W5-C1: Usage Examples from Tests ────────────────────────────────────────
+
+export interface UsageExample {
+  exportName: string;
+  testFile: string;
+  snippet: string;
+  context: string;
 }
 
 // ─── W2-4: Diff Analysis ────────────────────────────────────────────────────

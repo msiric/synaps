@@ -27,7 +27,7 @@ export const databaseDetector: ConventionDetector = (files, _tiers, _warnings, c
     if (orm && !detected.has(orm.name)) {
       detected.add(orm.name);
       conventions.push({
-        category: "imports",
+        category: "ecosystem",
         name: `${orm.name} database`,
         description: `Uses ${orm.name} (${fw.version}): ${orm.description}`,
         confidence: conf(1, 1),
@@ -45,7 +45,7 @@ export const databaseDetector: ConventionDetector = (files, _tiers, _warnings, c
     if (importCount > 0) {
       detected.add(orm.name);
       conventions.push({
-        category: "imports",
+        category: "ecosystem",
         name: `${orm.name} database`,
         description: `Uses ${orm.name}: ${orm.description}`,
         confidence: conf(importCount, importCount),
