@@ -286,6 +286,7 @@ function serializeToMarkdown(analysis: StructuredAnalysis): string {
         const examples = conv.examples.length > 0
           ? ` (e.g., ${conv.examples.slice(0, 2).map((e) => `\`${sanitize(e, 80)}\``).join(", ")})`
           : "";
+        // W3-4: No confidence stats in cross-package conventions either
         lines.push(`- **${conv.name}**: ${conv.description}${impact}${examples}`);
       }
       lines.push("");
@@ -341,6 +342,26 @@ function serializeToMarkdown(analysis: StructuredAnalysis): string {
       }
       lines.push("");
     }
+
+    // W3-1: Workspace commands from all workspace packages
+    if (analysis.crossPackage.workspaceCommands && analysis.crossPackage.workspaceCommands.length > 0) {
+      lines.push("## Workspace Commands");
+      lines.push("| Command | Package | Category |");
+      lines.push("|---------|---------|----------|");
+      for (const cmd of analysis.crossPackage.workspaceCommands) {
+        lines.push(`| \`${cmd.run}\` | ${cmd.packagePath} | ${cmd.category} |`);
+      }
+      lines.push("");
+    }
+
+    // W3-2: Technology-aware workflow rules
+    if (analysis.crossPackage.workflowRules && analysis.crossPackage.workflowRules.length > 0) {
+      lines.push("## Workflow Rules (Technology-Specific)");
+      for (const rule of analysis.crossPackage.workflowRules) {
+        lines.push(`- ${rule.trigger} → ${rule.action}`);
+      }
+      lines.push("");
+    }
   }
 
   return lines.join("\n");
@@ -374,15 +395,16 @@ function serializePackage(pkg: PackageAnalysis, lines: string[]): void {
   }
   lines.push("");
 
-  // Include convention examples and impact in serialization
+  // W3-4: Convention examples and impact — strip percentage stats
   lines.push("## Conventions");
   for (const conv of pkg.conventions) {
     const impact = conv.impact ? ` [impact: ${conv.impact}]` : "";
     const examples = conv.examples.length > 0
       ? ` (e.g., ${conv.examples.slice(0, 2).map((e) => `\`${sanitize(e, 80)}\``).join(", ")})`
       : "";
+    // W3-4: Strip percentage/count stats from confidence description
     lines.push(
-      `- **${conv.name}**: ${conv.description} [${conv.confidence.description}]${impact}${examples}`,
+      `- **${conv.name}**: ${conv.description}${impact}${examples}`,
     );
   }
   lines.push("");
@@ -420,9 +442,17 @@ function serializePackage(pkg: PackageAnalysis, lines: string[]): void {
   lines.push(`- Package type: ${pkg.architecture.packageType}`);
   lines.push(`- Has JSX: ${pkg.architecture.hasJSX}`);
   for (const dir of pkg.architecture.directories) {
-    const exports = dir.exports?.length > 0 ? ` → exports: ${dir.exports.slice(0, 5).join(", ")}${dir.exports.length > 5 ? ` (+${dir.exports.length - 5} more)` : ""}` : "";
+    // W3-4: Surface specific implementation names instead of just file counts
     const pattern = dir.pattern ? ` | pattern: \`${dir.pattern}\`` : "";
-    lines.push(`- \`${dir.path}/\` — ${dir.purpose} (${dir.fileCount} files)${exports}${pattern}`);
+    if (dir.exports && dir.exports.length > 0) {
+      // Show named implementations prominently
+      const exportList = dir.exports.length <= 8
+        ? dir.exports.join(", ")
+        : `${dir.exports.slice(0, 8).join(", ")} (+${dir.exports.length - 8} more)`;
+      lines.push(`- **${dir.purpose}**: ${exportList} (see \`${dir.path}/\`)${pattern}`);
+    } else {
+      lines.push(`- **${dir.purpose}**: \`${dir.path}/\` (${dir.fileCount} files)${pattern}`);
+    }
   }
   lines.push("");
 

@@ -31,7 +31,7 @@ const DEFAULTS: ResolvedConfig = {
   },
   llm: {
     provider: "anthropic",
-    model: "claude-sonnet-4-20250514",
+    model: process.env.AUTODOCS_LLM_MODEL ?? "claude-opus-4-20250514",
     maxOutputTokens: 4096, // E-7
   },
   conventions: {

@@ -14,7 +14,7 @@ import { parseFile } from "./ast-parser.js";
 import { buildSymbolGraph } from "./symbol-graph.js";
 import { classifyTiers } from "./tier-classifier.js";
 import { extractConventions } from "./convention-extractor.js";
-import { extractCommands } from "./command-extractor.js";
+import { extractCommands, scanWorkspaceCommands } from "./command-extractor.js";
 import { detectArchitecture } from "./architecture-detector.js";
 import { buildPublicAPI, buildPackageAnalysis, buildStructuredAnalysis } from "./analysis-builder.js";
 import { analyzeCrossPackage } from "./cross-package.js";
@@ -23,6 +23,7 @@ import { deriveAntiPatterns } from "./anti-pattern-detector.js";
 import { detectContributionPatterns } from "./contribution-patterns.js";
 import { classifyImpacts } from "./impact-classifier.js";
 import { analyzeConfig } from "./config-analyzer.js";
+import { generateWorkflowRules } from "./workflow-rules.js";
 import { fingerprintTopExports } from "./pattern-fingerprinter.js";
 import { analyzeDependencies } from "./dependency-analyzer.js";
 import { detectExistingDocs } from "./existing-docs.js";
@@ -69,6 +70,39 @@ export async function runPipeline(
       vlog(verbose, `  Dependency edges: ${crossPackage.dependencyGraph.length}`);
       vlog(verbose, `  Shared conventions: ${crossPackage.sharedConventions.length}`);
       vlog(verbose, `  Divergent conventions: ${crossPackage.divergentConventions.length}`);
+    }
+
+    // W3-1: Workspace-wide command scanning
+    if (config.rootDir) {
+      const workspaceCommands = scanWorkspaceCommands(config.rootDir, warnings);
+      if (workspaceCommands.length > 0) {
+        vlog(verbose, `  Workspace commands: ${workspaceCommands.length} operational commands found`);
+        if (crossPackage) {
+          crossPackage.workspaceCommands = workspaceCommands;
+        }
+      }
+
+      // W3-2: Workflow rule generation
+      const firstConfig = packageAnalyses.find((p) => p.configAnalysis)?.configAnalysis;
+      const workflowRules = generateWorkflowRules({
+        workspaceCommands,
+        rootCommands,
+        packageCommands: packageAnalyses.map((p) => ({
+          packageName: p.name,
+          commands: p.commands,
+        })),
+        configAnalysis: firstConfig,
+        allDependencyInsights: packageAnalyses
+          .map((p) => p.dependencyInsights)
+          .filter((d): d is import("./types.js").DependencyInsights => d != null),
+        allConventions: packageAnalyses.flatMap((p) => p.conventions),
+      });
+      if (workflowRules.length > 0) {
+        vlog(verbose, `  Workflow rules: ${workflowRules.length} technology-specific rules generated`);
+        if (crossPackage) {
+          crossPackage.workflowRules = workflowRules;
+        }
+      }
     }
   }
 

@@ -1,0 +1,1 @@
+{"name":"@test/api-server","scripts":{"dev":"bun run --watch src/index.ts","test":"bun test","db:migrate":"bun run ../../packages/db/src/migrate.ts"},"dependencies":{"hono":"^4.0.0"}}

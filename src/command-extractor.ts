@@ -1,9 +1,9 @@
 // src/command-extractor.ts — Module 6: Command Extractor
 // Errata applied: E-29 (auto-detect monorepo root)
 
-import { existsSync, readFileSync } from "node:fs";
-import { resolve, join, dirname } from "node:path";
-import type { CommandSet, Command, Warning } from "./types.js";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { resolve, join, dirname, relative } from "node:path";
+import type { CommandSet, Command, Warning, WorkspaceCommand } from "./types.js";
 
 const CATEGORY_PATTERNS: Record<string, string[]> = {
   build: ["build", "compile", "transpile"],
@@ -208,4 +208,108 @@ function autoDetectRoot(packageDir: string): string | undefined {
     dir = dirname(dir);
   }
   return undefined;
+}
+
+// ─── W3-1: Workspace-wide command scanning ──────────────────────────────────
+
+const OPERATIONAL_PATTERNS: RegExp[] = [
+  // Database
+  /^db[:\-]/, /^migrate/, /^seed/,
+  // Workers/queues
+  /^dev[:\-](worker|listener|queue)/, /^sync[:\-]/, /^worker/,
+  // Deployment
+  /^deploy/, /^release/,
+  // Code generation
+  /^generate/, /^codegen/,
+  // Email
+  /^email/,
+];
+
+/**
+ * W3-1: Scan ALL package.json files in the workspace for operational commands.
+ * Finds commands matching operational patterns (db:*, sync:*, worker*, deploy*, generate*).
+ */
+export function scanWorkspaceCommands(
+  rootDir: string,
+  warnings: Warning[] = [],
+): WorkspaceCommand[] {
+  const absRoot = resolve(rootDir);
+  const pm = detectPackageManager(absRoot);
+  const commands: WorkspaceCommand[] = [];
+  const seen = new Set<string>();
+
+  const packageJsonPaths = findAllPackageJsons(absRoot);
+
+  for (const pkgJsonPath of packageJsonPaths) {
+    try {
+      const content = readFileSync(pkgJsonPath, "utf-8");
+      const pkgJson = JSON.parse(content);
+      const scripts = pkgJson.scripts ?? {};
+      const pkgName = pkgJson.name ?? relative(absRoot, dirname(pkgJsonPath));
+      const pkgRelPath = relative(absRoot, dirname(pkgJsonPath)) || ".";
+
+      for (const [scriptName, scriptValue] of Object.entries(scripts)) {
+        if (typeof scriptValue !== "string") continue;
+        if (!OPERATIONAL_PATTERNS.some((p) => p.test(scriptName))) continue;
+
+        // Deduplicate by script name + command value
+        const dedupeKey = `${scriptName}:${scriptValue}`;
+        if (seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
+
+        const category = categorizeScript(scriptName);
+        commands.push({
+          run: formatRun(pm, scriptName),
+          scriptName,
+          packageName: pkgName,
+          packagePath: pkgRelPath,
+          category,
+        });
+      }
+    } catch {
+      // Skip malformed package.json
+    }
+  }
+
+  return commands;
+}
+
+function categorizeScript(name: string): string {
+  if (/^db[:\-]|^migrate|^seed/.test(name)) return "database";
+  if (/^dev[:\-](worker|listener|queue)|^sync[:\-]|^worker/.test(name)) return "workers";
+  if (/^deploy|^release/.test(name)) return "deployment";
+  if (/^generate|^codegen/.test(name)) return "codegen";
+  if (/^email/.test(name)) return "email";
+  return "operational";
+}
+
+/**
+ * Find all package.json files in a workspace, excluding node_modules and dist.
+ */
+function findAllPackageJsons(rootDir: string): string[] {
+  const results: string[] = [];
+
+  function walk(dir: string, depth: number): void {
+    if (depth > 6) return; // Prevent deep recursion
+    try {
+      const entries = readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.name === "node_modules" || entry.name === "dist" ||
+            entry.name === ".git" || entry.name === "build" ||
+            entry.name === "out" || entry.name === "coverage") continue;
+
+        const fullPath = join(dir, entry.name);
+        if (entry.isFile() && entry.name === "package.json") {
+          results.push(fullPath);
+        } else if (entry.isDirectory()) {
+          walk(fullPath, depth + 1);
+        }
+      }
+    } catch {
+      // Skip unreadable dirs
+    }
+  }
+
+  walk(rootDir, 0);
+  return results;
 }

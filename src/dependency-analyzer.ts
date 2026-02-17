@@ -232,6 +232,9 @@ function getFrameworkGuidance(name: string, version: string): FrameworkGuidanceE
     case "@prisma/client":
       return { guidance: `Prisma ${version} — ORM with schema-first approach` };
 
+    case "drizzle-orm":
+      return { guidance: `Drizzle ORM ${version} — schema-as-code SQL ORM, run db:generate after schema changes` };
+
     default:
       return null;
   }

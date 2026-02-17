@@ -14,7 +14,13 @@ WAVE 1 DATA INSTRUCTIONS:
 - If the analysis includes a "Config" section showing a linter/formatter (Biome, ESLint, Prettier), mention which tool is used so AI doesn't generate config for the wrong one.
 - If the analysis includes "Existing Documentation", note which docs exist so AI doesn't duplicate their content.
 - If the analysis includes "Pattern Fingerprints", use them to provide SPECIFIC architecture descriptions instead of generic ones. Describe exports by their actual parameter shapes, return types, internal calls, and error handling patterns. E.g., instead of "tree-based routing" say "5 router implementations sharing Router interface. SmartRouter (default) combines RegExp + Trie. Each implements find(method, path) → Result."
-- CRITICAL: Only mention technologies that appear in the analysis data. If the dependencies list @tanstack/react-query, say "TanStack Query" not "GraphQL". If the dependencies list oRPC, say "oRPC" not "GraphQL". Never infer a technology that isn't explicitly in the analysis.`;
+- CRITICAL: Only mention technologies that appear in the analysis data. If the dependencies list @tanstack/react-query, say "TanStack Query" not "GraphQL". If the dependencies list oRPC, say "oRPC" not "GraphQL". Never infer a technology that isn't explicitly in the analysis.
+
+WAVE 3 DATA INSTRUCTIONS:
+- If the analysis includes a "Workspace Commands" table, include ALL operational commands (db:generate, db:migrate, db:push, sync:*, worker*, deploy*) in the Commands section. These are critical for developers working across the monorepo.
+- If the analysis includes "Workflow Rules (Technology-Specific)", use these EXACT rules in the Workflow Rules section. These rules contain the specific commands to run (e.g., "run \`bun run db:generate\` then \`bun run db:migrate\`") — do NOT generalize them to "run migrations".
+- NEVER include percentage statistics like "42% of files use X" or "99% of exports are Y" — these waste instruction budget. State conventions as absolutes: "Use named exports" not "Use named exports (99% of exports are named)".
+- For Architecture, prefer naming specific implementations over generic descriptions. Say "SmartRouter, RegExpRouter, TrieRouter, PatternRouter, LinearRouter" instead of "multiple router strategies".`;
 
 // ─── Single-package template (for analyzing 1 package) ─────────────────────
 
@@ -61,6 +67,7 @@ Example:
 - **Permissions**: Runtime permission checks for tab operations
 
 ## Workflow Rules
+{If "Workflow Rules (Technology-Specific)" section is present, use those EXACT rules — they contain specific commands. Do NOT generalize them.}
 {ONLY "After X → run Y" or "When X → do Y" rules. These are what AI tools actually follow.}
 {Include rules from testing, graphql, telemetry conventions.}
 {If Config shows Biome: "Linting and formatting use Biome — do NOT configure ESLint or Prettier."}
@@ -123,6 +130,7 @@ REQUIRED STRUCTURE:
 {From rootCommands or most common package commands. Show ONCE. Table format.}
 {Include test, build, lint and any workflow commands.}
 {If a build tool (Turbo/Nx) is detected, those are the primary commands.}
+{If "Workspace Commands" table is present in the data, include ALL operational commands (db:generate, db:migrate, sync:*, deploy*, etc.) with the package they belong to. These are critical commands developers need.}
 
 ## Package Guide
 
@@ -136,7 +144,8 @@ REQUIRED STRUCTURE:
 {If Call Graph data exists, describe the top cross-package call flows. E.g.: "Data flow: useChannelPageTabData → GraphQL subscription → event handlers"}
 
 ## Workflow Rules
-{Conditional rules: "After X → run Y". From conventions with high impact.}
+{If "Workflow Rules (Technology-Specific)" section is present in the analysis data, use those EXACT rules — they contain specific commands. Do NOT generalize them.}
+{Additional conditional rules: "After X → run Y". From conventions with high impact.}
 {E.g., "After modifying .graphql files → run \`yarn generate:interfaces\`"}
 {If Config shows Biome: "Linting and formatting use Biome, not ESLint/Prettier."}
 {If Config shows a build tool: "Run tasks via \`turbo run <task>\`, not \`<pm> run <script>\`."}

@@ -1,5 +1,6 @@
 // src/role-inferrer.ts — Enhancement 1: Package Role Inference
 // Produces a natural-language role description and "when to use" hint for each package.
+// W3-3: Added HTTP framework / app framework detection for api-server and web-application types.
 
 import type { PackageAnalysis, PackageRole } from "./types.js";
 
@@ -33,6 +34,10 @@ const TECH_SIGNALS: { deps: string[]; label: string }[] = [
   { deps: ["jest", "vitest", "mocha", "ava"], label: "testing framework" },
 ];
 
+// W3-3: HTTP framework and app framework signals for role classification
+const HTTP_FRAMEWORKS = ["hono", "express", "fastify", "koa", "nest", "@hono/node-server", "@hono/bun"];
+const APP_FRAMEWORKS = ["next", "nuxt", "remix", "astro", "svelte", "@sveltejs/kit"];
+
 /**
  * Infer the role of a package from its analysis data.
  */
@@ -42,7 +47,7 @@ export function inferRole(analysis: Omit<PackageAnalysis, "role" | "antiPatterns
   const actionSignals = new Set<string>();
 
   // 1. Start with package type
-  const baseType = analysis.architecture.packageType;
+  let baseType = analysis.architecture.packageType;
   evidence.push(`packageType: ${baseType}`);
 
   // 2. Analyze export names for domain signals
@@ -85,6 +90,26 @@ export function inferRole(analysis: Omit<PackageAnalysis, "role" | "antiPatterns
     }
   }
 
+  // W3-3: Override classification for HTTP servers and web applications
+  // Check dependency insights (more reliable) then fall back to raw dependency names
+  const frameworkNames = analysis.dependencyInsights?.frameworks.map((f) => f.name) ?? [];
+  const allDepsForClassification = [...allDepNames, ...frameworkNames];
+
+  const hasHttpFramework = HTTP_FRAMEWORKS.some((fw) =>
+    allDepsForClassification.some((d) => d === fw || d.startsWith(fw + "/")),
+  );
+  const hasAppFramework = APP_FRAMEWORKS.some((fw) =>
+    allDepsForClassification.some((d) => d === fw || d.startsWith(fw + "/")),
+  );
+
+  if (hasAppFramework && (baseType === "library" || baseType === "unknown" || baseType === "mixed")) {
+    baseType = "web-application";
+    evidence.push("app framework detected (Next.js/Nuxt/Remix/Astro/SvelteKit)");
+  } else if (hasHttpFramework && (baseType === "library" || baseType === "unknown" || baseType === "mixed" || baseType === "server")) {
+    baseType = "api-server";
+    evidence.push("HTTP framework detected (Hono/Express/Fastify/Koa/Nest)");
+  }
+
   // 4. Compose summary
   const typeLabel = formatPackageType(baseType);
   const domainParts = [...domainSignals].slice(0, 4);
@@ -104,11 +129,22 @@ export function inferRole(analysis: Omit<PackageAnalysis, "role" | "antiPatterns
     ? capitalizeFirst(purposeParts.join(", "))
     : analysis.description || `${typeLabel} package`;
 
-  // 6. Compose whenToUse
+  // 6. Compose whenToUse — W3-3: specific guidance for api-server and web-application
+  let whenToUse: string;
   const actionParts = [...actionSignals].slice(0, 3);
-  const whenToUse = actionParts.length > 0
-    ? `Touch this package when ${actionParts.join(", or ")}`
-    : `Touch this package when working on ${typeLabel.toLowerCase()} functionality`;
+  if (baseType === "api-server") {
+    whenToUse = actionParts.length > 0
+      ? `Touch this package when adding API endpoints, routes, middleware, or ${actionParts.join(", or ")}`
+      : "Touch this package when adding API endpoints, routes, or middleware";
+  } else if (baseType === "web-application") {
+    whenToUse = actionParts.length > 0
+      ? `Touch this package when adding pages, components, client-side features, or ${actionParts.join(", or ")}`
+      : "Touch this package when adding pages, components, or client-side features";
+  } else if (actionParts.length > 0) {
+    whenToUse = `Touch this package when ${actionParts.join(", or ")}`;
+  } else {
+    whenToUse = `Touch this package when working on ${typeLabel.toLowerCase()} functionality`;
+  }
 
   return {
     summary,
@@ -125,6 +161,8 @@ function formatPackageType(type: string): string {
     case "library": return "Utility library";
     case "cli": return "CLI tool";
     case "server": return "Server application";
+    case "web-application": return "Web application";
+    case "api-server": return "API server";
     case "mixed": return "Mixed package";
     default: return "Package";
   }

@@ -1,0 +1,1 @@
+{"name":"@test/worker","scripts":{"dev:worker":"bun run --watch src/worker.ts","sync:bulk":"bun run src/sync-bulk.ts"}}

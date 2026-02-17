@@ -109,6 +109,23 @@ export function validateOutput(
     }
   }
 
+  // W3-1: Also include workspace commands and root commands from cross-package analysis
+  if (isStructuredAnalysis(analysis) && analysis.crossPackage) {
+    if (analysis.crossPackage.workspaceCommands) {
+      for (const cmd of analysis.crossPackage.workspaceCommands) {
+        allCommands.push(cmd.run);
+      }
+    }
+    if (analysis.crossPackage.rootCommands) {
+      const rc = analysis.crossPackage.rootCommands;
+      if (rc.build) allCommands.push(rc.build.run);
+      if (rc.test) allCommands.push(rc.test.run);
+      if (rc.lint) allCommands.push(rc.lint.run);
+      if (rc.start) allCommands.push(rc.start.run);
+      for (const cmd of rc.other) allCommands.push(cmd.run);
+    }
+  }
+
   // Check 1: Technology cross-reference
   checkTechnologyCrossRef(output, allDeps, issues);
 

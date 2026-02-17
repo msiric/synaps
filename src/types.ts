@@ -253,6 +253,23 @@ export interface Command {
   variants?: { name: string; run: string }[];
 }
 
+// W3-1: Workspace-wide command scanning
+export interface WorkspaceCommand {
+  run: string;
+  scriptName: string;
+  packageName: string;
+  packagePath: string;
+  category: string;
+}
+
+// W3-2: Technology-aware workflow rules
+export interface WorkflowRule {
+  trigger: string;
+  action: string;
+  source: string;
+  impact: "high";
+}
+
 // ─── Package architecture ────────────────────────────────────────────────────
 
 export interface DirectoryInfo {
@@ -267,12 +284,15 @@ export interface PackageArchitecture {
   entryPoint: string;
   directories: DirectoryInfo[];
   // E-30: Updated union — removed org-specific types, added cli/server
+  // W3-3: Added web-application, api-server
   packageType:
     | "react-components"
     | "hooks"
     | "library"
     | "cli"
     | "server"
+    | "web-application"
+    | "api-server"
     | "mixed"
     | "unknown";
   hasJSX: boolean;
@@ -297,6 +317,8 @@ export interface CrossPackageAnalysis {
   }[];
   rootCommands?: CommandSet; // E-8: optional
   sharedAntiPatterns: AntiPattern[];
+  workspaceCommands?: WorkspaceCommand[]; // W3-1: commands from all workspace packages
+  workflowRules?: WorkflowRule[]; // W3-2: technology-aware workflow rules
 }
 
 export interface PackageDependency {

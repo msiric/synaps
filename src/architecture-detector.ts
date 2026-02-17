@@ -63,6 +63,11 @@ function classifyPackageType(
 ): PackageArchitecture["packageType"] {
   const nonTypeExports = publicAPI.filter((e) => !e.isTypeOnly);
   if (nonTypeExports.length === 0) {
+    // W3-3: Check package.json dependencies before defaulting to "unknown"
+    // API servers and web apps often have no barrel exports
+    const depClassification = classifyByDependencies(packageDir);
+    if (depClassification) return depClassification;
+
     // Check file content for clues
     if (parsedFiles.some((f) => f.hasJSX)) return "mixed";
     return "unknown";
@@ -92,19 +97,39 @@ function classifyPackageType(
       readFileSync(join(packageDir, "package.json"), "utf-8"),
     );
     if (pkgJson.bin) return "cli";
-
-    // Check for server frameworks in dependencies
-    const allDeps = {
-      ...pkgJson.dependencies,
-      ...pkgJson.devDependencies,
-    };
-    const serverFrameworks = ["express", "fastify", "koa", "hapi", "nest"];
-    if (serverFrameworks.some((fw) => fw in allDeps)) return "server";
   } catch {
     // No package.json
   }
 
+  // W3-3: Check for app/HTTP framework dependencies
+  const depClassification = classifyByDependencies(packageDir);
+  if (depClassification) return depClassification;
+
   return "library";
+}
+
+/**
+ * W3-3: Classify package type by checking dependencies for HTTP/app frameworks.
+ */
+function classifyByDependencies(packageDir: string): PackageArchitecture["packageType"] | undefined {
+  try {
+    const pkgJson = JSON.parse(
+      readFileSync(join(packageDir, "package.json"), "utf-8"),
+    );
+    const allDeps = {
+      ...pkgJson.dependencies,
+      ...pkgJson.devDependencies,
+    };
+
+    const appFrameworks = ["next", "nuxt", "remix", "astro", "@sveltejs/kit"];
+    if (appFrameworks.some((fw) => fw in allDeps)) return "web-application";
+
+    const httpFrameworks = ["hono", "express", "fastify", "koa", "hapi", "nest", "@hono/node-server"];
+    if (httpFrameworks.some((fw) => fw in allDeps)) return "api-server";
+  } catch {
+    // No package.json
+  }
+  return undefined;
 }
 
 function detectDirectories(
