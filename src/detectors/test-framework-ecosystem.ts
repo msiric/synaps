@@ -4,6 +4,8 @@
 
 import type { Convention, ConventionConfidence, ConventionDetector, DetectorContext } from "../types.js";
 
+const KNOWN_TEST_FRAMEWORKS = ["vitest", "jest", "@jest/core", "mocha", "ava", "tap"];
+
 export const testFrameworkEcosystemDetector: ConventionDetector = (files, _tiers, _warnings, context) => {
   if (!context?.dependencies) return [];
 
@@ -33,6 +35,30 @@ export const testFrameworkEcosystemDetector: ConventionDetector = (files, _tiers
     } else if (name === "ava") {
       frameworkName = "Ava";
       frameworkDetail = `Ava ${fw.version}`;
+    }
+  }
+
+  // Fallback: check root devDeps for test frameworks (common in monorepos)
+  if (frameworkName === "Unknown" && context.rootDevDeps) {
+    for (const depName of Object.keys(context.rootDevDeps)) {
+      if (KNOWN_TEST_FRAMEWORKS.includes(depName)) {
+        const version = context.rootDevDeps[depName]?.replace(/^[\^~>=<]*\s*/, "") ?? "";
+        const name = depName.toLowerCase();
+        if (name === "vitest") {
+          frameworkName = "Vitest";
+          frameworkDetail = `Vitest ${version} (from monorepo root)`;
+        } else if (name === "jest" || name === "@jest/core") {
+          frameworkName = "Jest";
+          frameworkDetail = `Jest ${version} (from monorepo root)`;
+        } else if (name === "mocha") {
+          frameworkName = "Mocha";
+          frameworkDetail = `Mocha ${version} (from monorepo root)`;
+        } else if (name === "ava") {
+          frameworkName = "Ava";
+          frameworkDetail = `Ava ${version} (from monorepo root)`;
+        }
+        if (frameworkName !== "Unknown") break;
+      }
     }
   }
 

@@ -169,7 +169,7 @@ describe("W2-1: Output Validator", () => {
 
   it("flags budget exceeded for package-detail format", () => {
     const analysis = makePackageAnalysis();
-    const longOutput = Array(150).fill("- line content").join("\n");
+    const longOutput = Array(200).fill("- line content").join("\n");
     const result = validateOutput(longOutput, analysis, "package-detail");
 
     const budgetIssue = result.issues.find((i) => i.type === "budget_exceeded");

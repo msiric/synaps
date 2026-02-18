@@ -1,4 +1,4 @@
-# Session Prompt — Wave 5: Cleanup, Refactoring, and New Features
+# Session Prompt — Comprehensive Bug Fixes (16 Issues)
 
 Open a new Claude Code session from: `/Users/mariosiric/Documents/autodocs-engine/`
 
@@ -7,143 +7,162 @@ Then paste everything between the triple-backtick block below.
 ---
 
 ```
-# autodocs-engine — Wave 5: Cleanup, Refactoring, and New Features
+# autodocs-engine — Comprehensive Algorithm Bug Fixes
 
-A code review identified 371 lines of noise-producing convention detectors, a monolithic 610-line LLM adapter, overly aggressive budget limits, and missing high-value features. This session addresses all of it.
+A 10-repo benchmark revealed 16 bugs in the engine, with 4 CRITICAL issues causing hallucinated frameworks, wrong runtimes, and broken titles. This session fixes ALL 16 issues.
 
 ## Before You Code
 
-Read these documents:
+Read these documents in order:
 
-1. **The Wave 5 plan (complete spec):**
-   `docs/WAVE5-PLAN.md`
-   Read the entire document. It has 3 workstreams, 14 steps, exact files to modify/delete, and test plans.
+1. **The bug fix plan (complete spec for all 16 fixes):**
+   `docs/BUGFIX-PLAN.md`
+   Read the ENTIRE document. It has 11 implementation steps, exact code changes, new test fixtures, and validation criteria.
 
-2. **The code review that motivated these changes:**
-   `docs/CODE-REVIEW.md`
-   The "REMOVE" and "IMPROVE" sections explain why each detector is being deleted and why the adapter needs splitting.
+2. **The algorithm audit (root cause analysis):**
+   `docs/ALGORITHM-AUDIT.md`
+   Explains WHY each bug exists and how they're interconnected. The systemic root cause is monorepo scope leakage.
 
-3. **Current convention extractor (shows what to clean up):**
-   `src/convention-extractor.ts` (108 lines)
+3. **The benchmark that found these bugs:**
+   `docs/FINAL-BENCHMARK.md`
+   Shows the specific failures: React in CLI tool (knip), "# src" title (nitro), Bun in pnpm project (effect).
 
-## Three Workstreams (Execute in Order)
+After reading, confirm you understand:
+- The 4 CRITICAL bugs and their root cause (monorepo dep leakage)
+- The 11 implementation steps in order
+- The validation commands to verify each fix
 
-### Workstream A: Cleanup — Remove Noisy Detectors
+## The 16 Bugs (Grouped by Severity)
 
-**DELETE these 6 files:**
-- `src/detectors/import-patterns.ts` (89 lines — "barrel imports", "relative imports" — universal noise)
-- `src/detectors/export-patterns.ts` (66 lines — "named exports" — linter's job)
-- `src/detectors/component-patterns.ts` (54 lines — "displayName" — DevTools, not AI)
-- `src/detectors/error-handling.ts` (52 lines — "try-catch" — redundant with contentSignals)
-- `src/detectors/graphql-patterns.ts` (57 lines — superseded by data-fetching detector)
-- `src/detectors/telemetry-patterns.ts` (53 lines — org-specific)
+### CRITICAL (4 bugs — hallucinations and broken output)
+- **1.1:** Root deps merged into package deps → React appears in CLI tools
+- **2.1:** Analysis path leaks as title → "# src" instead of "# nitro"
+- **1.2:** Root runtime contaminates package → Bun shown for pnpm projects
+- **5.1:** Templates produce under-target output → 50-70 lines instead of 80-120
 
-**UPDATE `src/convention-extractor.ts`:**
-- Remove all 6 imports and registry entries
-- Remove the GraphQL suppression logic (lines 79-92)
-- Registry should have 8 detectors: fileNaming, hookPatterns, testPatterns + 5 ecosystem detectors
+### HIGH (4 bugs — incorrect or missing data)
+- **3.1:** Framework guidance for irrelevant frameworks → React guidance in backend
+- **5.2:** Validator can't catch root dep contamination
+- **6.1:** Analyzing src/ directly fails → missing metadata
+- **3.3:** "Unknown test framework" in monorepo packages
 
-**UPDATE `src/types.ts`:**
-- Remove unused ConventionCategory values: "imports", "exports", "components", "error-handling", "graphql", "telemetry", "state-management"
+### MEDIUM (4 bugs — suboptimal but not broken)
+- **1.3:** Config analyzer reads root config → sometimes wrong linter
+- **4.2:** Workspace commands may include irrelevant packages
+- **7.3:** Validator doesn't check for "src" title
+- **6.4:** Multiple exports subpaths (document as V2 limitation)
 
-**UPDATE `src/impact-classifier.ts` and `src/anti-pattern-detector.ts`:**
-- Remove rules referencing deleted categories
+### LOW (4 bugs — cosmetic)
+- **2.2:** Package name inconsistency
+- **5.3:** Percentage stats not fully removed
+- **6.2:** workspace:* protocol in version → skip from framework detection
+- **6.3:** .tsx-only packages → don't report extension split
 
-**UPDATE tests:**
-- Fix any test fixtures that reference deleted categories
-- Remove detector-specific test cases if any exist
+## Implementation Order (11 Steps)
 
-**VERIFY:** Run `npm test` — all remaining tests pass. Run on a real package — convention count drops but no "barrel imports" or "displayName" noise.
+Follow BUGFIX-PLAN.md exactly:
 
-### Workstream B: Refactoring
-
-**B1: Split LLM Adapter**
-
-Create `src/llm/` directory. Split `src/llm-adapter.ts` (610 lines) into:
-
-| File | Responsibility | Functions |
-|------|---------------|-----------|
-| `src/llm/client.ts` | HTTP only | `callLLM()`, `callLLMWithRetry()` |
-| `src/llm/serializer.ts` | StructuredAnalysis → markdown | `serializeToMarkdown()`, `serializePackageToMarkdown()`, `serializePackage()`, `sanitize()` |
-| `src/llm/template-selector.ts` | Pick template for format | `getTemplate()`, template imports |
-| `src/llm/hierarchical.ts` | Multi-file output | `formatHierarchical()`, `toPackageFilename()` |
-| `src/llm/adapter.ts` | Orchestration | `formatWithLLM()`, `validateAndCorrect()` |
-
-**Keep `src/llm-adapter.ts` as a re-export barrel** for backward compatibility:
-```typescript
-export { formatWithLLM, formatHierarchical, type HierarchicalOutput } from "./llm/adapter.js";
-```
-
-**B2: Adjust Budget Limits**
-
-In `src/budget-validator.ts` and `src/templates/agents-md.ts`:
-- Root: 80-100 lines (was 60-80)
-- Package detail: 100-150 lines (was 60-90)
-- Warning thresholds adjusted accordingly
-
-**B3: Simplify Pattern Fingerprinter**
-
-In `src/pattern-fingerprinter.ts` (370 → ~200 lines):
-- Remove abstract shapes ("parameterShape: single config object")
-- Keep: actual parameter names, return value keys, internal call names
-- Produce: 1-line summaries per export with concrete details
-
-### Workstream C: New Features
-
-**C1: Example Extractor** — New file: `src/example-extractor.ts` (~200 lines)
-
-For each public API export, find test files that import it, extract 3-7 line usage snippets from test blocks. Add `examples: UsageExample[]` to PackageAnalysis.
-
-**C2: Plugin System** — New file: `src/plugin-loader.ts` (~120 lines)
-
-`DetectorPlugin` interface + loading from package.json `autodocs.plugins` field, `.autodocs/plugins/` directory, or `--plugin <path>` CLI flag. Move telemetry detector to `examples/plugins/` as reference implementation.
-
-**C3: Mermaid Diagram Generator** — New file: `src/mermaid-generator.ts` (~80 lines)
-
-Generate Mermaid `graph TD` diagrams from dependency graphs. Color-code by package type. Include in cross-package analysis output.
-
-## Implementation Order (14 Steps)
-
-1. Delete 6 detector files
-2. Update convention-extractor registry
-3. Clean up ConventionCategory type
-4. Clean up impact-classifier
-5. Clean up anti-pattern-detector
-6. Update tests for cleanup
-7. Split LLM adapter into src/llm/ directory
-8. Adjust budget limits
-9. Simplify pattern-fingerprinter
-10. Example extractor (new module)
-11. Plugin system (new module)
-12. Mermaid diagram generator (new module)
-13. Pipeline integration for new modules
-14. Tests for all changes
+1. **dependency-analyzer.ts** — STOP merging root deps. Fix runtime source tracking. Skip workspace:* deps. (~60 lines)
+2. **analysis-builder.ts** — Walk up to find nearest package.json name. Handle src/ analysis. (~50 lines)
+3. **dependency-analyzer.ts** — Add import-verified framework detection (frameworks must be actually imported by source files). (~25 lines)
+4. **detectors/test-framework-ecosystem.ts** — Fallback to root devDeps for test framework. Infer from test file patterns. (~20 lines)
+5. **config-analyzer.ts** — Add source tracking ("package" vs "root") for linter/formatter. (~25 lines)
+6. **output-validator.ts** — Add framework relevance check + meaningless title check. (~40 lines)
+7. **command-extractor.ts** — Ensure workspace commands include package source. (~30 lines)
+8. **templates/agents-md.ts** — Change "target X lines" to "MUST produce at least X lines". (~15 lines)
+9. **llm/serializer.ts** — Strip remaining percentage patterns from conventions. (~10 lines)
+10. **detectors/file-naming.ts** — Don't report extension split when all files are same type. (~5 lines)
+11. **test/bugfix-audit.test.ts** — Tests for all fixes + new fixtures. (~250 lines)
 
 ## Testing
 
-After each workstream, run `npm test` to verify no regressions.
+### Benchmark repos (preserved from previous run)
 
-After all workstreams, verify on real packages:
+Verify repos still exist:
 ```bash
-# Convention noise check
-npx tsx src/bin/autodocs-engine.ts analyze test/fixtures/hooks-pkg --dry-run 2>/dev/null | \
-  python3 -c "import json,sys; convs=[c['name'] for c in json.loads(sys.stdin.read())['packages'][0]['conventions']]; print(convs)"
-# Should NOT contain: "Barrel imports", "Named exports", "displayName", "Try-catch", "GraphQL hooks"
+ls /tmp/final-benchmark/sanity /tmp/final-benchmark/knip /tmp/final-benchmark/nitro /tmp/final-benchmark/effect /tmp/final-benchmark/medusa
+```
 
-# LLM adapter split check
-node -e "const m = require('./dist/llm-adapter.js'); console.log(typeof m.formatWithLLM)"
-# Should print: "function"
+If missing, re-clone:
+```bash
+cd /tmp/final-benchmark
+git clone --depth 1 https://github.com/sanity-io/sanity.git
+git clone --depth 1 https://github.com/webpro-nl/knip.git
+git clone --depth 1 https://github.com/unjs/nitro.git
+git clone --depth 1 https://github.com/Effect-TS/effect.git
+git clone --depth 1 https://github.com/medusajs/medusa.git
+```
+
+### After ALL fixes, verify:
+
+```bash
+# All existing tests pass
+npm test
+
+# Bug 1.1: Knip should NOT mention React
+npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/knip/packages/knip --dry-run 2>/dev/null | python3 -c "
+import json,sys; d=json.loads(sys.stdin.read())
+fws = [f['name'] for f in d['packages'][0].get('dependencyInsights',{}).get('frameworks',[])]
+print('Frameworks:', fws)
+assert 'react' not in [f.lower() for f in fws], 'BUG 1.1 NOT FIXED: React found in knip!'
+print('✓ Bug 1.1 fixed: No React in knip')
+"
+
+# Bug 2.1: Nitro should NOT have "src" as name
+npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/nitro/src --root /tmp/final-benchmark/nitro --dry-run 2>/dev/null | python3 -c "
+import json,sys; d=json.loads(sys.stdin.read())
+name = d['packages'][0]['name']
+print('Name:', name)
+assert name != 'src', 'BUG 2.1 NOT FIXED: Name is still src!'
+print('✓ Bug 2.1 fixed: Name is', name)
+"
+
+# Bug 1.2: Effect should NOT show Bun as runtime
+npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/effect/packages/effect --root /tmp/final-benchmark/effect --dry-run 2>/dev/null | python3 -c "
+import json,sys; d=json.loads(sys.stdin.read())
+runtimes = [r['name'] for r in d['packages'][0].get('dependencyInsights',{}).get('runtime',[])]
+print('Runtimes:', runtimes)
+# Bun should NOT be listed as a package-level runtime for Effect
+print('✓ Bug 1.2 check: Runtimes =', runtimes)
+"
+
+# Bug 3.1: Medusa core-flows should NOT mention React
+npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/medusa/packages/core/core-flows --root /tmp/final-benchmark/medusa --dry-run 2>/dev/null | python3 -c "
+import json,sys; d=json.loads(sys.stdin.read())
+fws = [f['name'] for f in d['packages'][0].get('dependencyInsights',{}).get('frameworks',[])]
+print('Frameworks:', fws)
+assert 'react' not in [f.lower() for f in fws], 'BUG 3.1 NOT FIXED: React found in medusa core-flows!'
+print('✓ Bug 3.1 fixed: No React in medusa core-flows')
+"
+```
+
+### LLM output test (needs API key)
+```bash
+export ANTHROPIC_API_KEY="<key>"
+
+# Generate new engine output for knip
+mkdir -p /tmp/final-benchmark/results/knip/engine-v2
+npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/knip/packages/knip \
+  --root /tmp/final-benchmark/knip \
+  --format agents.md --output /tmp/final-benchmark/results/knip/engine-v2 --verbose
+
+# Verify: no React, title not "src", ≥80 lines
+grep -i "react" /tmp/final-benchmark/results/knip/engine-v2/AGENTS.md && echo "FAIL: React found" || echo "✓ No React"
+wc -l /tmp/final-benchmark/results/knip/engine-v2/AGENTS.md
 ```
 
 ## What NOT to Change
-- Don't modify Wave 1/2/3 analysis modules (config-analyzer, output-validator, etc.)
-- Don't change the pipeline architecture (just plug in new modules)
-- Don't remove ecosystem detectors (data-fetching, test-framework, database, web-framework, build-tool)
-- Don't remove hooks or file-naming detectors
+
+- Don't modify the AST parser, symbol graph, or tier classifier
+- Don't change the LLM adapter split (src/llm/*.ts)
+- Don't remove any ecosystem detectors
+- Don't change the pipeline architecture
+- All 201 existing tests must pass after changes
 
 ## What to Ask Me
-- If deleting a detector breaks an unexpected test
-- If the LLM adapter split creates circular dependency issues
-- If the plugin system needs more complex loading logic
-- If the example extractor can't find useful snippets in the test fixtures
+
+- If fixing Bug 1.1 causes unexpected test failures (some tests may depend on root dep merging)
+- If the name resolution walk-up hits unexpected edge cases
+- If the import-verified framework check is too aggressive (removing frameworks that ARE relevant)
+- If you need the API key for LLM output testing
 ```

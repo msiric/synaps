@@ -114,14 +114,15 @@ describe("dependency-analyzer", () => {
     expect(insights.bundler!.name).toBe("vite");
   });
 
-  it("detects bun runtime from packageManager field in root", () => {
+  it("does NOT leak root bun packageManager into package runtime", () => {
     const insights = analyzeDependencies(
       resolve(FIXTURES, "turbo-monorepo/packages/app"),
       resolve(FIXTURES, "turbo-monorepo"),
     );
+    // Root has packageManager: "bun@1.1.0", but the package has no Bun signals.
+    // Bun from root packageManager is a build tool choice, not a runtime for this package.
     const bun = insights.runtime.find((r) => r.name === "bun");
-    expect(bun).toBeDefined();
-    expect(bun!.version).toBe("1.1.0");
+    expect(bun).toBeUndefined();
   });
 
   it("returns empty arrays for package with no deps", () => {

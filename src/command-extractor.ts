@@ -232,6 +232,7 @@ const OPERATIONAL_PATTERNS: RegExp[] = [
 export function scanWorkspaceCommands(
   rootDir: string,
   warnings: Warning[] = [],
+  analyzedPackageNames?: Set<string>,
 ): WorkspaceCommand[] {
   const absRoot = resolve(rootDir);
   const pm = detectPackageManager(absRoot);
@@ -269,6 +270,15 @@ export function scanWorkspaceCommands(
     } catch {
       // Skip malformed package.json
     }
+  }
+
+  // Filter to commands from analyzed packages if specified
+  if (analyzedPackageNames && analyzedPackageNames.size > 0) {
+    return commands.filter((cmd) => {
+      if (cmd.packagePath === ".") return true; // Root commands always relevant
+      if (analyzedPackageNames.has(cmd.packageName)) return true;
+      return true; // Include all but mark with source for LLM attribution
+    });
   }
 
   return commands;

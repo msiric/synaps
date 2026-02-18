@@ -173,41 +173,40 @@ function detectBuildTool(
 
 // ─── Linter ─────────────────────────────────────────────────────────────────
 
+function detectLinterIn(
+  dir: string,
+): { name: string; configFile: string } | undefined {
+  // Biome
+  for (const name of ["biome.json", "biome.jsonc"]) {
+    if (existsSync(join(dir, name))) {
+      return { name: "biome", configFile: name };
+    }
+  }
+  // ESLint
+  const eslintFiles = [
+    "eslint.config.js", "eslint.config.mjs", "eslint.config.cjs", "eslint.config.ts",
+    ".eslintrc.json", ".eslintrc.js", ".eslintrc.cjs", ".eslintrc.yaml", ".eslintrc.yml", ".eslintrc",
+  ];
+  for (const name of eslintFiles) {
+    if (existsSync(join(dir, name))) {
+      return { name: "eslint", configFile: name };
+    }
+  }
+  return undefined;
+}
+
 function detectLinter(
   packageDir: string,
   rootDir?: string,
   _warnings: Warning[] = [],
 ): ConfigAnalysis["linter"] | undefined {
-  const dirs = rootDir ? [packageDir, rootDir] : [packageDir];
+  // Check package dir FIRST — package-level config takes priority
+  const pkgResult = detectLinterIn(packageDir);
+  if (pkgResult) return pkgResult;
 
-  for (const dir of dirs) {
-    // Biome (check first since it can replace ESLint)
-    for (const name of ["biome.json", "biome.jsonc"]) {
-      if (existsSync(join(dir, name))) {
-        return { name: "biome", configFile: name };
-      }
-    }
-  }
-
-  for (const dir of dirs) {
-    // ESLint
-    const eslintFiles = [
-      "eslint.config.js",
-      "eslint.config.mjs",
-      "eslint.config.cjs",
-      "eslint.config.ts",
-      ".eslintrc.json",
-      ".eslintrc.js",
-      ".eslintrc.cjs",
-      ".eslintrc.yaml",
-      ".eslintrc.yml",
-      ".eslintrc",
-    ];
-    for (const name of eslintFiles) {
-      if (existsSync(join(dir, name))) {
-        return { name: "eslint", configFile: name };
-      }
-    }
+  // Fall back to root
+  if (rootDir) {
+    return detectLinterIn(rootDir);
   }
 
   return undefined;
@@ -215,54 +214,50 @@ function detectLinter(
 
 // ─── Formatter ──────────────────────────────────────────────────────────────
 
+function detectFormatterIn(
+  dir: string,
+): { name: string; configFile: string } | undefined {
+  // Biome
+  for (const name of ["biome.json", "biome.jsonc"]) {
+    if (existsSync(join(dir, name))) {
+      try {
+        const raw = readFileSync(join(dir, name), "utf-8");
+        const cleaned = stripJsonComments(raw);
+        const config = JSON.parse(cleaned);
+        if (config.formatter?.enabled !== false) {
+          return { name: "biome", configFile: name };
+        }
+      } catch {
+        return { name: "biome", configFile: name };
+      }
+    }
+  }
+  // Prettier
+  const prettierFiles = [
+    ".prettierrc", ".prettierrc.json", ".prettierrc.js", ".prettierrc.cjs", ".prettierrc.mjs",
+    ".prettierrc.yaml", ".prettierrc.yml", ".prettierrc.toml",
+    "prettier.config.js", "prettier.config.mjs", "prettier.config.cjs",
+  ];
+  for (const name of prettierFiles) {
+    if (existsSync(join(dir, name))) {
+      return { name: "prettier", configFile: name };
+    }
+  }
+  return undefined;
+}
+
 function detectFormatter(
   packageDir: string,
   rootDir?: string,
   _warnings: Warning[] = [],
 ): ConfigAnalysis["formatter"] | undefined {
-  const dirs = rootDir ? [packageDir, rootDir] : [packageDir];
+  // Check package dir FIRST — package-level config takes priority
+  const pkgResult = detectFormatterIn(packageDir);
+  if (pkgResult) return pkgResult;
 
-  for (const dir of dirs) {
-    // Biome can also be a formatter
-    for (const name of ["biome.json", "biome.jsonc"]) {
-      if (existsSync(join(dir, name))) {
-        // Read biome config to check if formatter is enabled
-        try {
-          const raw = readFileSync(join(dir, name), "utf-8");
-          const cleaned = stripJsonComments(raw);
-          const config = JSON.parse(cleaned);
-          // If formatter is not explicitly disabled, Biome formats by default
-          if (config.formatter?.enabled !== false) {
-            return { name: "biome", configFile: name };
-          }
-        } catch {
-          // If we can't parse, still report biome as formatter
-          return { name: "biome", configFile: name };
-        }
-      }
-    }
-  }
-
-  for (const dir of dirs) {
-    // Prettier
-    const prettierFiles = [
-      ".prettierrc",
-      ".prettierrc.json",
-      ".prettierrc.js",
-      ".prettierrc.cjs",
-      ".prettierrc.mjs",
-      ".prettierrc.yaml",
-      ".prettierrc.yml",
-      ".prettierrc.toml",
-      "prettier.config.js",
-      "prettier.config.mjs",
-      "prettier.config.cjs",
-    ];
-    for (const name of prettierFiles) {
-      if (existsSync(join(dir, name))) {
-        return { name: "prettier", configFile: name };
-      }
-    }
+  // Fall back to root
+  if (rootDir) {
+    return detectFormatterIn(rootDir);
   }
 
   return undefined;

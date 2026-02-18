@@ -395,6 +395,7 @@ export type TierInfo = { tier: 1 | 2 | 3; reason: string };
 export interface DetectorContext {
   dependencies?: DependencyInsights;
   config?: ConfigAnalysis;
+  rootDevDeps?: Record<string, string>;
 }
 
 export type ConventionDetector = (

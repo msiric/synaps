@@ -145,6 +145,12 @@ export function validateOutput(
   // Check 5: Command verification
   checkCommandVerification(output, allCommands, issues);
 
+  // Check 6: Meaningless title detection (Bug 7.3)
+  checkTitle(output, issues);
+
+  // Check 7: Framework relevance — frameworks in deps but with 0 source imports (Bug 5.2)
+  checkFrameworkRelevance(output, packages, issues);
+
   // Compose correction prompt
   const errors = issues.filter((i) => i.severity === "error");
   let correctionPrompt: string | undefined;
@@ -280,11 +286,11 @@ function checkBudget(
   issues: ValidationIssue[],
 ): void {
   const lineCount = output.split("\n").length;
-  if (lineCount > 120) {
+  if (lineCount > 180) {
     issues.push({
       severity: "error",
       type: "budget_exceeded",
-      message: `Package detail file is ${lineCount} lines — target is 60-90 lines`,
+      message: `Package detail file is ${lineCount} lines — target is 100-160 lines`,
       suggestion: `Compress the Public API section to show only top 15 exports by import count. Remove redundant descriptions.`,
     });
   }
@@ -321,6 +327,52 @@ function checkCommandVerification(
         message: `Output includes command \`${cmd}\` which doesn't match any analyzed command`,
         suggestion: `Known commands: ${allCommands.slice(0, 5).map((c) => `\`${c}\``).join(", ")}`,
       });
+    }
+  }
+}
+
+// ─── Check 6: Meaningless Title ──────────────────────────────────────────────
+
+function checkTitle(output: string, issues: ValidationIssue[]): void {
+  const MEANINGLESS = ["# src", "# lib", "# dist", "# app", "# packages", "# core", "# main"];
+  const firstLine = output.split("\n")[0]?.trim().toLowerCase();
+  if (firstLine && MEANINGLESS.some((m) => firstLine === m)) {
+    issues.push({
+      severity: "error",
+      type: "meaningless_title",
+      message: `Title "${firstLine}" appears to be a directory name, not a project name`,
+      suggestion: "Use the package name from package.json or the monorepo name",
+    });
+  }
+}
+
+// ─── Check 7: Framework Relevance ───────────────────────────────────────────
+
+function checkFrameworkRelevance(
+  output: string,
+  packages: PackageAnalysis[],
+  issues: ValidationIssue[],
+): void {
+  for (const pkg of packages) {
+    if (!pkg.dependencyInsights?.frameworks) continue;
+
+    for (const fw of pkg.dependencyInsights.frameworks) {
+      const regex = new RegExp(`\\b${escapeRegex(fw.name)}\\b`, "i");
+      if (!regex.test(output)) continue;
+
+      // Check if any source file actually imports from this framework
+      const hasImports = pkg.dependencies.external.some(
+        (d) => d.name === fw.name && d.importCount > 0,
+      );
+
+      if (!hasImports) {
+        issues.push({
+          severity: "warning",
+          type: "unused_framework",
+          message: `"${fw.name}" is in dependencies but no source file imports from it — may be a monorepo root dependency`,
+          suggestion: `Consider removing "${fw.name}" from the output or verifying it's used`,
+        });
+      }
     }
   }
 }

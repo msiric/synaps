@@ -131,9 +131,9 @@ describe("W5-B2: Budget limits adjusted", () => {
     const { agentsMdSingleTemplate, agentsMdMultiRootTemplate, agentsMdPackageDetailTemplate } =
       await import("../src/templates/agents-md.js");
 
-    expect(agentsMdSingleTemplate.systemPrompt).toContain("80-120 lines");
-    expect(agentsMdMultiRootTemplate.systemPrompt).toContain("80-100 lines");
-    expect(agentsMdPackageDetailTemplate.systemPrompt).toContain("100-150 lines");
+    expect(agentsMdSingleTemplate.systemPrompt).toContain("at least 90 lines");
+    expect(agentsMdMultiRootTemplate.systemPrompt).toContain("at least 80 lines");
+    expect(agentsMdPackageDetailTemplate.systemPrompt).toContain("at least 100 lines");
   });
 });
 

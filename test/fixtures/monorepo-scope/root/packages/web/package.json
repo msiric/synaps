@@ -1,0 +1,13 @@
+{
+  "name": "@monorepo/web",
+  "version": "1.0.0",
+  "description": "Web application",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev"
+  }
+}

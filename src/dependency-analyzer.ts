@@ -13,6 +13,7 @@ export function analyzeDependencies(
   packageDir: string,
   rootDir?: string,
   warnings: Warning[] = [],
+  sourceImports?: Set<string>,
 ): DependencyInsights {
   const result: DependencyInsights = {
     runtime: [],
@@ -35,26 +36,11 @@ export function analyzeDependencies(
     return result;
   }
 
+  // Only use THIS package's own deps — do NOT merge root deps.
+  // Root deps may include unrelated packages (e.g., React for a docs site
+  // in a monorepo with a CLI tool). Root deps are only used for
+  // cross-package analysis, not per-package analysis.
   const deps = { ...pkgJson.dependencies, ...pkgJson.devDependencies };
-
-  // Also read root package.json for monorepo-level deps
-  if (rootDir) {
-    const rootPkgPath = join(rootDir, "package.json");
-    if (existsSync(rootPkgPath)) {
-      try {
-        const rootPkg = JSON.parse(readFileSync(rootPkgPath, "utf-8"));
-        // Root deps are lower priority — only fill in what's not in package-level
-        const rootDeps = { ...rootPkg.dependencies, ...rootPkg.devDependencies };
-        for (const [name, version] of Object.entries(rootDeps)) {
-          if (!(name in deps)) {
-            deps[name] = version;
-          }
-        }
-      } catch {
-        // skip
-      }
-    }
-  }
 
   // Detect runtime
   detectRuntime(pkgJson, packageDir, rootDir, result);
@@ -62,6 +48,7 @@ export function analyzeDependencies(
   // Detect frameworks with version guidance
   for (const [name, version] of Object.entries(deps)) {
     if (typeof version !== "string") continue;
+    if (version.startsWith("workspace:")) continue; // Skip internal workspace deps
     const cleanVersion = cleanVersionRange(version);
 
     const guidance = getFrameworkGuidance(name, cleanVersion);
@@ -82,6 +69,22 @@ export function analyzeDependencies(
     if (isBundler(name) && !result.bundler) {
       result.bundler = { name, version: cleanVersion };
     }
+  }
+
+  // If sourceImports provided, filter frameworks to only those actually imported
+  if (sourceImports && result.frameworks.length > 0) {
+    const verified = result.frameworks.filter((f) => sourceImports.has(f.name));
+    const unverified = result.frameworks.filter((f) => !sourceImports.has(f.name));
+
+    if (unverified.length > 0) {
+      warnings.push({
+        level: "info",
+        module: "dependency-analyzer",
+        message: `Frameworks in package.json but not imported by source files: ${unverified.map((f) => f.name).join(", ")}`,
+      });
+    }
+
+    result.frameworks = verified;
   }
 
   return result;
@@ -116,49 +119,33 @@ function detectRuntime(
     }
   }
 
-  // Check root package.json engines if not found at package level
+  // Detect Bun from bun.lockb in PACKAGE dir only (not root)
+  if (!result.runtime.some((r) => r.name === "bun")) {
+    if (existsSync(join(packageDir, "bun.lockb")) || existsSync(join(packageDir, "bun.lock"))) {
+      result.runtime.push({ name: "bun", version: "detected" });
+    }
+  }
+
+  // Detect Deno from deno.json in PACKAGE dir only (not root)
+  if (existsSync(join(packageDir, "deno.json")) || existsSync(join(packageDir, "deno.jsonc"))) {
+    if (!result.runtime.some((r) => r.name === "deno")) {
+      result.runtime.push({ name: "deno", version: "detected" });
+    }
+  }
+
+  // Only fall back to root runtime if the package has NO runtime signals at all
   if (result.runtime.length === 0 && rootDir) {
     const rootPkgPath = join(rootDir, "package.json");
     if (existsSync(rootPkgPath)) {
       try {
         const rootPkg = JSON.parse(readFileSync(rootPkgPath, "utf-8"));
         if (rootPkg.engines?.node) {
-          result.runtime.push({ name: "node", version: cleanVersionRange(rootPkg.engines.node) });
+          result.runtime.push({ name: "node", version: cleanVersionRange(rootPkg.engines.node) + " (monorepo root)" });
         }
-        if (rootPkg.engines?.bun) {
-          result.runtime.push({ name: "bun", version: cleanVersionRange(rootPkg.engines.bun) });
-        }
-        if (typeof rootPkg.packageManager === "string" && rootPkg.packageManager.startsWith("bun@")) {
-          const version = rootPkg.packageManager.split("@")[1];
-          if (!result.runtime.some((r) => r.name === "bun")) {
-            result.runtime.push({ name: "bun", version });
-          }
-        }
+        // Do NOT add Bun from root packageManager — it's likely the build tool, not the runtime
       } catch {
         // skip
       }
-    }
-  }
-
-  // Detect Bun from bun.lockb presence
-  if (!result.runtime.some((r) => r.name === "bun")) {
-    const dirs = rootDir ? [packageDir, rootDir] : [packageDir];
-    for (const dir of dirs) {
-      if (existsSync(join(dir, "bun.lockb")) || existsSync(join(dir, "bun.lock"))) {
-        result.runtime.push({ name: "bun", version: "detected" });
-        break;
-      }
-    }
-  }
-
-  // Detect Deno from deno.json
-  const dirs = rootDir ? [packageDir, rootDir] : [packageDir];
-  for (const dir of dirs) {
-    if (existsSync(join(dir, "deno.json")) || existsSync(join(dir, "deno.jsonc"))) {
-      if (!result.runtime.some((r) => r.name === "deno")) {
-        result.runtime.push({ name: "deno", version: "detected" });
-      }
-      break;
     }
   }
 }

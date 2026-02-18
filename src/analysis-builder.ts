@@ -3,7 +3,7 @@
 //                 E-32 (importCount per public symbol), E-13 (cap publicAPI)
 
 import { readFileSync, existsSync } from "node:fs";
-import { resolve, join, basename, extname, relative } from "node:path";
+import { resolve, join, basename, dirname, extname, relative } from "node:path";
 import type {
   ParsedFile,
   SymbolGraph,
@@ -123,6 +123,56 @@ function comparePublicAPIEntries(a: PublicAPIEntry, b: PublicAPIEntry): number {
 }
 
 /**
+ * Walk up from analysisDir to find nearest package.json with a name field.
+ * Stops at rootDir boundary or filesystem root.
+ */
+function resolvePackageMetadata(
+  analysisDir: string,
+  rootDir?: string,
+): { name: string; version: string; description: string } {
+  const absDir = resolve(analysisDir);
+  // Only walk up if rootDir is provided (monorepo context).
+  // Without rootDir, we don't know the boundary and could pick up unrelated package.json.
+  const stopAt = rootDir ? resolve(rootDir) : absDir;
+  let dir = absDir;
+
+  while (true) {
+    const pkgPath = join(dir, "package.json");
+    if (existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
+        if (pkg.name) {
+          return {
+            name: pkg.name,
+            version: pkg.version ?? "0.0.0",
+            description: pkg.description ?? "",
+          };
+        }
+      } catch {
+        // Skip unparseable
+      }
+    }
+
+    // Stop at root dir boundary
+    if (dir === stopAt) break;
+
+    const parent = dirname(dir);
+    if (parent === dir) break; // reached filesystem root
+    dir = parent;
+  }
+
+  // Last resort: use the analysis directory name, but filter out meaningless names
+  const dirName = basename(resolve(analysisDir));
+  const MEANINGLESS_NAMES = new Set(["src", "lib", "dist", "app", "packages", "core", "main"]);
+  if (MEANINGLESS_NAMES.has(dirName)) {
+    const parentName = basename(dirname(resolve(analysisDir)));
+    return { name: parentName, version: "0.0.0", description: "" };
+  }
+
+  return { name: dirName, version: "0.0.0", description: "" };
+}
+
+/**
  * Build a complete PackageAnalysis from all module outputs.
  */
 export function buildPackageAnalysis(
@@ -140,21 +190,11 @@ export function buildPackageAnalysis(
   const absPackageDir = resolve(packageDir);
   const absRootDir = rootDir ? resolve(rootDir) : absPackageDir;
 
-  // Read package.json
-  let name = basename(absPackageDir);
-  let version = "0.0.0";
-  let description = "";
-  const pkgJsonPath = join(absPackageDir, "package.json");
-  if (existsSync(pkgJsonPath)) {
-    try {
-      const pkgJson = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
-      name = pkgJson.name ?? name;
-      version = pkgJson.version ?? version;
-      description = pkgJson.description ?? description;
-    } catch {
-      // Invalid package.json
-    }
-  }
+  // Resolve package metadata by walking up to nearest package.json with a name
+  const meta = resolvePackageMetadata(packageDir, rootDir);
+  let name = meta.name;
+  let version = meta.version;
+  let description = meta.description;
 
   // Build FileInventory
   const files = buildFileInventory(parsedFiles, tiers);

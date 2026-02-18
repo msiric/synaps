@@ -1,7 +1,8 @@
 // src/pipeline.ts — Pipeline Orchestrator
 // Errata applied: E-31 (publicAPI before Architecture Detector), E-39 (warnings to all modules)
 
-import { basename } from "node:path";
+import { readFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import type {
   ResolvedConfig,
   StructuredAnalysis,
@@ -85,7 +86,8 @@ export async function runPipeline(
 
     // W3-1: Workspace-wide command scanning
     if (config.rootDir) {
-      const workspaceCommands = scanWorkspaceCommands(config.rootDir, warnings);
+      const analyzedPkgNames = new Set(packageAnalyses.map((p) => p.name));
+      const workspaceCommands = scanWorkspaceCommands(config.rootDir, warnings, analyzedPkgNames);
       if (workspaceCommands.length > 0) {
         vlog(verbose, `  Workspace commands: ${workspaceCommands.length} operational commands found`);
         if (crossPackage) {
@@ -191,8 +193,32 @@ function analyzePackage(
   const configAnalysis = analyzeConfig(pkgPath, config.rootDir, warnings);
   vlog(verbose, `  Config: build=${configAnalysis.buildTool?.name ?? "none"}, linter=${configAnalysis.linter?.name ?? "none"}, formatter=${configAnalysis.formatter?.name ?? "none"}`);
 
-  const dependencyInsights = analyzeDependencies(pkgPath, config.rootDir, warnings);
+  // Collect all imported module specifiers from source files for import-verified framework detection
+  const allImportedModules = new Set<string>();
+  for (const pf of parsed) {
+    for (const imp of pf.imports) {
+      const spec = imp.moduleSpecifier;
+      if (spec.startsWith(".") || spec.startsWith("/")) continue; // skip relative/absolute
+      // Extract base package name: "@scope/pkg/deep" → "@scope/pkg", "react/jsx-runtime" → "react"
+      const parts = spec.split("/");
+      const basePkg = spec.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
+      allImportedModules.add(basePkg);
+    }
+  }
+
+  const dependencyInsights = analyzeDependencies(pkgPath, config.rootDir, warnings, allImportedModules);
   vlog(verbose, `  Dependencies: ${dependencyInsights.frameworks.length} frameworks, runtime=${dependencyInsights.runtime.map((r) => r.name).join("+") || "node"}`);
+
+  // Read root devDeps for test framework fallback in monorepos
+  let rootDevDeps: Record<string, string> | undefined;
+  if (config.rootDir) {
+    try {
+      const rootPkg = JSON.parse(readFileSync(join(config.rootDir, "package.json"), "utf-8"));
+      rootDevDeps = rootPkg.devDependencies;
+    } catch {
+      // skip
+    }
+  }
 
   // W2-3: Pass dependency and config context to convention detectors
   const conventions = extractConventions(
@@ -200,7 +226,7 @@ function analyzePackage(
     tiers,
     config.conventions.disable,
     warnings,
-    { dependencies: dependencyInsights, config: configAnalysis },
+    { dependencies: dependencyInsights, config: configAnalysis, rootDevDeps },
   );
   vlog(verbose, `  Conventions: ${conventions.length} detected`);
 
