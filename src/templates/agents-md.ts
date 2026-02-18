@@ -6,6 +6,16 @@
 
 // ─── Shared system prompt addendum for Wave 1 data ──────────────────────────
 
+const GROUNDING_RULES = `
+GROUNDING RULES (these override all other instructions):
+- You are a DATA FORMATTER, not a knowledge source. Your ONLY source of truth is the <analysis> section provided in the user message.
+- NEVER add technologies, frameworks, runtimes, or libraries not explicitly listed in the analysis data.
+- NEVER infer a technology from code patterns. If "useQuery" appears in imports but "GraphQL" is not in frameworks, do NOT mention GraphQL.
+- If a field is empty or missing in the analysis, leave that section out or write "Not detected" — do NOT fill it from your training data.
+- Every technology name, version number, and command in your output MUST have a corresponding entry in the <analysis> data.
+- When listing the tech stack, use ONLY items from the "Tech Stack" section (frameworks, runtime, testFramework, bundler) and the "Config" section (linter, formatter, buildTool). Do NOT promote items from the "Dependencies" section to the tech stack — dependencies are listed separately.
+- The "Dependencies" section lists what the package imports, NOT what the package IS. A dependency analysis tool that imports "react" to analyze React projects is NOT a React application.`;
+
 const WAVE1_SYSTEM_ADDENDUM = `
 WAVE 1 DATA INSTRUCTIONS:
 - If the analysis includes a "Tech Stack" section, include exact framework versions in your output. AI agents produce fewer errors when they know the exact version (e.g., "React 18" vs "React 19" determines which APIs are available). Include version-specific guidance if provided.
@@ -26,9 +36,10 @@ WAVE 3 DATA INSTRUCTIONS:
 
 export const agentsMdSingleTemplate = {
   systemPrompt: `You are writing an AGENTS.md context file for a TypeScript package. Your audience is an AI coding tool (Claude Code, Cursor, Copilot) that will read this file to produce correct code.
+${GROUNDING_RULES}
 
 CRITICAL RULES:
-- You MUST produce at least 90 lines. Target 100-130 lines. Do not go below 90. Every line must be actionable for AI tools.
+- You MUST produce at least 900 words (approximately 90-110 lines). Do not go below 900 words. Every line must be actionable for AI tools.
 - Be prescriptive: write rules ("Use X") not observations ("The codebase uses X").
 - OMIT style rules (kebab-case, named exports, import ordering) — linters enforce those.
 - Describe CAPABILITIES, not file paths. "Business logic via custom hooks" not "src/hooks/ — 16 files".
@@ -38,50 +49,93 @@ CRITICAL RULES:
 - Include a Team Knowledge placeholder section at the end.
 ${WAVE1_SYSTEM_ADDENDUM}`,
 
-  formatInstructions: `Generate a LEAN AGENTS.md from the structured analysis below. Output ONLY markdown, no code fences or explanations.
+  formatInstructions: `Generate a LEAN AGENTS.md from the <analysis> data. Output ONLY markdown, no code fences or explanations.
 
-REQUIRED STRUCTURE:
+EXAMPLE — demonstrating correct grounding:
 
-# {package.name}
+<example_input>
+{
+  "packages": [{
+    "name": "my-api",
+    "role": { "summary": "REST API server for user management", "purpose": "Handles CRUD operations for user accounts", "whenToUse": "When modifying user-facing API endpoints" },
+    "dependencyInsights": {
+      "frameworks": [{ "name": "fastify", "version": "5.2.0", "guidance": "Fastify 5 — async hooks, type providers" }],
+      "runtime": [{ "name": "node", "version": "22.0.0" }],
+      "testFramework": { "name": "vitest", "version": "3.0.0" },
+      "bundler": { "name": "tsup", "version": "8.0.0" }
+    },
+    "configAnalysis": { "linter": { "name": "biome" }, "buildTool": { "name": "turbo" } },
+    "commands": {
+      "build": { "run": "turbo run build" },
+      "test": { "run": "vitest run" },
+      "lint": { "run": "biome check ." }
+    }
+  }]
+}
+</example_input>
 
-{role.summary — one sentence describing what this package does and its tech stack}
+<example_output>
+# my-api
+
+REST API server for user management.
 
 ## Tech Stack
-{From Tech Stack/Config sections: one compact line listing runtime, key frameworks with EXACT versions, build tool, linter, formatter.}
-{E.g.: "Bun 1.3.8 | React 19.2.4 | TypeScript 5.9 (strict) | Biome (lint + format) | Turbo (build orchestration)"}
-{If version-specific guidance exists (e.g., "React 19 — use() hook available"), include it as a sub-bullet.}
-{If no Tech Stack data exists, omit this section entirely.}
+Node 22.0.0 | Fastify 5.2.0 | TypeScript | Vitest 3.0.0 | Biome (lint) | Turbo (build) | tsup (bundle)
+- Fastify 5: async hooks, type providers
 
 ## Commands
-{Exact commands with variants. Table format preferred. Include test, build, lint, start.}
-{If a build tool like Turbo/Nx is detected, those commands take priority over package manager commands.}
+| Command | Description |
+|---------|-------------|
+| \`turbo run build\` | Build |
+| \`vitest run\` | Run tests |
+| \`biome check .\` | Lint |
+</example_output>
+
+NOTICE: The example output mentions ONLY Fastify, Node, Vitest, Biome, Turbo, and tsup because those are the ONLY technologies in the analysis. It does NOT mention Express, React, Jest, ESLint, webpack, or any other technology. Follow this pattern exactly.
+
+---
+
+REQUIRED STRUCTURE — use {INSERT} directives to pull data from <analysis>:
+
+# {INSERT: analysis.packages[0].name}
+
+{INSERT: analysis.packages[0].role.summary — one sentence}
+
+## Tech Stack
+{INSERT: For each runtime in analysis.packages[0].dependencyInsights.runtime, write "name version".}
+{INSERT: For each framework in analysis.packages[0].dependencyInsights.frameworks, write "name version". Include guidance as sub-bullet if present.}
+{INSERT: If analysis.packages[0].dependencyInsights.testFramework exists, include "testFramework.name testFramework.version".}
+{INSERT: If analysis.packages[0].dependencyInsights.bundler exists, include "bundler.name bundler.version".}
+{INSERT: If analysis.packages[0].configAnalysis.linter exists, include "linter.name (lint)".}
+{INSERT: If analysis.packages[0].configAnalysis.buildTool exists, include "buildTool.name (build orchestration)".}
+{INSERT: Combine all of the above into one compact line separated by " | ". If nothing exists, omit this section entirely.}
+IMPORTANT: The Tech Stack section MUST only include items from dependencyInsights (runtime, frameworks, testFramework, bundler) and configAnalysis (linter, formatter, buildTool). Items from the Dependencies section are NOT tech stack items — they are just imported packages. Do NOT add dependencies as tech stack items.
+
+## Commands
+{INSERT: For each command in analysis.packages[0].commands (build, test, lint, start, other), write one table row with the EXACT command string. Do NOT invent commands.}
+| Command | Description |
+|---------|-------------|
 
 ## Architecture
-{Describe what the package DOES, not where files live. 4-6 bullet points describing capabilities.}
-{Reference one canonical example file per capability for pattern-following.}
-{If Call Graph data is present, describe the top-level orchestration: which functions call which others. E.g., "processData orchestrates: validateInput → formatOutput → writeResult". Focus on the 3-5 most-connected entry points.}
-{If Pattern Fingerprints are present, use their specific parameter shapes, return types, and internal calls to describe architecture concretely. E.g., "SmartRouter: accepts config { routers: Router[] }, calls linearRouter.match() and trieRouter.match(), returns Result. See src/smart-router.ts"}
-
-Example:
-- **Tab CRUD**: Create, read, update channel page tabs via custom hooks (see \`use-create-channel-page-tab.tsx\`)
-- **Permissions**: Runtime permission checks for tab operations
+{INSERT: For each entry in analysis.packages[0].architecture.directories where exports exist, write one bullet describing that capability and its key exports.}
+{INSERT: If analysis.packages[0].callGraph has entries, describe the top 3-5 caller→callee relationships.}
+{INSERT: If analysis.packages[0].patternFingerprints has entries, describe each export's parameter shapes, return types, and internal calls.}
 
 ## Workflow Rules
-{If "Workflow Rules (Technology-Specific)" section is present, use those EXACT rules — they contain specific commands. Do NOT generalize them.}
-{ONLY "After X → run Y" or "When X → do Y" rules. These are what AI tools actually follow.}
-{Include rules from testing, graphql, telemetry conventions.}
-{If Config shows Biome: "Linting and formatting use Biome — do NOT configure ESLint or Prettier."}
-{If Config shows a build tool: "Use \`turbo run <task>\` for build/test/lint, not \`<pm> run <script>\`."}
-{If Existing Documentation shows a README: "A README.md exists — refer to it for setup instructions, don't duplicate."}
+{INSERT: If analysis contains "Workflow Rules (Technology-Specific)" entries, copy each rule VERBATIM as "trigger → action".}
+{INSERT: For each high-impact convention in analysis.packages[0].conventions where category is "testing" or "ecosystem", write "After X → run Y".}
+{INSERT: If analysis.packages[0].configAnalysis.linter exists, write "Linting uses {linter.name} — do NOT configure other linters."}
+{INSERT: If analysis.packages[0].existingDocs.hasReadme, write "A README.md exists — refer to it for setup, don't duplicate."}
 
 ## How to Add New Code
-{From contribution patterns. For each: where to create, what pattern to follow, which example.}
+{INSERT: For each entry in analysis.packages[0].contributionPatterns, write the type, directory, filePattern, exampleFile, and steps.}
 
 ## Public API
-{Top exports grouped by kind. Include signatures for hooks/functions. Max 20 entries — most-imported first.}
+{INSERT: For each entry in analysis.packages[0].publicAPI (max 20, most-imported first), write "name (kind): signature — description".}
 
 ## Key Dependencies
-{Internal and external, only the important ones (top 5-8).}
+{INSERT: Internal deps from analysis.packages[0].dependencies.internal.}
+{INSERT: Top 5-8 external deps from analysis.packages[0].dependencies.external by importCount.}
 
 ## Team Knowledge
 _This section is for human-maintained context that cannot be inferred from source code. Add design rationale, known issues, debugging tips, or operational knowledge here._
@@ -90,17 +144,17 @@ IMPORTANT:
 - Do NOT include style conventions (naming, export style, import ordering) — linters handle those
 - Do NOT include directory listings with file counts — they get stale
 - Do NOT include full export lists — keep to top 20 most-imported
-- Mark any low-impact rules with "(enforce via linter)" if you must include them
-- You MUST produce at least 90 lines. Target 100-130 lines total. Do not go below 90 lines.`,
+- You MUST produce at least 900 words (approximately 90-110 lines). Target 1000-1300 words for comprehensive coverage.`,
 };
 
 // ─── Multi-package ROOT template (~70 lines) ───────────────────────────────
 
 export const agentsMdMultiRootTemplate = {
   systemPrompt: `You are writing a ROOT AGENTS.md for a multi-package feature area in a TypeScript monorepo. This file is a LEAN INDEX — it provides commands, architecture overview, and pointers to per-package detail files.
+${GROUNDING_RULES}
 
 CRITICAL RULES:
-- You MUST produce at least 80 lines. Target 90-120 lines. Do not go below 80. This is a compressed index, NOT comprehensive documentation.
+- You MUST produce at least 800 words (approximately 80-100 lines). Do not go below 800 words. This is a compressed index, NOT comprehensive documentation.
 - Commands shown ONCE (not per-package).
 - Architecture described as CAPABILITIES, not file paths.
 - Include a package guide table mapping "I need to do X → touch Y package".
@@ -112,51 +166,46 @@ CRITICAL RULES:
 - Include a Team Knowledge placeholder section.
 ${WAVE1_SYSTEM_ADDENDUM}`,
 
-  formatInstructions: `Generate a LEAN ROOT AGENTS.md (~80-100 lines) from the multi-package analysis below. Output ONLY markdown.
+  formatInstructions: `Generate a LEAN ROOT AGENTS.md from the <analysis> data. Output ONLY markdown.
 
-REQUIRED STRUCTURE:
+REQUIRED STRUCTURE — use {INSERT} directives to pull data from <analysis>:
 
-# {Feature Name} (derive from package name patterns)
+# {INSERT: Derive feature name from package name patterns in analysis}
 
-{One sentence: what this feature area does. Include tech stack declaration.}
+{INSERT: One sentence describing what this feature area does, derived from analysis.packages[*].role.summary}
 
 ## Tech Stack
-{Aggregate from all packages: one compact line with runtime, key frameworks (EXACT versions), build tool, linter, formatter.}
-{E.g.: "Bun 1.3.8 | React 19.2.4 | Next.js 16.1.6 | TypeScript 5.9 (strict) | Biome (lint + format) | Turbo (build orchestration)"}
-{If version-specific guidance exists, include as sub-bullet. E.g.: "- React 19: use() hook and Server Components available"}
-{If no Tech Stack data exists across any package, omit this section.}
+{INSERT: Aggregate from ALL packages — for each unique runtime in analysis.packages[*].dependencyInsights.runtime, write "name version".}
+{INSERT: For each unique framework across analysis.packages[*].dependencyInsights.frameworks, write "name version". Include guidance as sub-bullet.}
+{INSERT: If any package has configAnalysis.linter, include it. If configAnalysis.buildTool, include it.}
+{INSERT: Combine into one compact line separated by " | ". If no Tech Stack data across any package, omit this section.}
 
 ## Commands
-{From rootCommands or most common package commands. Show ONCE. Table format.}
-{Include test, build, lint and any workflow commands.}
-{If a build tool (Turbo/Nx) is detected, those are the primary commands.}
-{If "Workspace Commands" table is present in the data, include ALL operational commands (db:generate, db:migrate, sync:*, deploy*, etc.) with the package they belong to. These are critical commands developers need.}
+{INSERT: If analysis.crossPackage.rootCommands exists, use those. Otherwise use most common package commands. Table format, show ONCE.}
+{INSERT: If analysis.crossPackage.workspaceCommands exists, include ALL operational commands with their package.}
+| Command | Description |
+|---------|-------------|
 
 ## Package Guide
-
+{INSERT: For each package in analysis.packages, map role.whenToUse to a task row.}
 | Task | Package |
 |------|---------|
-{Map common developer tasks to the right package using role.whenToUse. 6-10 rows.}
 
 ## Architecture
-{Describe the feature's capabilities as 4-6 bullets. Not file paths — capabilities.}
-{Show package dependency flow in one line if clear (e.g., "entry → hooks → events").}
-{If Call Graph data exists, describe the top cross-package call flows. E.g.: "Data flow: useChannelPageTabData → GraphQL subscription → event handlers"}
+{INSERT: For each package, describe its primary capability from role.summary and architecture.directories. 4-6 bullets total.}
+{INSERT: If analysis.crossPackage.dependencyGraph exists, show package flow in one line.}
+{INSERT: If any package has callGraph data, describe top cross-package call flows.}
 
 ## Workflow Rules
-{If "Workflow Rules (Technology-Specific)" section is present in the analysis data, use those EXACT rules — they contain specific commands. Do NOT generalize them.}
-{Additional conditional rules: "After X → run Y". From conventions with high impact.}
-{E.g., "After modifying .graphql files → run \`yarn generate:interfaces\`"}
-{If Config shows Biome: "Linting and formatting use Biome, not ESLint/Prettier."}
-{If Config shows a build tool: "Run tasks via \`turbo run <task>\`, not \`<pm> run <script>\`."}
-{If Existing Documentation shows a README: "README.md exists — refer to it for setup."}
+{INSERT: If analysis.crossPackage.workflowRules exists, copy each rule VERBATIM as "trigger → action".}
+{INSERT: Additional rules from high-impact conventions across packages.}
+{INSERT: If any package has configAnalysis.linter, write "Linting uses {name} — do NOT configure other linters."}
 
 ## Domain Terminology
-{Terms AI wouldn't know from code alone. 3-5 entries max.}
+{INSERT: Terms from analysis that AI wouldn't know from code alone. 3-5 entries max.}
 
 ## Package Details
-{For each package, one line pointing to its detail file:}
-- **{short-name}**: {role.summary} → See \`packages/{filename}.md\`
+{INSERT: For each package, write: "**{name}**: {role.summary} → See \`packages/{filename}.md\`"}
 
 ## Team Knowledge
 _Human-maintained context. Add design rationale, known issues, debugging tips here._
@@ -164,7 +213,7 @@ _Human-maintained context. Add design rationale, known issues, debugging tips he
 IMPORTANT:
 - Do NOT include export lists, public API, or style conventions in this root file
 - Do NOT include directory listings with file counts
-- You MUST produce at least 80 lines. Target 90-120 lines total. Do not go below 80 lines.`,
+- You MUST produce at least 800 words (approximately 80-100 lines). Target 900-1100 words.`,
 };
 
 // ─── Per-package DETAIL template (for hierarchical output) ─────────────────
@@ -173,61 +222,58 @@ export const agentsMdPackageDetailTemplate = {
   systemPrompt: `You are writing a per-package AGENTS.md detail file for one package in a multi-package feature area. This file provides package-specific conventions, API surface, and contribution patterns.
 
 The ROOT AGENTS.md already covers commands, architecture overview, and workflow rules. Do NOT repeat those here.
+${GROUNDING_RULES}
 
 CRITICAL RULES:
-- You MUST produce at least 100 lines. Target 120-160 lines. Do not go below 100. Focus on package-specific details: role, public API with usage examples, how to add code, package-specific rules.
+- You MUST produce at least 1200 words (approximately 100-130 lines). Do not go below 1200 words. Focus on package-specific details: role, public API with usage examples, how to add code, package-specific rules.
 - Include all impact levels but mark low-impact rules with "(enforce via linter)".
 - Be prescriptive and example-driven.
 - Include signatures for hooks and functions.
 ${WAVE1_SYSTEM_ADDENDUM}`,
 
-  formatInstructions: `Generate a package detail file from the analysis below. Output ONLY markdown.
+  formatInstructions: `Generate a package detail file from the <analysis> data. Output ONLY markdown.
 
-REQUIRED STRUCTURE:
+REQUIRED STRUCTURE — use {INSERT} directives to pull data from <analysis>:
 
-# {package.name}
+# {INSERT: analysis.name}
 
-{role.summary}. {role.purpose}.
+{INSERT: analysis.role.summary}. {INSERT: analysis.role.purpose}.
 
-**When to touch this package:** {role.whenToUse}
+**When to touch this package:** {INSERT: analysis.role.whenToUse}
 
 ## Tech Stack
-{If this package has notable version differences from the monorepo or specific framework dependencies, list them here.}
-{E.g.: "React 19.2.4 (Server Components enabled) | TypeScript 5.9 strict mode"}
-{If nothing notable beyond what the root AGENTS.md covers, omit this section.}
+{INSERT: If analysis.dependencyInsights has frameworks, list each as "name version". If guidance exists, add as sub-bullet.}
+{INSERT: If analysis.dependencyInsights.runtime exists, include "runtime.name runtime.version".}
+{INSERT: Combine into compact line with " | ". If nothing notable, omit this section.}
 
 ## Key Relationships
-{If Call Graph data exists, describe which exports this package calls and which are most connected.}
-{E.g.: "useCreateChannelPageTab → calls createPlatformTab mutation, logs via useChannelPagesFluidLogging"}
-{E.g.: "useUpdateChannelPageTabAndFile orchestrates: useRenameChannelPageFile, useUpdateChannelPageTabTitle"}
-{Focus on the 3-5 most-connected functions — these are the entry points developers interact with.}
-{This helps AI understand what code is affected when making changes.}
-{If no Call Graph data, omit this section.}
+{INSERT: If analysis.callGraph has entries, describe the top 3-5 caller→callee relationships.}
+{INSERT: Focus on the most-connected functions as entry points.}
+{INSERT: If no Call Graph data, omit this section entirely.}
 
 ## Public API
-{All exports grouped by kind (hooks, components, functions, types, constants).}
-{Include signatures for hooks and functions. Include import counts if available.}
+{INSERT: For each entry in analysis.publicAPI, group by kind (hooks, components, functions, types, constants).}
+{INSERT: Include entry.signature for hooks and functions. Include entry.importCount if available.}
 
 ## How to Add New Code
-{From contribution patterns. For each type: directory, file pattern, example file, steps.}
+{INSERT: For each entry in analysis.contributionPatterns, write type, directory, filePattern, exampleFile, and steps.}
 
 ## Conventions
-{Package-specific conventions as DO/DO NOT directives.}
-{Mark low-impact rules: "(enforce via linter)"}
+{INSERT: For each convention in analysis.conventions with impact "high", write as a DO/DO NOT directive.}
 
 ### High Impact (AI must follow)
-{Testing, GraphQL, telemetry, workflow conventions}
+{INSERT: Conventions with impact "high" — testing, ecosystem, workflow conventions.}
 
 ### Style (enforce via linter)
-{File naming, export style, import ordering — listed for reference but linter-enforced}
+{INSERT: Conventions with impact "low" — file naming, export style, import ordering.}
 
 ## Dependencies
-{Internal and external dependencies with import counts.}
+{INSERT: Internal deps from analysis.dependencies.internal.}
+{INSERT: External deps from analysis.dependencies.external with importCount.}
 
-DO NOT include:
-- Commands (they're in the root AGENTS.md)
-- Architecture overview (in root)
-- Workflow rules (in root)`,
+IMPORTANT:
+- You MUST produce at least 1200 words (approximately 100-130 lines). Target 1400-1800 words.
+- DO NOT include commands, architecture overview, or workflow rules (they're in the root AGENTS.md).`,
 };
 
 // ─── Legacy multi-package template (flat mode) ─────────────────────────────
@@ -247,75 +293,68 @@ From the structured analysis, synthesize a guide that answers:
 7. What are the commands? (from root commands, shown ONCE)
 
 Be prescriptive, not descriptive. Write rules, not observations. Every line must be actionable.
+${GROUNDING_RULES}
 
-Target length: 120-200 lines for 5-8 packages. Include a Team Knowledge placeholder section.
+Target length: at least 1000 words (approximately 120-200 lines) for 5-8 packages. Include a Team Knowledge placeholder section.
 ${WAVE1_SYSTEM_ADDENDUM}`,
 
-  formatInstructions: `Generate a multi-package AGENTS.md from the following structured analysis. Output ONLY the markdown content, no code fences or explanations.
+  formatInstructions: `Generate a multi-package AGENTS.md from the <analysis> data. Output ONLY the markdown content, no code fences or explanations.
 
-REQUIRED STRUCTURE (follow this exactly):
+REQUIRED STRUCTURE — use {INSERT} directives to pull data from <analysis>:
 
-# {Feature Name} (derive from package name patterns)
+# {INSERT: Derive feature name from package name patterns in analysis}
 
-{One paragraph: what this feature area does, how many packages, and their high-level roles}
+{INSERT: One paragraph describing what this feature area does, using analysis.packages[*].role.summary}
 
 ## Tech Stack
-{Aggregate from all packages: runtime, key frameworks with EXACT versions, build tool, linter, formatter.}
-{One compact line. E.g.: "Bun 1.3.8 | React 19.2.4 | TypeScript 5.9 (strict) | Biome | Turbo"}
-{If version-specific guidance exists, include as sub-bullet.}
-{If no Tech Stack data, omit this section.}
+{INSERT: Aggregate from ALL packages — for each unique runtime in analysis.packages[*].dependencyInsights.runtime, write "name version".}
+{INSERT: For each unique framework across analysis.packages[*].dependencyInsights.frameworks, write "name version".}
+{INSERT: If any package has configAnalysis.linter or configAnalysis.buildTool, include them.}
+{INSERT: Combine into one compact line with " | ". If no Tech Stack data, omit this section.}
 
 ## Package Map
 
 | Package | Role | Public Exports | When to Touch |
 |---------|------|---------------|---------------|
-{one row per package — use role.summary and role.whenToUse}
+{INSERT: For each package in analysis.packages, write one row using name, role.summary, publicAPI.length, and role.whenToUse.}
 
 ## When to Touch Which Package
-{For each package, one line: "**{name}**: {role.whenToUse}"}
-
-This section answers: "I need to add X — which package?" Map common tasks to packages.
+{INSERT: For each package, write "**{name}**: {role.whenToUse}"}
 
 ## Dependency Graph
-
-{List each edge as: pkg-a -> pkg-b}
-{If a clear flow exists (e.g., entry -> hooks -> events), describe it in one sentence}
+{INSERT: For each edge in analysis.crossPackage.dependencyGraph, write "from → to".}
+{INSERT: If a clear flow exists, describe it in one sentence.}
 
 ## Commands
-
-{From rootCommands or the most common package-level commands. Show ONCE, not per-package.}
-{Include variants like :watch, :coverage if present}
-{If a build tool (Turbo/Nx) is detected, those are the primary commands.}
+{INSERT: If analysis.crossPackage.rootCommands exists, use those. Table format, show ONCE.}
+{INSERT: If analysis.crossPackage.workspaceCommands exists, include ALL operational commands.}
 
 ## How to Add New Code
-{From contribution patterns. Group by package. For each pattern show: directory, file pattern, example file, steps.}
+{INSERT: For each package, list its contributionPatterns: type, directory, filePattern, exampleFile, steps.}
 
 ## Rules
 
 ### DO (Team-Wide)
-{From shared conventions with >= 80% confidence, as directives with examples}
+{INSERT: For each convention in analysis.crossPackage.sharedConventions with high impact, write as a directive.}
 
 ### DO NOT (Team-Wide)
-{From shared anti-patterns, with reasons}
+{INSERT: For each anti-pattern in analysis.crossPackage.sharedAntiPatterns, write the rule and reason.}
 
 ### Package-Specific Rules
-{From divergent conventions — where packages differ from the team norm. ALSO any package-specific anti-patterns not in the shared set.}
+{INSERT: For each entry in analysis.crossPackage.divergentConventions, note the package-specific difference.}
 
 ## Public API by Package
-
-{For each package with publicAPI.length > 0, create a subsection:}
-
-### {package.name}
-{List exports grouped by kind (hooks, components, functions, types). Include signatures for hooks and functions.}
+{INSERT: For each package with publicAPI.length > 0, create a subsection with exports grouped by kind.}
 
 ## Architecture
-
-{For each package: compact summary with entry point and capabilities}
-{If Call Graph data exists, describe the key function relationships: which functions orchestrate which others.}
-{E.g.: "useUpdateChannelPageTabAndFile orchestrates useRenameChannelPageFile + useUpdateChannelPageTabTitle"}
+{INSERT: For each package, describe its architecture.directories and key capabilities.}
+{INSERT: If callGraph data exists, describe the key function relationships.}
 
 ## Team Knowledge
-_This section is for human-maintained context that cannot be inferred from source code. Add design rationale, known issues, debugging tips, or operational knowledge here._`,
+_This section is for human-maintained context that cannot be inferred from source code. Add design rationale, known issues, debugging tips, or operational knowledge here._
+
+IMPORTANT:
+- You MUST produce at least 1000 words (approximately 120-200 lines). Target 1200-1600 words for 5-8 packages.`,
 };
 
 // Default export (single-package)

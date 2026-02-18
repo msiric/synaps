@@ -196,7 +196,9 @@ describe("W2-1: Output Validator", () => {
 
   it("returns valid when no issues", () => {
     const analysis = makeStructuredAnalysis();
-    const output = `# Test Package\n\nUses TanStack Query for data fetching.\nNext.js 16 with App Router.`;
+    // Output must meet minimum word count (300 for root format) to pass validation
+    const filler = Array(60).fill("This is actionable content for AI tools to follow when working with this package.").join("\n");
+    const output = `# Test Package\n\nUses TanStack Query for data fetching.\nNext.js 16 with App Router.\n\n${filler}`;
     const result = validateOutput(output, analysis, "root");
 
     expect(result.isValid).toBe(true);

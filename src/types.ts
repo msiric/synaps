@@ -438,7 +438,7 @@ export interface ValidationResult {
 
 export interface ValidationIssue {
   severity: "error" | "warning";
-  type: "hallucinated_technology" | "version_mismatch" | "unknown_symbol" | "budget_exceeded" | "command_mismatch";
+  type: "hallucinated_technology" | "version_mismatch" | "unknown_symbol" | "budget_exceeded" | "command_mismatch" | "meaningless_title" | "unused_framework" | "under_minimum_length";
   message: string;
   line?: number;
   suggestion?: string;

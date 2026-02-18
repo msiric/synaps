@@ -273,18 +273,18 @@ describe("Bug 3.3: Test framework from root devDeps", () => {
 // ─── Bug 5.1: Template output density ───────────────────────────────────────
 
 describe("Bug 5.1: Template output density", () => {
-  it("single template enforces minimum line count", () => {
-    expect(agentsMdSingleTemplate.systemPrompt).toContain("MUST produce at least 90 lines");
-    expect(agentsMdSingleTemplate.formatInstructions).toContain("at least 90 lines");
+  it("single template enforces minimum word count", () => {
+    expect(agentsMdSingleTemplate.systemPrompt).toContain("MUST produce at least 900 words");
+    expect(agentsMdSingleTemplate.formatInstructions).toContain("at least 900 words");
   });
 
-  it("multi root template enforces minimum line count", () => {
-    expect(agentsMdMultiRootTemplate.systemPrompt).toContain("MUST produce at least 80 lines");
-    expect(agentsMdMultiRootTemplate.formatInstructions).toContain("at least 80 lines");
+  it("multi root template enforces minimum word count", () => {
+    expect(agentsMdMultiRootTemplate.systemPrompt).toContain("MUST produce at least 800 words");
+    expect(agentsMdMultiRootTemplate.formatInstructions).toContain("at least 800 words");
   });
 
-  it("package detail template enforces minimum line count", () => {
-    expect(agentsMdPackageDetailTemplate.systemPrompt).toContain("MUST produce at least 100 lines");
+  it("package detail template enforces minimum word count", () => {
+    expect(agentsMdPackageDetailTemplate.systemPrompt).toContain("MUST produce at least 1200 words");
   });
 });
 

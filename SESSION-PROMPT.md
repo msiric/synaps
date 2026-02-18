@@ -1,4 +1,4 @@
-# Session Prompt — Comprehensive Bug Fixes (16 Issues)
+# Session Prompt — Prompting Improvements (Grounding LLM Output)
 
 Open a new Claude Code session from: `/Users/mariosiric/Documents/autodocs-engine/`
 
@@ -7,162 +7,152 @@ Then paste everything between the triple-backtick block below.
 ---
 
 ```
-# autodocs-engine — Comprehensive Algorithm Bug Fixes
+# autodocs-engine — Grounding the LLM Output to Structured Data
 
-A 10-repo benchmark revealed 16 bugs in the engine, with 4 CRITICAL issues causing hallucinated frameworks, wrong runtimes, and broken titles. This session fixes ALL 16 issues.
+The engine's JSON analysis is accurate (verified: no React for Knip, no Bun for MCP SDK in the JSON). But the LLM formatting layer hallucinates — it adds technologies from its own knowledge that aren't in the structured data. This session fixes the prompting architecture to ground the LLM's output strictly to the analysis data.
 
 ## Before You Code
 
-Read these documents in order:
+Read the complete plan:
+`docs/PROMPTING-IMPROVEMENTS.md`
 
-1. **The bug fix plan (complete spec for all 16 fixes):**
-   `docs/BUGFIX-PLAN.md`
-   Read the ENTIRE document. It has 11 implementation steps, exact code changes, new test fixtures, and validation criteria.
+It has 6 specific changes with exact code modifications, based on research into LLM grounding techniques (Anthropic's XML tag training, data-to-text generation best practices, mechanical validation patterns).
 
-2. **The algorithm audit (root cause analysis):**
-   `docs/ALGORITHM-AUDIT.md`
-   Explains WHY each bug exists and how they're interconnected. The systemic root cause is monorepo scope leakage.
+Also read the research:
+`docs/research/llm-prompting-research.md`
 
-3. **The benchmark that found these bugs:**
-   `docs/FINAL-BENCHMARK.md`
-   Shows the specific failures: React in CLI tool (knip), "# src" title (nitro), Bun in pnpm project (effect).
+Key principles driving these changes:
+- Claude was **specifically trained** to recognize XML tags for separating instructions from data
+- Temperature 0 maximizes determinism, minimizes creative hallucination
+- Fill-in-the-blank templates constrain the output space more than free-form generation
+- Few-shot examples concretely demonstrate the grounding principle
+- Whitelist-based validation catches hallucinations that blacklist approaches miss
+- Word counts are more reliable than line counts for LLM enforcement
 
-After reading, confirm you understand:
-- The 4 CRITICAL bugs and their root cause (monorepo dep leakage)
-- The 11 implementation steps in order
-- The validation commands to verify each fix
+## The 6 Changes
 
-## The 16 Bugs (Grouped by Severity)
+### 1. Temperature = 0 (1 line)
+**File:** `src/llm/client.ts`
+Add `temperature: 0` to the API request body. Currently no temperature is set (defaults to 1.0 = maximum creativity).
 
-### CRITICAL (4 bugs — hallucinations and broken output)
-- **1.1:** Root deps merged into package deps → React appears in CLI tools
-- **2.1:** Analysis path leaks as title → "# src" instead of "# nitro"
-- **1.2:** Root runtime contaminates package → Bun shown for pnpm projects
-- **5.1:** Templates produce under-target output → 50-70 lines instead of 80-120
+### 2. XML Tag Restructuring (~30 lines)
+**Files:** `src/llm/adapter.ts`, `src/templates/agents-md.ts`
+Wrap the prompt in XML tags that Claude natively understands:
+- `<instructions>` for format template
+- `<analysis>` for serialized structured data
+- Final instruction: "Generate AGENTS.md now. Use ONLY data from <analysis>."
 
-### HIGH (4 bugs — incorrect or missing data)
-- **3.1:** Framework guidance for irrelevant frameworks → React guidance in backend
-- **5.2:** Validator can't catch root dep contamination
-- **6.1:** Analyzing src/ directly fails → missing metadata
-- **3.3:** "Unknown test framework" in monorepo packages
+### 3. Grounding Rules in System Prompt (~20 lines)
+**File:** `src/templates/agents-md.ts`
+Add to EVERY system prompt:
+```
+GROUNDING RULES (override all other instructions):
+- You are a DATA FORMATTER, not a knowledge source.
+- NEVER add technologies not in <analysis>.
+- NEVER infer a technology from code patterns.
+- Every technology, version, and command MUST have a corresponding entry in <analysis>.
+```
 
-### MEDIUM (4 bugs — suboptimal but not broken)
-- **1.3:** Config analyzer reads root config → sometimes wrong linter
-- **4.2:** Workspace commands may include irrelevant packages
-- **7.3:** Validator doesn't check for "src" title
-- **6.4:** Multiple exports subpaths (document as V2 limitation)
+### 4. Fill-in-the-Blank Template Rewrite (~100 lines)
+**File:** `src/templates/agents-md.ts`
+Replace free-form section descriptions with explicit field references:
+```
+## Tech Stack
+{INSERT: For each framework in analysis.dependencyInsights.frameworks, write "name version". If empty, write "No frameworks detected."}
+```
+This tells the LLM EXACTLY which field to pull from, eliminating "I'll add what I know."
 
-### LOW (4 bugs — cosmetic)
-- **2.2:** Package name inconsistency
-- **5.3:** Percentage stats not fully removed
-- **6.2:** workspace:* protocol in version → skip from framework detection
-- **6.3:** .tsx-only packages → don't report extension split
+### 5. One Few-Shot Example (~50 lines)
+**File:** `src/templates/agents-md.ts` (or new `src/templates/example.ts`)
+Add one complete example showing: JSON analysis with Fastify → AGENTS.md mentions ONLY Fastify. Explicitly note: "The output does NOT mention Express, React, or any other technology because they are NOT in the analysis."
 
-## Implementation Order (11 Steps)
+### 6. Word Count Instead of Line Count (~10 lines)
+**File:** `src/templates/agents-md.ts`
+Change "at least 90 lines" → "at least 900 words (approximately 90-110 lines)". LLMs handle word counts more reliably.
 
-Follow BUGFIX-PLAN.md exactly:
+### 7. Whitelist-Based Technology Validator (~80 lines)
+**File:** `src/output-validator.ts`
+Replace blacklist approach (check if mentioned tech is in deps) with whitelist (build set of allowed technologies from analysis, flag ANYTHING not in that set). Also add minimum length validation with retry.
 
-1. **dependency-analyzer.ts** — STOP merging root deps. Fix runtime source tracking. Skip workspace:* deps. (~60 lines)
-2. **analysis-builder.ts** — Walk up to find nearest package.json name. Handle src/ analysis. (~50 lines)
-3. **dependency-analyzer.ts** — Add import-verified framework detection (frameworks must be actually imported by source files). (~25 lines)
-4. **detectors/test-framework-ecosystem.ts** — Fallback to root devDeps for test framework. Infer from test file patterns. (~20 lines)
-5. **config-analyzer.ts** — Add source tracking ("package" vs "root") for linter/formatter. (~25 lines)
-6. **output-validator.ts** — Add framework relevance check + meaningless title check. (~40 lines)
-7. **command-extractor.ts** — Ensure workspace commands include package source. (~30 lines)
-8. **templates/agents-md.ts** — Change "target X lines" to "MUST produce at least X lines". (~15 lines)
-9. **llm/serializer.ts** — Strip remaining percentage patterns from conventions. (~10 lines)
-10. **detectors/file-naming.ts** — Don't report extension split when all files are same type. (~5 lines)
-11. **test/bugfix-audit.test.ts** — Tests for all fixes + new fixtures. (~250 lines)
+### 8. Length Validation with Retry (~20 lines)
+**File:** `src/output-validator.ts`, `src/llm/adapter.ts`
+If output is under minimum word/line count, retry with specific expansion instructions.
+
+## Implementation Order
+
+1. Temperature = 0 → `src/llm/client.ts`
+2. XML tags + grounding rules → `src/llm/adapter.ts`, `src/templates/agents-md.ts`
+3. Fill-in-the-blank template rewrite → `src/templates/agents-md.ts`
+4. Few-shot example → `src/templates/agents-md.ts`
+5. Word count enforcement → `src/templates/agents-md.ts`
+6. Whitelist technology validator → `src/output-validator.ts`
+7. Length validation + retry → `src/output-validator.ts`, `src/llm/adapter.ts`
+8. Tests → `test/prompting-improvements.test.ts`
 
 ## Testing
 
-### Benchmark repos (preserved from previous run)
+### Preserved benchmark repos and comparison files at /tmp/final-benchmark/
 
-Verify repos still exist:
+Verify repos exist:
 ```bash
-ls /tmp/final-benchmark/sanity /tmp/final-benchmark/knip /tmp/final-benchmark/nitro /tmp/final-benchmark/effect /tmp/final-benchmark/medusa
+ls /tmp/final-benchmark/knip /tmp/final-benchmark/mcp-sdk /tmp/final-benchmark/sanity /tmp/final-benchmark/effect
 ```
 
-If missing, re-clone:
+If missing, clone:
 ```bash
 cd /tmp/final-benchmark
-git clone --depth 1 https://github.com/sanity-io/sanity.git
 git clone --depth 1 https://github.com/webpro-nl/knip.git
-git clone --depth 1 https://github.com/unjs/nitro.git
+git clone --depth 1 https://github.com/modelcontextprotocol/typescript-sdk.git mcp-sdk
+git clone --depth 1 https://github.com/sanity-io/sanity.git
 git clone --depth 1 https://github.com/Effect-TS/effect.git
-git clone --depth 1 https://github.com/medusajs/medusa.git
 ```
 
-### After ALL fixes, verify:
+### After ALL changes, test on the 4 worst repos:
 
 ```bash
-# All existing tests pass
-npm test
+export ANTHROPIC_API_KEY="<key or read from /Users/mariosiric/Documents/teams-modular-packages/tools/autodocs-engine/experiments/04-ab-comparison/.env>"
 
-# Bug 1.1: Knip should NOT mention React
-npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/knip/packages/knip --dry-run 2>/dev/null | python3 -c "
-import json,sys; d=json.loads(sys.stdin.read())
-fws = [f['name'] for f in d['packages'][0].get('dependencyInsights',{}).get('frameworks',[])]
-print('Frameworks:', fws)
-assert 'react' not in [f.lower() for f in fws], 'BUG 1.1 NOT FIXED: React found in knip!'
-print('✓ Bug 1.1 fixed: No React in knip')
-"
-
-# Bug 2.1: Nitro should NOT have "src" as name
-npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/nitro/src --root /tmp/final-benchmark/nitro --dry-run 2>/dev/null | python3 -c "
-import json,sys; d=json.loads(sys.stdin.read())
-name = d['packages'][0]['name']
-print('Name:', name)
-assert name != 'src', 'BUG 2.1 NOT FIXED: Name is still src!'
-print('✓ Bug 2.1 fixed: Name is', name)
-"
-
-# Bug 1.2: Effect should NOT show Bun as runtime
-npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/effect/packages/effect --root /tmp/final-benchmark/effect --dry-run 2>/dev/null | python3 -c "
-import json,sys; d=json.loads(sys.stdin.read())
-runtimes = [r['name'] for r in d['packages'][0].get('dependencyInsights',{}).get('runtime',[])]
-print('Runtimes:', runtimes)
-# Bun should NOT be listed as a package-level runtime for Effect
-print('✓ Bug 1.2 check: Runtimes =', runtimes)
-"
-
-# Bug 3.1: Medusa core-flows should NOT mention React
-npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/medusa/packages/core/core-flows --root /tmp/final-benchmark/medusa --dry-run 2>/dev/null | python3 -c "
-import json,sys; d=json.loads(sys.stdin.read())
-fws = [f['name'] for f in d['packages'][0].get('dependencyInsights',{}).get('frameworks',[])]
-print('Frameworks:', fws)
-assert 'react' not in [f.lower() for f in fws], 'BUG 3.1 NOT FIXED: React found in medusa core-flows!'
-print('✓ Bug 3.1 fixed: No React in medusa core-flows')
-"
-```
-
-### LLM output test (needs API key)
-```bash
-export ANTHROPIC_API_KEY="<key>"
-
-# Generate new engine output for knip
-mkdir -p /tmp/final-benchmark/results/knip/engine-v2
+# Knip (was 4.4 — React hallucination)
+mkdir -p /tmp/final-benchmark/results/knip/engine-v3
 npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/knip/packages/knip \
   --root /tmp/final-benchmark/knip \
-  --format agents.md --output /tmp/final-benchmark/results/knip/engine-v2 --verbose
+  --format agents.md --output /tmp/final-benchmark/results/knip/engine-v3 --verbose
 
-# Verify: no React, title not "src", ≥80 lines
-grep -i "react" /tmp/final-benchmark/results/knip/engine-v2/AGENTS.md && echo "FAIL: React found" || echo "✓ No React"
-wc -l /tmp/final-benchmark/results/knip/engine-v2/AGENTS.md
+grep -i "react" /tmp/final-benchmark/results/knip/engine-v3/AGENTS.md && echo "FAIL: React found" || echo "✓ No React"
+wc -w /tmp/final-benchmark/results/knip/engine-v3/AGENTS.md  # Should be ≥800 words
+
+# MCP SDK (was 3.6 — Bun hallucination)
+mkdir -p /tmp/final-benchmark/results/mcp-sdk/engine-v3
+npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/mcp-sdk/src \
+  --root /tmp/final-benchmark/mcp-sdk \
+  --format agents.md --output /tmp/final-benchmark/results/mcp-sdk/engine-v3 --verbose
+
+grep -i "\bbun\b" /tmp/final-benchmark/results/mcp-sdk/engine-v3/AGENTS.md | grep -iv "bundle" && echo "FAIL: Bun found" || echo "✓ No Bun"
+
+# Sanity (was 4.7 — jest.mock in Vitest repo)
+mkdir -p /tmp/final-benchmark/results/sanity/engine-v3
+npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/sanity/packages/sanity \
+  --root /tmp/final-benchmark/sanity \
+  --format agents.md --output /tmp/final-benchmark/results/sanity/engine-v3 --verbose
+
+grep -i "jest.mock" /tmp/final-benchmark/results/sanity/engine-v3/AGENTS.md && echo "FAIL: jest.mock found" || echo "✓ No jest.mock"
+```
+
+### Success criteria:
+1. **Zero hallucinated technologies** (React, Bun, GraphQL not in analysis → not in output)
+2. **All outputs ≥800 words**
+3. **All 222 existing tests pass**
+4. **Validator catches and retries any slipthrough**
+
+## API Key
+
+```bash
+export ANTHROPIC_API_KEY=$(cat /Users/mariosiric/Documents/teams-modular-packages/tools/autodocs-engine/experiments/04-ab-comparison/.env 2>/dev/null | cut -d= -f2)
 ```
 
 ## What NOT to Change
-
-- Don't modify the AST parser, symbol graph, or tier classifier
-- Don't change the LLM adapter split (src/llm/*.ts)
-- Don't remove any ecosystem detectors
-- Don't change the pipeline architecture
-- All 201 existing tests must pass after changes
-
-## What to Ask Me
-
-- If fixing Bug 1.1 causes unexpected test failures (some tests may depend on root dep merging)
-- If the name resolution walk-up hits unexpected edge cases
-- If the import-verified framework check is too aggressive (removing frameworks that ARE relevant)
-- If you need the API key for LLM output testing
+- Don't modify the analysis pipeline (ast-parser, symbol-graph, dependency-analyzer, etc.)
+- Don't change the Wave 5 LLM adapter split structure (src/llm/*.ts)
+- Don't remove any existing validation checks — ADD the whitelist check alongside them
+- All 222 existing tests must pass
 ```

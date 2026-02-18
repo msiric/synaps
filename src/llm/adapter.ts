@@ -35,7 +35,15 @@ export async function formatWithLLM(
   const template = getTemplate(config.output.format, isMultiPackage);
 
   const systemPrompt = template.systemPrompt;
-  const userPrompt = `${template.formatInstructions}\n\n---\n\n${serialized}`;
+  const userPrompt = `<instructions>
+${template.formatInstructions}
+</instructions>
+
+<analysis>
+${serialized}
+</analysis>
+
+Generate the AGENTS.md now. Use ONLY data from the <analysis> section. Do NOT add technologies, frameworks, runtimes, or version numbers that are not explicitly present in <analysis>.`;
 
   const apiKey = config.llm.apiKey;
   if (!apiKey) {

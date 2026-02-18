@@ -41,7 +41,15 @@ export async function formatHierarchical(
 
   const filenameHint = `\n\nPackage detail files will be at:\n${packageFilenames.map((p) => `- packages/${p.filename}`).join("\n")}`;
 
-  const rootPrompt = `${rootTemplate.formatInstructions}${filenameHint}\n\n---\n\n${rootSerialized}`;
+  const rootPrompt = `<instructions>
+${rootTemplate.formatInstructions}${filenameHint}
+</instructions>
+
+<analysis>
+${rootSerialized}
+</analysis>
+
+Generate the AGENTS.md now. Use ONLY data from the <analysis> section. Do NOT add technologies, frameworks, runtimes, or version numbers that are not explicitly present in <analysis>.`;
   const rawRoot = await callLLMWithRetry(rootTemplate.systemPrompt, rootPrompt, config.llm);
   // W2-1: Validate root output
   const rootContent = await validateAndCorrect(rawRoot, analysis, "root", rootTemplate.systemPrompt, config.llm);
@@ -50,7 +58,15 @@ export async function formatHierarchical(
   const packagePromises = analysis.packages.map(async (pkg) => {
     const pkgSerialized = serializePackageToMarkdown(pkg);
     const pkgTemplate = agentsMdPackageDetailTemplate;
-    const pkgPrompt = `${pkgTemplate.formatInstructions}\n\n---\n\n${pkgSerialized}`;
+    const pkgPrompt = `<instructions>
+${pkgTemplate.formatInstructions}
+</instructions>
+
+<analysis>
+${pkgSerialized}
+</analysis>
+
+Generate the package detail file now. Use ONLY data from the <analysis> section. Do NOT add technologies, frameworks, runtimes, or version numbers that are not explicitly present in <analysis>.`;
     const rawContent = await callLLMWithRetry(pkgTemplate.systemPrompt, pkgPrompt, config.llm);
     // W2-1: Validate per-package output
     const content = await validateAndCorrect(rawContent, pkg, "package-detail", pkgTemplate.systemPrompt, config.llm);

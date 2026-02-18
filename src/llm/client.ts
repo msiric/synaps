@@ -52,6 +52,7 @@ async function callLLM(
         max_tokens: llmConfig.maxOutputTokens,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
+        temperature: 0,
       }),
     });
 

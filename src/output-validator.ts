@@ -151,6 +151,13 @@ export function validateOutput(
   // Check 7: Framework relevance — frameworks in deps but with 0 source imports (Bug 5.2)
   checkFrameworkRelevance(output, packages, issues);
 
+  // Check 8: Whitelist-based technology validation (catches hallucinations the blacklist misses)
+  checkTechnologyWhitelist(output, packages, issues);
+
+  // Check 9: Minimum length validation
+  const minWords = format === "package-detail" ? 400 : 300;
+  checkMinimumLength(output, minWords, issues);
+
   // Compose correction prompt
   const errors = issues.filter((i) => i.severity === "error");
   let correctionPrompt: string | undefined;
@@ -374,6 +381,161 @@ function checkFrameworkRelevance(
         });
       }
     }
+  }
+}
+
+// ─── Check 8: Whitelist-Based Technology Validation ──────────────────────────
+
+const WHITELIST_TECH_PATTERNS: Array<{ name: string; regex: RegExp }> = [
+  { name: "react", regex: /\breact\b/gi },
+  { name: "vue", regex: /\bvue(?:\.js)?\b/gi },
+  { name: "angular", regex: /\bangular\b/gi },
+  { name: "svelte", regex: /\bsvelte\b/gi },
+  { name: "next.js", regex: /\bnext\.?js?\b/gi },
+  { name: "nuxt", regex: /\bnuxt\b/gi },
+  { name: "remix", regex: /\bremix\b/gi },
+  { name: "astro", regex: /\bastro\b/gi },
+  { name: "express", regex: /\bexpress\b/gi },
+  { name: "fastify", regex: /\bfastify\b/gi },
+  { name: "hono", regex: /\bhono\b/gi },
+  { name: "koa", regex: /\bkoa\b/gi },
+  { name: "graphql", regex: /\bgraphql\b/gi },
+  { name: "prisma", regex: /\bprisma\b/gi },
+  { name: "drizzle", regex: /\bdrizzle\b/gi },
+  { name: "bun", regex: /\bbun\b/gi },
+  { name: "deno", regex: /\bdeno\b/gi },
+  { name: "jest", regex: /\bjest\b/gi },
+  { name: "vitest", regex: /\bvitest\b/gi },
+  { name: "mocha", regex: /\bmocha\b/gi },
+  { name: "webpack", regex: /\bwebpack\b/gi },
+  { name: "vite", regex: /\bvite\b/gi },
+  { name: "esbuild", regex: /\besbuild\b/gi },
+  { name: "rollup", regex: /\brollup\b/gi },
+  { name: "biome", regex: /\bbiome\b/gi },
+  { name: "prettier", regex: /\bprettier\b/gi },
+  { name: "eslint", regex: /\beslint\b/gi },
+];
+
+function checkTechnologyWhitelist(
+  output: string,
+  packages: PackageAnalysis[],
+  issues: ValidationIssue[],
+): void {
+  // Build the complete whitelist from analysis data
+  const allowed = new Set<string>();
+
+  for (const pkg of packages) {
+    // Frameworks
+    if (pkg.dependencyInsights) {
+      for (const fw of pkg.dependencyInsights.frameworks) {
+        allowed.add(fw.name.toLowerCase());
+        // Common aliases
+        if (fw.name.toLowerCase() === "next") allowed.add("next.js");
+        if (fw.name.toLowerCase() === "vue") allowed.add("vue.js");
+      }
+      // Runtimes
+      for (const rt of pkg.dependencyInsights.runtime) {
+        allowed.add(rt.name.toLowerCase());
+      }
+      // Test framework
+      if (pkg.dependencyInsights.testFramework) {
+        allowed.add(pkg.dependencyInsights.testFramework.name.toLowerCase());
+      }
+      // Bundler
+      if (pkg.dependencyInsights.bundler) {
+        allowed.add(pkg.dependencyInsights.bundler.name.toLowerCase());
+      }
+    }
+    // Config tools
+    if (pkg.configAnalysis) {
+      if (pkg.configAnalysis.linter && pkg.configAnalysis.linter.name !== "none") {
+        allowed.add(pkg.configAnalysis.linter.name.toLowerCase());
+      }
+      if (pkg.configAnalysis.formatter && pkg.configAnalysis.formatter.name !== "none") {
+        allowed.add(pkg.configAnalysis.formatter.name.toLowerCase());
+      }
+      if (pkg.configAnalysis.buildTool && pkg.configAnalysis.buildTool.name !== "none") {
+        allowed.add(pkg.configAnalysis.buildTool.name.toLowerCase());
+      }
+      if (pkg.configAnalysis.taskRunner && pkg.configAnalysis.taskRunner.name !== "none") {
+        allowed.add(pkg.configAnalysis.taskRunner.name.toLowerCase());
+      }
+    }
+    // External deps (top-level names like "graphql", "prisma", etc.)
+    for (const dep of pkg.dependencies.external) {
+      // Extract base package name (e.g., "@tanstack/react-query" → "react-query")
+      const baseName = dep.name.replace(/^@[^/]+\//, "").toLowerCase();
+      allowed.add(baseName);
+      allowed.add(dep.name.toLowerCase());
+
+      // Also allow technology keywords associated with this dep via TECH_KEYWORDS
+      for (const [keyword, packageNames] of Object.entries(TECH_KEYWORDS)) {
+        if (packageNames.some((pkg) => pkg === dep.name)) {
+          allowed.add(keyword);
+        }
+      }
+    }
+  }
+
+  for (const { name, regex } of WHITELIST_TECH_PATTERNS) {
+    regex.lastIndex = 0;
+    if (!regex.test(output)) continue;
+
+    // Skip if it's in the whitelist
+    if (allowed.has(name)) continue;
+    // Also check without dots (next.js → nextjs)
+    if (allowed.has(name.replace(/\./g, ""))) continue;
+
+    // Skip negation context
+    const negationRegex = new RegExp(`(not|no|without|instead of|rather than|don't use|do not use|does not use|doesn't use)\\s+${escapeRegex(name)}`, "gi");
+    if (negationRegex.test(output)) continue;
+
+    // Skip "bun" when it's part of "bundle" or "bundler"
+    if (name === "bun") {
+      const bunStandalone = /\bbun\b/gi;
+      let hasFalsePositive = true;
+      bunStandalone.lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = bunStandalone.exec(output)) !== null) {
+        const after = output.slice(match.index + 3, match.index + 10).toLowerCase();
+        if (!after.startsWith("dl") && !after.startsWith("dle")) {
+          hasFalsePositive = false;
+          break;
+        }
+      }
+      if (hasFalsePositive) continue;
+    }
+
+    // Check if it already has a hallucinated_technology issue for this tech
+    const alreadyReported = issues.some(
+      (i) => i.type === "hallucinated_technology" && i.message.toLowerCase().includes(name),
+    );
+    if (alreadyReported) continue;
+
+    issues.push({
+      severity: "error",
+      type: "hallucinated_technology",
+      message: `Output mentions "${name}" but it is NOT in the analysis frameworks, runtimes, config tools, or dependencies. This is likely hallucinated.`,
+      suggestion: `Remove all mentions of "${name}" — it does not appear in the structured analysis.`,
+    });
+  }
+}
+
+// ─── Check 9: Minimum Length Validation ──────────────────────────────────────
+
+function checkMinimumLength(
+  output: string,
+  minWords: number,
+  issues: ValidationIssue[],
+): void {
+  const wordCount = output.split(/\s+/).filter((w) => w.length > 0).length;
+  if (wordCount < minWords) {
+    issues.push({
+      severity: "error",
+      type: "under_minimum_length",
+      message: `Output is ${wordCount} words but minimum is ${minWords}. Expand Architecture, Workflow Rules, and Public API sections.`,
+      suggestion: `Add more detail to reach at least ${minWords} words. Include all commands, workflow rules, and top 20 public API exports.`,
+    });
   }
 }
 
