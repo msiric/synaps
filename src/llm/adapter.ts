@@ -77,36 +77,15 @@ export async function validateAndCorrect(
   const validation = validateOutput(output, analysis, format);
 
   if (validation.isValid || !validation.correctionPrompt) {
-    // Log warnings to stderr
-    for (const issue of validation.issues) {
-      if (issue.severity === "warning") {
-        process.stderr.write(`[WARN] output-validator: ${issue.message}\n`);
-      }
-    }
     return output;
   }
-
-  // Log issues before retry
-  for (const issue of validation.issues) {
-    process.stderr.write(`[${issue.severity.toUpperCase()}] output-validator: ${issue.message}\n`);
-  }
-  process.stderr.write(`[INFO] output-validator: Retrying with ${validation.issues.filter((i) => i.severity === "error").length} correction(s)...\n`);
 
   // One targeted retry
   try {
     const corrected = await callLLMWithRetry(systemPrompt, validation.correctionPrompt, llmConfig);
-
-    // Validate again but don't retry further
-    const revalidation = validateOutput(corrected, analysis, format);
-    if (!revalidation.isValid) {
-      for (const issue of revalidation.issues) {
-        process.stderr.write(`[WARN] output-validator (post-retry): ${issue.message}\n`);
-      }
-    }
     return corrected;
   } catch {
     // If retry fails, return original output
-    process.stderr.write(`[WARN] output-validator: Correction retry failed, using original output\n`);
     return output;
   }
 }

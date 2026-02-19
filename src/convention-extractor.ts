@@ -8,6 +8,7 @@ import type {
   ParsedFile,
   TierInfo,
   Convention,
+  ConventionConfidence,
   ConventionDetector,
   DetectorContext,
   Warning,
@@ -90,6 +91,15 @@ export function extractConventions(
   }
 
   return conventions;
+}
+
+/**
+ * Build a structured confidence metric for convention detection.
+ * Shared by all detectors to avoid duplication.
+ */
+export function buildConfidence(matched: number, total: number): ConventionConfidence {
+  const percentage = total > 0 ? Math.round((matched / total) * 100) : 0;
+  return { matched, total, percentage, description: `${matched} of ${total} (${percentage}%)` };
 }
 
 /**

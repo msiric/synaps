@@ -1,7 +1,8 @@
 // src/detectors/web-framework.ts — W2-3: Web Framework Pattern Detector
 // Detects Express, Fastify, Hono, Koa, NestJS from dependencies.
 
-import type { Convention, ConventionConfidence, ConventionDetector, DetectorContext } from "../types.js";
+import type { Convention, ConventionDetector, DetectorContext } from "../types.js";
+import { buildConfidence } from "../convention-extractor.js";
 
 const FRAMEWORK_MAP: Record<string, { name: string; middleware: string; router: string }> = {
   express: { name: "Express", middleware: "app.use() middleware chain", router: "express.Router()" },
@@ -27,7 +28,7 @@ export const webFrameworkDetector: ConventionDetector = (files, _tiers, _warning
         category: "ecosystem",
         name: `${framework.name} web framework`,
         description: `Uses ${framework.name} (${fw.version}). Middleware: ${framework.middleware}. Routes: ${framework.router}.`,
-        confidence: conf(1, 1),
+        confidence: buildConfidence(1, 1),
         examples: [`${fw.name}@${fw.version}`],
       });
     }
@@ -45,7 +46,7 @@ export const webFrameworkDetector: ConventionDetector = (files, _tiers, _warning
         category: "ecosystem",
         name: `${framework.name} web framework`,
         description: `Uses ${framework.name}. Middleware: ${framework.middleware}. Routes: ${framework.router}.`,
-        confidence: conf(importCount, importCount),
+        confidence: buildConfidence(importCount, importCount),
         examples: [`${importCount} files import from ${pkg}`],
       });
     }
@@ -53,8 +54,3 @@ export const webFrameworkDetector: ConventionDetector = (files, _tiers, _warning
 
   return conventions;
 };
-
-function conf(matched: number, total: number): ConventionConfidence {
-  const percentage = total > 0 ? Math.round((matched / total) * 100) : 0;
-  return { matched, total, percentage, description: `${matched} of ${total} (${percentage}%)` };
-}

@@ -1,6 +1,6 @@
 import { basename } from "node:path";
-import type { Convention, ConventionConfidence, ConventionDetector, ParsedFile } from "../types.js";
-import { sourceParsedFiles } from "../convention-extractor.js";
+import type { Convention, ConventionDetector, ParsedFile } from "../types.js";
+import { sourceParsedFiles, buildConfidence } from "../convention-extractor.js";
 
 export const hookPatternDetector: ConventionDetector = (files, tiers, _warnings) => {
   const conventions: Convention[] = [];
@@ -24,7 +24,7 @@ export const hookPatternDetector: ConventionDetector = (files, tiers, _warnings)
     category: "hooks",
     name: "Custom hooks",
     description: `Package exports ${hookNames.length} custom hooks`,
-    confidence: conf(hookNames.length, hookNames.length),
+    confidence: buildConfidence(hookNames.length, hookNames.length),
     examples: hookNames.slice(0, 3),
   });
 
@@ -46,7 +46,7 @@ export const hookPatternDetector: ConventionDetector = (files, tiers, _warnings)
       category: "hooks",
       name: "Hooks return objects",
       description: `Hooks return objects with named properties (not arrays)`,
-      confidence: conf(returnObj, returnObj + returnArr + returnVoid),
+      confidence: buildConfidence(returnObj, returnObj + returnArr + returnVoid),
       examples: hookNames.slice(0, 2).map((n) => `${n} returns { ... }`),
     });
   }
@@ -68,7 +68,7 @@ export const hookPatternDetector: ConventionDetector = (files, tiers, _warnings)
       category: "hooks",
       name: "Co-located hook tests",
       description: `Hook files have co-located test files`,
-      confidence: conf(coLocated, hookFiles.length),
+      confidence: buildConfidence(coLocated, hookFiles.length),
       examples: hookFiles.slice(0, 2).map((f) => `${basename(f.relativePath)} + .test.ts`),
     });
   }
@@ -95,20 +95,10 @@ export const hookPatternDetector: ConventionDetector = (files, tiers, _warnings)
       category: "hooks",
       name: "React hook usage distribution",
       description: `React hooks used across source files`,
-      confidence: conf(total, total),
+      confidence: buildConfidence(total, total),
       examples: hookUsage.map((h) => `${h.name}: ${h.count}`),
     });
   }
 
   return conventions;
 };
-
-function conf(matched: number, total: number): ConventionConfidence {
-  const percentage = total > 0 ? Math.round((matched / total) * 100) : 0;
-  return {
-    matched,
-    total,
-    percentage,
-    description: `${matched} of ${total} (${percentage}%)`,
-  };
-}

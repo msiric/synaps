@@ -7,7 +7,8 @@ import type {
   Convention,
   AntiPattern,
 } from "./types.js";
-import { sanitize } from "./llm/serializer.js";
+import { ENGINE_VERSION } from "./types.js";
+import { sanitize, stripConventionStats } from "./llm/serializer.js";
 
 // ─── Output Type ─────────────────────────────────────────────────────────────
 
@@ -279,7 +280,7 @@ function formatWorkflowRules(analysis: StructuredAnalysis): string {
   if (highImpactConventions.length > 0) {
     lines.push("");
     for (const conv of highImpactConventions) {
-      lines.push(`- ${stripStats(conv.description)}`);
+      lines.push(`- ${stripConventionStats(conv.description)}`);
     }
   }
 
@@ -406,7 +407,7 @@ function formatConventions(analysis: StructuredAnalysis): string {
 
   for (const pkg of analysis.packages) {
     for (const conv of pkg.conventions) {
-      const desc = stripStats(conv.description);
+      const desc = stripConventionStats(conv.description);
       if (desc) {
         const examples = conv.examples.length > 0
           ? ` (e.g., \`${sanitize(conv.examples[0], 60)}\`)`
@@ -423,7 +424,7 @@ function formatConventions(analysis: StructuredAnalysis): string {
   // Shared conventions from cross-package
   if (analysis.crossPackage?.sharedConventions) {
     for (const conv of analysis.crossPackage.sharedConventions) {
-      const desc = stripStats(conv.description);
+      const desc = stripConventionStats(conv.description);
       if (desc) {
         doRules.push(`- **DO**: ${desc} _(all packages)_`);
       }
@@ -506,7 +507,7 @@ export function generatePackageDeterministicAgentsMd(
 ): DeterministicOutput {
   // Wrap in a minimal StructuredAnalysis for reuse of formatters
   const singleAnalysis: StructuredAnalysis = {
-    meta: { engineVersion: "0.1.0", analyzedAt: "", rootDir: ".", config: {} as any, timingMs: 0 },
+    meta: { engineVersion: ENGINE_VERSION, analyzedAt: "", rootDir: ".", config: {} as any, timingMs: 0 },
     packages: [pkg],
     warnings: [],
   };
@@ -531,19 +532,6 @@ export function generatePackageDeterministicAgentsMd(
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/**
- * Strip percentage patterns and raw count stats from convention descriptions.
- */
-function stripStats(desc: string): string {
-  return desc
-    .replace(/\s*\(\d+%\)/g, "")
-    .replace(/\s*\d+ of \d+ files/g, "")
-    .replace(/\s*\d+ of \d+ exports/g, "")
-    .replace(/\s*\d+ of \d+ imports/g, "")
-    .replace(/\s*\d+ of \d+\b/g, "")
-    .trim();
-}
 
 /**
  * Collect high-impact conventions across all packages (for workflow rules section).

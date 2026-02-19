@@ -52,7 +52,10 @@ export function extractCommands(
       absPackageDir,
     );
     if (cmd) {
-      (commands as any)[category] = cmd;
+      if (category === "build") commands.build = cmd;
+      else if (category === "test") commands.test = cmd;
+      else if (category === "lint") commands.lint = cmd;
+      else if (category === "start") commands.start = cmd;
     }
   }
 
@@ -270,15 +273,6 @@ export function scanWorkspaceCommands(
     } catch {
       // Skip malformed package.json
     }
-  }
-
-  // Filter to commands from analyzed packages if specified
-  if (analyzedPackageNames && analyzedPackageNames.size > 0) {
-    return commands.filter((cmd) => {
-      if (cmd.packagePath === ".") return true; // Root commands always relevant
-      if (analyzedPackageNames.has(cmd.packageName)) return true;
-      return true; // Include all but mark with source for LLM attribution
-    });
   }
 
   return commands;

@@ -12,7 +12,7 @@ export function sanitize(s: string, maxLen = 500): string {
  * Strip percentage patterns and raw count stats from convention descriptions.
  * "32 of 33 files (97%)" → "" | "(97%)" → ""
  */
-function sanitizeConventionDescription(desc: string): string {
+export function stripConventionStats(desc: string): string {
   return desc
     .replace(/\s*\(\d+%\)/g, "")
     .replace(/\s*\d+ of \d+ files/g, "")
@@ -80,7 +80,7 @@ export function serializeToMarkdown(analysis: StructuredAnalysis): string {
         const examples = conv.examples.length > 0
           ? ` (e.g., ${conv.examples.slice(0, 2).map((e) => `\`${sanitize(e, 80)}\``).join(", ")})`
           : "";
-        const desc = sanitizeConventionDescription(conv.description);
+        const desc = stripConventionStats(conv.description);
         lines.push(`- **${conv.name}**: ${desc}${impact}${examples}`);
       }
       lines.push("");
@@ -196,7 +196,7 @@ export function serializePackage(pkg: PackageAnalysis, lines: string[]): void {
     const examples = conv.examples.length > 0
       ? ` (e.g., ${conv.examples.slice(0, 2).map((e) => `\`${sanitize(e, 80)}\``).join(", ")})`
       : "";
-    const desc = sanitizeConventionDescription(conv.description);
+    const desc = stripConventionStats(conv.description);
     lines.push(
       `- **${conv.name}**: ${desc}${impact}${examples}`,
     );

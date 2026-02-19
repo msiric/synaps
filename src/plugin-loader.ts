@@ -3,7 +3,7 @@
 // Plugin discovery: package.json "autodocs.plugins", .autodocs/plugins/ directory, --plugin CLI flag.
 
 import { readFileSync, existsSync, readdirSync } from "node:fs";
-import { resolve, extname } from "node:path";
+import { resolve, relative, isAbsolute, extname } from "node:path";
 import type { ConventionDetector, Warning } from "./types.js";
 
 /**
@@ -35,7 +35,7 @@ export function loadPlugins(
   // 1. Explicit --plugin paths
   for (const pluginPath of explicitPaths) {
     const abs = resolve(rootDir, pluginPath);
-    const plugin = loadPlugin(abs, warnings);
+    const plugin = loadPlugin(abs, warnings, rootDir);
     if (plugin && !loaded.has(plugin.name)) {
       loaded.add(plugin.name);
       plugins.push(plugin);
@@ -51,7 +51,7 @@ export function loadPlugins(
       if (autodocs?.plugins && Array.isArray(autodocs.plugins)) {
         for (const pluginPath of autodocs.plugins) {
           const abs = resolve(rootDir, pluginPath);
-          const plugin = loadPlugin(abs, warnings);
+          const plugin = loadPlugin(abs, warnings, rootDir);
           if (plugin && !loaded.has(plugin.name)) {
             loaded.add(plugin.name);
             plugins.push(plugin);
@@ -73,7 +73,7 @@ export function loadPlugins(
       });
       for (const file of files) {
         const abs = resolve(pluginDir, file);
-        const plugin = loadPlugin(abs, warnings);
+        const plugin = loadPlugin(abs, warnings, rootDir);
         if (plugin && !loaded.has(plugin.name)) {
           loaded.add(plugin.name);
           plugins.push(plugin);
@@ -95,7 +95,20 @@ export function loadPlugins(
  * Load a single plugin from a file path.
  * The plugin module must default-export a DetectorPlugin object.
  */
-function loadPlugin(absPath: string, warnings: Warning[]): DetectorPlugin | null {
+function loadPlugin(absPath: string, warnings: Warning[], rootDir?: string): DetectorPlugin | null {
+  // Path boundary check: ensure plugin is within the project root
+  if (rootDir) {
+    const rel = relative(resolve(rootDir), resolve(absPath));
+    if (rel.startsWith("..") || isAbsolute(rel)) {
+      warnings.push({
+        level: "error",
+        module: "plugin-loader",
+        message: `Plugin path "${absPath}" resolves outside project root — skipped for security`,
+      });
+      return null;
+    }
+  }
+
   if (!existsSync(absPath)) {
     warnings.push({
       level: "warn",

@@ -68,16 +68,17 @@ export function buildPublicAPI(
   });
 
   // E-32: Compute importCount per public symbol
-  for (const entry of entries) {
-    let count = 0;
-    for (const pf of parsedFiles) {
-      for (const imp of pf.imports) {
-        if (imp.importedNames.includes(entry.name)) {
-          count++;
-        }
+  // Pre-build symbol → count map in a single pass (avoids O(entries * files * imports))
+  const importCounts = new Map<string, number>();
+  for (const pf of parsedFiles) {
+    for (const imp of pf.imports) {
+      for (const name of imp.importedNames) {
+        importCounts.set(name, (importCounts.get(name) ?? 0) + 1);
       }
     }
-    entry.importCount = count;
+  }
+  for (const entry of entries) {
+    entry.importCount = importCounts.get(entry.name) ?? 0;
   }
 
   // E-13 + Fix C: Cap publicAPI entries with multi-criteria ranking

@@ -175,7 +175,7 @@ function detectBuildTool(
 
 function detectLinterIn(
   dir: string,
-): { name: string; configFile: string } | undefined {
+): NonNullable<ConfigAnalysis["linter"]> | undefined {
   // Biome
   for (const name of ["biome.json", "biome.jsonc"]) {
     if (existsSync(join(dir, name))) {
@@ -216,7 +216,7 @@ function detectLinter(
 
 function detectFormatterIn(
   dir: string,
-): { name: string; configFile: string } | undefined {
+): NonNullable<ConfigAnalysis["formatter"]> | undefined {
   // Biome
   for (const name of ["biome.json", "biome.jsonc"]) {
     if (existsSync(join(dir, name))) {

@@ -4,6 +4,10 @@
 import type { ResolvedConfig } from "../types.js";
 import { LLMError } from "../types.js";
 
+interface AnthropicResponse {
+  content?: { type?: string; text?: string }[];
+}
+
 /**
  * Call LLM API with automatic retry (1 retry after 2s delay).
  */
@@ -60,13 +64,15 @@ async function callLLM(
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
+      // Truncate error body to avoid leaking sensitive data in logs
+      const safeBody = body.slice(0, 200);
       throw new LLMError(
-        `LLM API returned ${response.status}: ${body}`,
+        `LLM API returned ${response.status}: ${safeBody}`,
         response.status,
       );
     }
 
-    const data = (await response.json()) as any;
+    const data: AnthropicResponse = await response.json();
     const text = data?.content?.[0]?.text;
     if (!text) {
       throw new LLMError("LLM response missing content text");

@@ -1,7 +1,8 @@
 // src/detectors/build-tool.ts — W2-3: Build/Bundle Tool Pattern Detector
 // Detects esbuild, webpack, rollup, vite, turbopack, swc from dependencies.
 
-import type { Convention, ConventionConfidence, ConventionDetector, DetectorContext } from "../types.js";
+import type { Convention, ConventionDetector, DetectorContext } from "../types.js";
+import { buildConfidence } from "../convention-extractor.js";
 
 const BUNDLER_MAP: Record<string, { name: string; format: string }> = {
   webpack: { name: "Webpack", format: "CJS/ESM with loaders and plugins" },
@@ -31,7 +32,7 @@ export const buildToolDetector: ConventionDetector = (files, _tiers, _warnings, 
         category: "ecosystem",
         name: `${bundler.name} bundler`,
         description: `Built with ${bundler.name} (${b.version}): ${bundler.format}`,
-        confidence: conf(1, 1),
+        confidence: buildConfidence(1, 1),
         examples: [`${b.name}@${b.version}`],
       });
     }
@@ -44,7 +45,7 @@ export const buildToolDetector: ConventionDetector = (files, _tiers, _warnings, 
       category: "ecosystem",
       name: `${bt.name} build orchestration`,
       description: `Build orchestration via ${bt.name} (${bt.configFile}). Tasks: ${bt.taskNames.join(", ")}.`,
-      confidence: conf(1, 1),
+      confidence: buildConfidence(1, 1),
       examples: [`Config: ${bt.configFile}`],
     });
   }
@@ -61,7 +62,7 @@ export const buildToolDetector: ConventionDetector = (files, _tiers, _warnings, 
         category: "ecosystem",
         name: `${bundler.name} bundler`,
         description: `Uses ${bundler.name}: ${bundler.format}`,
-        confidence: conf(importCount, importCount),
+        confidence: buildConfidence(importCount, importCount),
         examples: [`${importCount} files import from ${pkg}`],
       });
     }
@@ -69,8 +70,3 @@ export const buildToolDetector: ConventionDetector = (files, _tiers, _warnings, 
 
   return conventions;
 };
-
-function conf(matched: number, total: number): ConventionConfidence {
-  const percentage = total > 0 ? Math.round((matched / total) * 100) : 0;
-  return { matched, total, percentage, description: `${matched} of ${total} (${percentage}%)` };
-}

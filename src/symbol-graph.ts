@@ -364,8 +364,10 @@ export function resolveModuleSpecifier(
   for (const candidate of candidates) {
     const absPath = resolve(fromDir, candidate);
 
-    // E-21: Path traversal boundary check
-    if (!absPath.startsWith(resolve(packageDir))) {
+    // E-21: Path traversal boundary check — use relative() to avoid prefix collision
+    // (startsWith("/foo/bar") would wrongly match "/foo/barroom/baz")
+    const relToPackage = relative(resolve(packageDir), absPath);
+    if (relToPackage.startsWith("..")) {
       warnings.push({
         level: "warn",
         module: "symbol-graph",

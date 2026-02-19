@@ -1,7 +1,8 @@
 // src/detectors/database.ts — W2-3: Database/ORM Pattern Detector
 // Detects Drizzle, Prisma, TypeORM, Sequelize, Knex from dependencies.
 
-import type { Convention, ConventionConfidence, ConventionDetector, DetectorContext } from "../types.js";
+import type { Convention, ConventionDetector, DetectorContext } from "../types.js";
+import { buildConfidence } from "../convention-extractor.js";
 
 const ORM_MAP: Record<string, { name: string; description: string }> = {
   "drizzle-orm": { name: "Drizzle ORM", description: "Schema-as-code ORM with SQL-like query builder" },
@@ -30,7 +31,7 @@ export const databaseDetector: ConventionDetector = (files, _tiers, _warnings, c
         category: "ecosystem",
         name: `${orm.name} database`,
         description: `Uses ${orm.name} (${fw.version}): ${orm.description}`,
-        confidence: conf(1, 1),
+        confidence: buildConfidence(1, 1),
         examples: [`${fw.name}@${fw.version}`],
       });
     }
@@ -48,7 +49,7 @@ export const databaseDetector: ConventionDetector = (files, _tiers, _warnings, c
         category: "ecosystem",
         name: `${orm.name} database`,
         description: `Uses ${orm.name}: ${orm.description}`,
-        confidence: conf(importCount, importCount),
+        confidence: buildConfidence(importCount, importCount),
         examples: [`${importCount} files import from ${pkg}`],
       });
     }
@@ -56,8 +57,3 @@ export const databaseDetector: ConventionDetector = (files, _tiers, _warnings, c
 
   return conventions;
 };
-
-function conf(matched: number, total: number): ConventionConfidence {
-  const percentage = total > 0 ? Math.round((matched / total) * 100) : 0;
-  return { matched, total, percentage, description: `${matched} of ${total} (${percentage}%)` };
-}

@@ -3,7 +3,8 @@
 // the GraphQL hallucination. If useQuery comes from @tanstack/react-query,
 // the project does NOT use GraphQL for data fetching.
 
-import type { Convention, ConventionConfidence, ConventionDetector, DetectorContext } from "../types.js";
+import type { Convention, ConventionDetector, DetectorContext } from "../types.js";
+import { buildConfidence } from "../convention-extractor.js";
 
 export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warnings, _context) => {
   const conventions: Convention[] = [];
@@ -47,7 +48,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
       category: "ecosystem",
       name: "Apollo Client (GraphQL)",
       description: `Uses Apollo Client for GraphQL data fetching (useQuery/useMutation from @apollo/client)`,
-      confidence: conf(count, totalUsages),
+      confidence: buildConfidence(count, totalUsages),
       examples: [`${count} Apollo hook imports`],
     });
   }
@@ -58,7 +59,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
       category: "ecosystem",
       name: "TanStack Query data fetching",
       description: `Uses TanStack Query (NOT GraphQL) for data fetching. useQuery/useMutation are from @tanstack/react-query.`,
-      confidence: conf(count, totalUsages),
+      confidence: buildConfidence(count, totalUsages),
       examples: [`${count} TanStack Query hook imports`],
     });
   }
@@ -69,7 +70,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
       category: "ecosystem",
       name: "tRPC data fetching",
       description: `Uses tRPC + TanStack Query for type-safe data fetching (NOT GraphQL)`,
-      confidence: conf(count, totalUsages),
+      confidence: buildConfidence(count, totalUsages),
       examples: [`${count} tRPC hook imports`],
     });
   }
@@ -80,7 +81,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
       category: "ecosystem",
       name: "SWR data fetching",
       description: `Uses SWR for data fetching`,
-      confidence: conf(count, totalUsages),
+      confidence: buildConfidence(count, totalUsages),
       examples: [`${count} SWR imports`],
     });
   }
@@ -91,7 +92,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
       category: "ecosystem",
       name: "URQL (GraphQL)",
       description: `Uses URQL for GraphQL data fetching`,
-      confidence: conf(count, totalUsages),
+      confidence: buildConfidence(count, totalUsages),
       examples: [`${count} URQL imports`],
     });
   }
@@ -104,7 +105,7 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
         category: "ecosystem",
         name: "oRPC data fetching",
         description: `Uses oRPC for type-safe RPC data fetching (NOT GraphQL)`,
-        confidence: conf(count, totalUsages),
+        confidence: buildConfidence(count, totalUsages),
         examples: [`${count} oRPC hook imports from ${source}`],
       });
     }
@@ -126,15 +127,10 @@ export const dataFetchingDetector: ConventionDetector = (files, _tiers, _warning
       category: "ecosystem",
       name: "Custom data fetching hooks",
       description: `Uses useQuery/useMutation hooks from custom or unknown source(s): ${unknownSources.join(", ")}. Do NOT assume GraphQL.`,
-      confidence: conf(totalUsages, totalUsages),
+      confidence: buildConfidence(totalUsages, totalUsages),
       examples: unknownSources.map((s) => `imported from ${s}`),
     });
   }
 
   return conventions;
 };
-
-function conf(matched: number, total: number): ConventionConfidence {
-  const percentage = total > 0 ? Math.round((matched / total) * 100) : 0;
-  return { matched, total, percentage, description: `${matched} of ${total} (${percentage}%)` };
-}

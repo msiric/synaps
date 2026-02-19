@@ -1,4 +1,5 @@
-import type { Convention, ConventionConfidence, ConventionDetector, ParsedFile } from "../types.js";
+import type { Convention, ConventionDetector, ParsedFile } from "../types.js";
+import { buildConfidence } from "../convention-extractor.js";
 
 export const testPatternDetector: ConventionDetector = (files, _tiers, _warnings) => {
   const conventions: Convention[] = [];
@@ -19,7 +20,7 @@ export const testPatternDetector: ConventionDetector = (files, _tiers, _warnings
     category: "testing",
     name: `${framework} test framework`,
     description: `Tests use ${framework}${rtl > 0 ? " + React Testing Library" : ""}`,
-    confidence: conf(testFiles.length, testFiles.length),
+    confidence: buildConfidence(testFiles.length, testFiles.length),
     examples: [`${testFiles.length} test files`],
   });
 
@@ -43,7 +44,7 @@ export const testPatternDetector: ConventionDetector = (files, _tiers, _warnings
         category: "testing",
         name: "Co-located tests",
         description: `Test files are co-located with source files`,
-        confidence: conf(coLocated, testFiles.length),
+        confidence: buildConfidence(coLocated, testFiles.length),
         examples: [`${coLocated} of ${testFiles.length} tests co-located (${pct}%)`],
       });
     }
@@ -56,20 +57,10 @@ export const testPatternDetector: ConventionDetector = (files, _tiers, _warnings
       category: "testing",
       name: "jest.mock() pattern",
       description: `Tests use jest.mock() for mocking dependencies`,
-      confidence: conf(totalMocks, totalMocks),
+      confidence: buildConfidence(totalMocks, totalMocks),
       examples: [`${totalMocks} jest.mock() calls across test files`],
     });
   }
 
   return conventions;
 };
-
-function conf(matched: number, total: number): ConventionConfidence {
-  const percentage = total > 0 ? Math.round((matched / total) * 100) : 0;
-  return {
-    matched,
-    total,
-    percentage,
-    description: `${matched} of ${total} (${percentage}%)`,
-  };
-}

@@ -365,10 +365,14 @@ function adjustCommandsForBuildTool(
       }
     } else {
       // Create new command from turbo task
-      (commands as any)[cmdField] = {
+      const newCmd = {
         run: `${prefix} ${taskName}`,
         source: `${buildTool.configFile} tasks.${taskName}`,
       };
+      if (cmdField === "build") commands.build = newCmd;
+      else if (cmdField === "test") commands.test = newCmd;
+      else if (cmdField === "lint") commands.lint = newCmd;
+      else if (cmdField === "start") commands.start = newCmd;
     }
   }
 }

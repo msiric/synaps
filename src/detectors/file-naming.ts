@@ -1,6 +1,6 @@
 import { basename } from "node:path";
-import type { Convention, ConventionConfidence, ConventionDetector } from "../types.js";
-import { sourceParsedFiles } from "../convention-extractor.js";
+import type { Convention, ConventionDetector } from "../types.js";
+import { sourceParsedFiles, buildConfidence } from "../convention-extractor.js";
 
 const KEBAB_CASE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const CAMEL_CASE = /^[a-z][a-zA-Z0-9]*$/;
@@ -40,7 +40,7 @@ export const fileNamingDetector: ConventionDetector = (files, tiers, _warnings) 
       category: "file-naming",
       name: `${dominant.name} filenames`,
       description: `Source files use ${dominant.name} naming convention`,
-      confidence: makeConfidence(dominant.count, nonIndex),
+      confidence: buildConfidence(dominant.count, nonIndex),
       examples: sourceFiles
         .map((f) => basename(f.relativePath))
         .filter((n) => !n.startsWith("index."))
@@ -52,7 +52,7 @@ export const fileNamingDetector: ConventionDetector = (files, tiers, _warnings) 
       category: "file-naming",
       name: "Mixed file naming",
       description: `Mixed: ${dominant.name} (${pct}%), ${patterns[1].name} (${secondPct}%)`,
-      confidence: makeConfidence(dominant.count, nonIndex),
+      confidence: buildConfidence(dominant.count, nonIndex),
       examples: sourceFiles
         .map((f) => basename(f.relativePath))
         .filter((n) => !n.startsWith("index."))
@@ -68,20 +68,10 @@ export const fileNamingDetector: ConventionDetector = (files, tiers, _warnings) 
       category: "file-naming",
       name: ".tsx/.ts extension split",
       description: `.tsx for JSX components, .ts for logic`,
-      confidence: makeConfidence(tsx + ts, total),
+      confidence: buildConfidence(tsx + ts, total),
       examples: [`${tsx} .tsx files`, `${ts} .ts files`],
     });
   }
 
   return conventions;
 };
-
-function makeConfidence(matched: number, total: number): ConventionConfidence {
-  const percentage = total > 0 ? Math.round((matched / total) * 100) : 0;
-  return {
-    matched,
-    total,
-    percentage,
-    description: `${matched} of ${total} files (${percentage}%)`,
-  };
-}

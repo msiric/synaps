@@ -2,7 +2,8 @@
 // Detects specific test frameworks from dependencies and config, including Bun test.
 // Fixes "Unknown test framework" in V3 benchmark for midday api-server.
 
-import type { Convention, ConventionConfidence, ConventionDetector, DetectorContext } from "../types.js";
+import type { Convention, ConventionDetector, DetectorContext } from "../types.js";
+import { buildConfidence } from "../convention-extractor.js";
 
 const KNOWN_TEST_FRAMEWORKS = ["vitest", "jest", "@jest/core", "mocha", "ava", "tap"];
 
@@ -89,15 +90,10 @@ export const testFrameworkEcosystemDetector: ConventionDetector = (files, _tiers
       category: "testing",
       name: `${frameworkName} test framework (ecosystem)`,
       description: `Tests use ${frameworkDetail}${hasPlaywright ? " + Playwright (e2e)" : ""}${hasCypress ? " + Cypress (e2e)" : ""}`,
-      confidence: conf(testFiles.length, testFiles.length),
+      confidence: buildConfidence(testFiles.length, testFiles.length),
       examples: [`${testFiles.length} test files detected`],
     });
   }
 
   return conventions;
 };
-
-function conf(matched: number, total: number): ConventionConfidence {
-  const percentage = total > 0 ? Math.round((matched / total) * 100) : 0;
-  return { matched, total, percentage, description: `${matched} of ${total} (${percentage}%)` };
-}

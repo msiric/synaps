@@ -100,7 +100,7 @@ function walkDirectory(
     const fullPath = join(dir, entry.name);
 
     if (entry.isDirectory()) {
-      if (DEFAULT_EXCLUDE_DIRS.includes(entry.name as any)) continue;
+      if ((DEFAULT_EXCLUDE_DIRS as readonly string[]).includes(entry.name)) continue;
       walkDirectory(fullPath, packageDir, results, visitedInodes, warnings);
     } else if (entry.isSymbolicLink()) {
       // E-16: Symlink boundary check
@@ -131,7 +131,7 @@ function walkDirectory(
             continue;
           }
           visitedInodes.add(stat.ino);
-          if (!DEFAULT_EXCLUDE_DIRS.includes(entry.name as any)) {
+          if (!(DEFAULT_EXCLUDE_DIRS as readonly string[]).includes(entry.name)) {
             walkDirectory(
               fullPath,
               packageDir,

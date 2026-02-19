@@ -138,7 +138,7 @@ describe("integration: analyze()", () => {
     });
 
     expect(result.meta.timingMs).toBeGreaterThanOrEqual(0);
-    expect(result.meta.engineVersion).toBe("0.1.0");
+    expect(result.meta.engineVersion).toBe("0.3.0");
     expect(result.meta.analyzedAt).toBeTruthy();
   });
 
