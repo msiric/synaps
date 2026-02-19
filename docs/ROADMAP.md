@@ -1,98 +1,149 @@
 # Roadmap
 
-> Current version: 0.3.0. 279 tests. ~10,000 lines of source. Deterministic output mode implemented (13/15 sections hallucination-proof). Benchmarked against 10 open-source repos.
+> Current version: 0.3.0. 299 tests. ~10,200 lines of source.
+> Deterministic output (14/16 sections hallucination-proof).
+> Meta-tool detection (3-signal cascade). Benchmarked against 10 open-source repos.
 
 ## Current Status
 
-**What works well:**
+**Shipped and working:**
 - AST-based analysis: exports, imports, call graph, barrel resolution, convention detection
-- Deterministic output for 13 of 15 AGENTS.md sections (no hallucination by construction)
+- Deterministic output for 14 of 16 AGENTS.md sections (no hallucination by construction)
+- Meta-tool detection: 3-signal cascade (peerDeps → dep-placement → family-count) with format-time reclassification, dominant family exemption, and `--no-meta-tool` escape hatch
 - Version-aware framework guidance (React 18 vs 19, TypeScript 5.4 vs 5.5, Next.js 13-16)
 - Monorepo support: hierarchical output, workspace command scanning, cross-package analysis
-- Output validation: cross-references LLM output against structured analysis data
+- Workflow rules for both single-package and multi-package analysis
+- Output validation: cross-references LLM output against analysis data
+- Type-only import filtering across pipeline and ecosystem detectors
 - Multiple formats: AGENTS.md, CLAUDE.md, .cursorrules, JSON
+- Security: plugin path boundary validation, LLM error body redaction, typed API responses
 
-**What needs work:**
-- Domain knowledge (4.2/10 in benchmarks — cannot infer project-specific terminology from code)
-- Workflow specificity (4.9/10 — generates generic rules, not project-specific)
-- Meta-tool detection (Knip-class tools that import frameworks for analysis, not as core deps)
-- Empty target handling (should fail gracefully, not generate hallucinated content)
-- Deterministic output not yet benchmarked against 10-repo suite
+**Benchmark results (10-repo suite, Feb 2026):**
+- 10/10 repos generate without errors
+- Knip correctly detected as meta-tool (16 framework families, "Supported Frameworks" section)
+- Zero false positives on meta-tool detection (7 normal repos unaffected)
+- Zero technology hallucinations in deterministic sections
+- Analysis times: 5ms to 1.6s (even 3,746-file sanity in under 2 seconds)
 
-## Next: Meta-Tool Detection
+---
 
-### Problem
+## Phase 1: Ship (Weeks 1-2)
 
-When analyzing tools that have plugins for multiple frameworks (Knip, ESLint configs, bundler plugins), the engine lists every supported framework as a project dependency. Knip's output says "Uses Express, NestJS, Webpack, Vite, Drizzle, Prisma" — these are frameworks Knip *analyzes*, not frameworks it *uses*.
+### `npx autodocs-engine init`
 
-The import-verification fix doesn't help because Knip's source files DO import from React (to analyze React projects). This is a semantic distinction: importing a framework to support it vs. importing it to build on it.
+The single most important feature for adoption. Zero-config first-run experience:
 
-### Solution
+```bash
+npx autodocs-engine init
+```
 
-A heuristic that detects packages importing >5 distinct major frameworks as "meta-tools" and adjusts output.
+Auto-detects:
+- Monorepo vs single package (from `workspaces` in package.json, `pnpm-workspace.yaml`, `turbo.json`)
+- Package paths from workspace configuration
+- Package manager from lockfiles
+- Whether an API key is available (JSON-only vs full AGENTS.md)
 
-**Threshold:** >5 distinct major frameworks. Normal web app: 2-3 (React + Express + Prisma). Normal library: 0-1. Meta-tool: 10+.
+Generates AGENTS.md in the right location(s). Prints a 3-line summary. No flags required.
 
-**Major framework list (~40 entries):** UI frameworks (react, vue, angular, svelte, solid-js, preact), meta-frameworks (next, nuxt, remix, astro), HTTP servers (express, fastify, hono, koa, nestjs), build tools (webpack, vite, esbuild, rollup, parcel), ORMs (prisma, drizzle, typeorm, sequelize, knex, mongoose), state management (redux, zustand, mobx, jotai, recoil).
+**Implementation:** New `src/bin/init.ts` command (~150 lines). Reads workspace configs, calls existing `analyze()` and `formatDeterministic()` APIs, writes output.
 
-### Behavior when meta-tool detected
+### Update README with benchmark results
 
-1. **Ecosystem detectors suppressed.** No "Uses Express" or "Uses React" conventions
-2. **Dependencies split.** Core dependencies listed separately from "Supported frameworks (15 detected): react, express, nestjs, ..."
-3. **Role summary updated.** "CLI tool — imports 15 frameworks for plugin support, not as core dependencies"
-4. **Non-ecosystem conventions preserved.** File naming, hooks, testing still active
+Current README references old benchmarks (zod, hono, react-hook-form — 5 repos). Update with the 10-repo suite results and the deterministic output claims.
 
-### Implementation
+### Ship as v0.5.0
 
-| File | Change | Lines |
-|------|--------|------:|
-| new: `src/meta-tool-detector.ts` | Detection logic, framework list | ~50 |
-| `src/types.ts` | `isMetaTool` and `metaToolInfo` fields on PackageAnalysis | ~8 |
-| `src/convention-extractor.ts` | Suppress ecosystem detectors when meta-tool | ~10 |
-| `src/deterministic-formatter.ts` | Split dependency display for meta-tools | ~25 |
-| `src/role-inferrer.ts` | Adjust role summary for meta-tools | ~15 |
-| `src/pipeline.ts` | Insert detection after dependency analysis | ~10 |
-| `src/config.ts` | `--meta-tool-threshold` flag (configurable) | ~5 |
-| new: `test/meta-tool-detection.test.ts` | Test cases | ~80 |
-| **Total** | | **~203** |
+Version bump, npm publish, first public release with the init command.
+
+---
+
+## Phase 2: Distribution (Weeks 3-4)
+
+### GitHub Action
+
+```yaml
+- uses: msiric/autodocs-engine@v1
+```
+
+Runs on PR. Either:
+- Comments with a diff ("3 new exports detected, 1 convention changed")
+- Auto-commits an updated AGENTS.md
+
+The `--diff` analyzer already exists. This is mostly packaging (action.yml, Dockerfile or composite action, CI testing).
+
+**Why this matters:** One person installs it → every contributor on every PR sees it. Viral within organizations.
+
+### Community launch
+
+- Post to agents.md community channels
+- dev.to article: "Generate AGENTS.md automatically from your TypeScript codebase"
+- X/Twitter announcement
+- Target: first 50 users, collect feedback
+
+---
+
+## Phase 3: Quality Improvements (Month 2)
+
+Based on benchmark gap analysis (domain: 4.2/10, workflow: 4.9/10):
+
+### CONTRIBUTING.md extraction
+
+Already detected but not read. When present, extract key patterns via micro-LLM:
+- Commit message format
+- Branch naming conventions
+- Review requirements
+- Test requirements before PR
+
+Same bounded micro-LLM pattern as README extraction. High signal, low hallucination risk.
+
+### `exports` subpath support
+
+Modern packages with `"exports": { "./server": ..., "./client": ... }` are increasingly common. Currently only the main `.` entry is analyzed.
+
+Extend `symbol-graph.ts` to resolve multiple entry points from the exports field. Each subpath becomes an additional source for the public API section.
+
+### Workflow rules from package.json scripts
+
+Parse `package.json` scripts more deeply to extract specific workflow rules. Scripts like `precommit`, `prepare`, `postinstall`, `prebuild` encode workflow requirements that should surface as rules.
+
+---
+
+## Phase 4: Differentiation (Month 3)
+
+### MCP server mode
+
+Expose the analysis as a real-time service that AI tools query via Model Context Protocol:
+
+```bash
+autodocs-engine serve
+```
+
+Requires incremental analysis (content-hash caching) to avoid re-parsing on every query. The structured JSON output is already the right shape for MCP tool responses.
+
+This is the long-term moat: a static file drifts; a live service is always current.
+
+### Quality score per package
+
+0-100 score measuring AI-readability: test coverage ratio, type safety (strict mode, `any` usage), JSDoc on public API, convention consistency. Novel signal — not code quality per se, but how easy the codebase is for AI tools to work with.
+
+---
 
 ## Known Limitations
 
-These are fundamental constraints of the current approach, not bugs.
+1. **Domain knowledge ceiling.** AST analysis cannot infer project-specific terminology, design rationale, or tribal knowledge. The "Team Knowledge" placeholder section is the escape hatch.
 
-1. **Domain knowledge ceiling.** The engine analyzes code structure but cannot infer *why* the code is structured this way, what terminology the team uses, or what deployment quirks exist. The "Team Knowledge" placeholder section is the escape hatch for humans to add this context.
+2. **Single entry point.** Packages with `exports` subpaths are analyzed at the main `.` entry only. Subpath public APIs are not yet captured.
 
-2. **Empty target behavior.** If the analysis target has <5 source files (wrong path in a monorepo, restructured repo), the engine may produce plausible-sounding but fabricated output via the micro-LLM calls. It should instead error with a clear message.
+3. **TypeScript only.** No Python, Go, Rust, or other language support. The AST parser, convention detectors, and symbol graph are deeply TypeScript-specific.
 
-3. **Single entry point.** Modern packages with `exports` subpaths (e.g., `./server`, `./client`, `./rsc`) are analyzed only at the main `.` entry. Subpath exports are not included in the public API surface.
+4. **Empty target behavior.** Analyzing a directory with <5 source files may produce thin output. The engine should warn rather than generate minimal content.
 
-4. **No documentation parsing.** The engine reads README.md first paragraph for domain context but does not parse CONTRIBUTING.md, wiki pages, or inline documentation beyond JSDoc comments. This is the primary source of the domain knowledge gap.
+---
 
-## Future Considerations
+## Explicitly Deprioritized
 
-Ordered by expected impact on output quality.
-
-### High Impact
-
-- **README/CONTRIBUTING.md extraction.** Parse project documentation to extract domain terminology, workflow rules, and conventions that can't be inferred from code. Would directly address the 4.2/10 domain score.
-
-- **CI config parsing.** Read `.github/workflows/*.yml` and pre-commit hooks to extract workflow rules ("conventional commits required," "build before test," "failing test first") rather than generating generic ones.
-
-- **Incremental analysis.** Cache analysis results keyed by file content hash. Re-analyze only changed packages. Reduces monorepo analysis time from minutes to seconds for CI integration.
-
-- **Benchmark deterministic output.** Run the deterministic formatter against all 10 benchmark repos to validate that accuracy improves as predicted. This is the most immediate need.
-
-### Medium Impact
-
-- **Breaking change detection.** Classify diff results as breaking/non-breaking using semver rules. Enable CI to auto-fail on unreleased breaking changes.
-
-- **Example extraction improvements.** Richer usage example extraction from test files — currently limited to 3-7 line snippets around the first usage of each export.
-
-- **Plugin ecosystem.** Move org-specific patterns to optional plugins. The plugin system exists (`src/plugin-loader.ts`) but has no community plugins yet.
-
-### Lower Impact
-
-- **Quality score per package.** 0-100 based on test coverage, type safety, documentation completeness.
-- **Watch mode.** Regenerate AGENTS.md on file changes for development workflow.
-- **Task-completion evaluation.** Measure whether generated AGENTS.md files actually help AI tools produce better code (the real metric, vs "does the output look good to an evaluator").
-- **Streaming LLM output.** Progress indication during micro-LLM calls.
+- **Watch mode.** GitHub Action covers "keep it updated" better. Watch mode useful in dev but rarely remembered.
+- **More output formats.** AGENTS.md, CLAUDE.md, .cursorrules, JSON covers the market. Add formats on user demand.
+- **More convention detectors.** The 8 detectors cover major patterns. Long-tail detectors (Redux Toolkit slices, tRPC routers) should be community plugins.
+- **Task-completion eval.** Intellectually interesting but premature. Need users before measuring effectiveness.
+- **Python support.** ~3K lines, requires parallel implementations of parser, symbol graph, convention detectors. Quarter 2 at earliest, driven by user demand.

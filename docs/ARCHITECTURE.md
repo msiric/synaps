@@ -17,15 +17,16 @@ Analysis runs as a linear pipeline per package, then cross-package if multiple p
 | 5 | Public API | `analysis-builder.ts` | `PublicAPIEntry[]` — ranked by kind priority + import count, capped |
 | 6 | Config Analysis | `config-analyzer.ts` | TypeScript settings, build tool, linter, formatter, env vars |
 | 7 | Dependency Analysis | `dependency-analyzer.ts` | Framework versions with guidance, runtime, test framework, bundler |
-| 8 | Convention Extraction | `convention-extractor.ts` | `Convention[]` via 8 detectors (file naming, hooks, testing, ecosystem) |
-| 9 | Command Extraction | `command-extractor.ts` | `CommandSet` — build/test/lint/start with variants |
-| 10 | Architecture Detection | `architecture-detector.ts` | Entry point, directory purposes, package type classification |
-| 11 | Role Inference | `role-inferrer.ts` | Natural-language summary, purpose, "when to use" |
-| 12 | Anti-Patterns | `anti-pattern-detector.ts` | "DO NOT" rules derived from strong conventions |
-| 13 | Contribution Patterns | `contribution-patterns.ts` | "How to add new code" recipes from directory structure |
-| 14 | Impact Classification | `impact-classifier.ts` | Each convention/anti-pattern rated high/medium/low |
-| 15 | Pattern Fingerprinting | `pattern-fingerprinter.ts` | Parameter shapes, return types, internal calls for top exports |
-| 16 | Example Extraction | `example-extractor.ts` | Usage snippets from test files for public exports |
+| 8 | Meta-Tool Detection | `meta-tool-detector.ts` | 3-signal cascade: peerDeps → dep-placement → family-count fallback |
+| 9 | Convention Extraction | `convention-extractor.ts` | `Convention[]` via 8 detectors (file naming, hooks, testing, ecosystem) |
+| 10 | Command Extraction | `command-extractor.ts` | `CommandSet` — build/test/lint/start with variants |
+| 11 | Architecture Detection | `architecture-detector.ts` | Entry point, directory purposes, package type classification |
+| 12 | Role Inference | `role-inferrer.ts` | Natural-language summary, purpose, "when to use" |
+| 13 | Anti-Patterns | `anti-pattern-detector.ts` | "DO NOT" rules derived from strong conventions |
+| 14 | Contribution Patterns | `contribution-patterns.ts` | "How to add new code" recipes from directory structure |
+| 15 | Impact Classification | `impact-classifier.ts` | Each convention/anti-pattern rated high/medium/low |
+| 16 | Pattern Fingerprinting | `pattern-fingerprinter.ts` | Parameter shapes, return types, internal calls for top exports |
+| 17 | Example Extraction | `example-extractor.ts` | Usage snippets from test files for public exports |
 
 ### Cross-Package (multi-package only)
 
@@ -74,8 +75,10 @@ PackagePath(s) + Config
 
 The default `agents.md` output uses a **70/30 deterministic model**:
 
-- **13 sections generated in code** (zero hallucination by construction): title, summary, tech stack, commands table, package guide, workflow rules, how to add code, public API, dependencies, conventions, dependency graph, mermaid diagram, team knowledge placeholder
+- **14 sections generated in code** (zero hallucination by construction): title, summary, tech stack, commands table, package guide, workflow rules, how to add code, public API, dependencies, conventions, supported frameworks (meta-tools only), dependency graph, mermaid diagram, team knowledge placeholder
 - **2 sections synthesized by micro-LLM** with tightly-scoped inputs: architecture capabilities (receives only directory names + export names + call graph — no technology names), domain terminology (receives only README first paragraph)
+
+For packages detected as meta-tools (via the 3-signal cascade), ecosystem conventions are reclassified at format time — moved from the Conventions section to a "Supported Frameworks" section. Analysis data is preserved intact; only the presentation changes.
 
 This architecture was adopted after benchmarking showed the full-LLM approach hallucinated technologies in 3/10 repos despite XML tags, temperature 0, and validation.
 
@@ -99,6 +102,7 @@ Legacy full-LLM mode is available via `--llm-synthesis full`.
 | `bin/autodocs-engine.ts` | 264 | CLI entry point, arg parsing, file I/O |
 | `dependency-analyzer.ts` | 263 | Framework versions, runtime detection, guidance |
 | `config.ts` | 211 | Config file loading, CLI arg parsing, defaults |
+| `meta-tool-detector.ts` | 175 | 3-signal cascade for analyzer/plugin package detection |
 | `existing-docs.ts` | 197 | README extraction, merge mode, delimiter handling |
 | `file-discovery.ts` | 190 | git ls-files, FS walk fallback, symlink handling |
 | `role-inferrer.ts` | 173 | Domain signals, tech signals, role composition |
