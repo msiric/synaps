@@ -43,6 +43,8 @@ export interface ResolvedConfig {
   };
   maxPublicAPIEntries: number; // E-13: default 100
   verbose: boolean;
+  metaToolThreshold: number; // default 5 — Signal 3 family count threshold
+  noMetaTool: boolean; // --no-meta-tool flag
 }
 
 export type OutputFormat = "json" | "agents.md" | "claude.md" | "cursorrules";
@@ -78,6 +80,12 @@ export interface PackageAnalysis {
   callGraph?: CallGraphEdge[];
   patternFingerprints?: PatternFingerprint[];
   examples?: UsageExample[]; // W5-C1: Usage examples extracted from test files
+  isMetaTool?: boolean;
+  metaToolInfo?: {
+    signal: "peer-dependencies" | "dep-placement" | "family-count";
+    supportedFamilies: string[];
+    coreFamilies: string[];
+  };
 }
 
 // ─── Config Analysis (Improvement 1) ────────────────────────────────────────
@@ -223,6 +231,7 @@ export interface Convention {
   confidence: ConventionConfidence; // E-12: structured, not string
   examples: string[];
   impact?: RuleImpact; // Classified by what AI tools reliably follow
+  source?: string; // Detector name that produced this convention (e.g., "dataFetching")
 }
 
 // W5-A: Removed unused categories: imports, exports, components, error-handling, graphql, telemetry, state-management

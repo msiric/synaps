@@ -29,6 +29,7 @@ export const databaseDetector: ConventionDetector = (files, _tiers, _warnings, c
       detected.add(orm.name);
       conventions.push({
         category: "ecosystem",
+        source: "database",
         name: `${orm.name} database`,
         description: `Uses ${orm.name} (${fw.version}): ${orm.description}`,
         confidence: buildConfidence(1, 1),
@@ -41,12 +42,13 @@ export const databaseDetector: ConventionDetector = (files, _tiers, _warnings, c
   for (const [pkg, orm] of Object.entries(ORM_MAP)) {
     if (detected.has(orm.name)) continue;
     const importCount = files.filter((f) =>
-      f.imports.some((i) => i.moduleSpecifier === pkg || i.moduleSpecifier.startsWith(pkg + "/")),
+      f.imports.some((i) => !i.isTypeOnly && (i.moduleSpecifier === pkg || i.moduleSpecifier.startsWith(pkg + "/"))),
     ).length;
     if (importCount > 0) {
       detected.add(orm.name);
       conventions.push({
         category: "ecosystem",
+        source: "database",
         name: `${orm.name} database`,
         description: `Uses ${orm.name}: ${orm.description}`,
         confidence: buildConfidence(importCount, importCount),

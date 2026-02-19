@@ -30,6 +30,7 @@ import { analyzeDependencies } from "./dependency-analyzer.js";
 import { detectExistingDocs } from "./existing-docs.js";
 import { extractExamples } from "./example-extractor.js";
 import { generateDependencyDiagram } from "./mermaid-generator.js";
+import { detectMetaTool } from "./meta-tool-detector.js";
 
 /** Verbose logger — writes to stderr only when verbose is enabled. */
 function vlog(verbose: boolean, msg: string): void {
@@ -194,12 +195,13 @@ function analyzePackage(
   vlog(verbose, `  Config: build=${configAnalysis.buildTool?.name ?? "none"}, linter=${configAnalysis.linter?.name ?? "none"}, formatter=${configAnalysis.formatter?.name ?? "none"}`);
 
   // Collect all imported module specifiers from source files for import-verified framework detection
+  // Excludes type-only imports — they don't indicate runtime framework usage
   const allImportedModules = new Set<string>();
   for (const pf of parsed) {
     for (const imp of pf.imports) {
+      if (imp.isTypeOnly) continue;
       const spec = imp.moduleSpecifier;
-      if (spec.startsWith(".") || spec.startsWith("/")) continue; // skip relative/absolute
-      // Extract base package name: "@scope/pkg/deep" → "@scope/pkg", "react/jsx-runtime" → "react"
+      if (spec.startsWith(".") || spec.startsWith("/")) continue;
       const parts = spec.split("/");
       const basePkg = spec.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
       allImportedModules.add(basePkg);
@@ -208,6 +210,27 @@ function analyzePackage(
 
   const dependencyInsights = analyzeDependencies(pkgPath, config.rootDir, warnings, allImportedModules);
   vlog(verbose, `  Dependencies: ${dependencyInsights.frameworks.length} frameworks, runtime=${dependencyInsights.runtime.map((r) => r.name).join("+") || "node"}`);
+
+  // Meta-tool detection (before conventions — informs format-time reclassification)
+  let pkgJsonRaw: Record<string, unknown> | null = null;
+  try {
+    pkgJsonRaw = JSON.parse(readFileSync(join(pkgPath, "package.json"), "utf-8"));
+  } catch { /* no package.json */ }
+
+  const metaToolResult = (!config.noMetaTool && pkgJsonRaw)
+    ? detectMetaTool({
+        parsedFiles: parsed,
+        tiers,
+        dependencies: (pkgJsonRaw.dependencies ?? {}) as Record<string, string>,
+        devDependencies: (pkgJsonRaw.devDependencies ?? {}) as Record<string, string>,
+        peerDeps: (pkgJsonRaw.peerDependencies ?? {}) as Record<string, string>,
+        threshold: config.metaToolThreshold,
+      }, warnings)
+    : { isMetaTool: false, signal: "none" as const, supportedFamilies: [] as string[], coreFamilies: [] as string[] };
+
+  if (metaToolResult.isMetaTool) {
+    vlog(verbose, `  Meta-tool: ${metaToolResult.signal} (${metaToolResult.supportedFamilies.length} families, core: ${metaToolResult.coreFamilies.join(", ") || "none"})`);
+  }
 
   // Read root devDeps for test framework fallback in monorepos
   let rootDevDeps: Record<string, string> | undefined;
@@ -273,6 +296,9 @@ function analyzePackage(
     warnings,
   );
   const role = inferRole(partialAnalysis);
+  if (metaToolResult.isMetaTool) {
+    role.summary += ` — integrates with ${metaToolResult.supportedFamilies.length} framework ecosystems`;
+  }
   vlog(verbose, `  Role: ${role.summary}`);
 
   // Enhancement 3: Anti-pattern derivation
@@ -325,6 +351,12 @@ function analyzePackage(
     callGraph: symbolGraph.callGraph.length > 0 ? symbolGraph.callGraph : undefined,
     patternFingerprints: patternFingerprints.length > 0 ? patternFingerprints : undefined,
     examples: examples.length > 0 ? examples : undefined,
+    isMetaTool: metaToolResult.isMetaTool || undefined,
+    metaToolInfo: metaToolResult.isMetaTool ? {
+      signal: metaToolResult.signal as "peer-dependencies" | "dep-placement" | "family-count",
+      supportedFamilies: metaToolResult.supportedFamilies,
+      coreFamilies: metaToolResult.coreFamilies,
+    } : undefined,
   };
 }
 

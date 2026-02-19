@@ -22,6 +22,7 @@ export interface ParsedArgs {
   merge?: boolean;
   diff?: string;
   llmSynthesis?: LLMSynthesisMode;
+  noMetaTool?: boolean;
 }
 
 const DEFAULTS: ResolvedConfig = {
@@ -42,6 +43,8 @@ const DEFAULTS: ResolvedConfig = {
   },
   maxPublicAPIEntries: 100, // E-13
   verbose: false,
+  metaToolThreshold: 5,
+  noMetaTool: false,
 };
 
 /**
@@ -85,6 +88,8 @@ export function resolveConfig(
     maxPublicAPIEntries:
       fileConfig?.maxPublicAPIEntries ?? DEFAULTS.maxPublicAPIEntries,
     verbose: args.verbose,
+    metaToolThreshold: fileConfig?.metaToolThreshold ?? DEFAULTS.metaToolThreshold,
+    noMetaTool: args.noMetaTool ?? fileConfig?.noMetaTool ?? DEFAULTS.noMetaTool,
   };
 
   // Decision #11: Auto-detect format based on API key availability
@@ -188,7 +193,7 @@ export async function parseCliArgs(
   const mri = (await import("mri")).default;
   const args = mri(argv, {
     alias: { f: "format", o: "output", c: "config", q: "quiet", v: "verbose" },
-    boolean: ["dry-run", "quiet", "verbose", "help", "hierarchical", "flat", "merge"],
+    boolean: ["dry-run", "quiet", "verbose", "help", "hierarchical", "flat", "merge", "no-meta-tool"],
     string: ["format", "output", "config", "root", "diff", "llm-synthesis"],
   });
 
@@ -207,5 +212,6 @@ export async function parseCliArgs(
     merge: args.merge ?? undefined,
     diff: args.diff ?? undefined,
     llmSynthesis: (args["llm-synthesis"] as LLMSynthesisMode) ?? undefined,
+    noMetaTool: args["no-meta-tool"] ?? undefined,
   };
 }

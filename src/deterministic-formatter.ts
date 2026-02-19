@@ -9,6 +9,7 @@ import type {
 } from "./types.js";
 import { ENGINE_VERSION } from "./types.js";
 import { sanitize, stripConventionStats } from "./llm/serializer.js";
+import { PACKAGE_TO_FAMILY } from "./meta-tool-detector.js";
 
 // ─── Output Type ─────────────────────────────────────────────────────────────
 
@@ -23,6 +24,7 @@ export interface DeterministicOutput {
   publicAPI: string;
   dependencies: string;
   conventions: string;
+  supportedFrameworks: string; // meta-tools only
   dependencyGraph: string;    // multi-package only
   mermaidDiagram: string;     // multi-package only
   teamKnowledge: string;
@@ -55,6 +57,7 @@ export function generateDeterministicAgentsMd(
     publicAPI: formatPublicAPI(analysis),
     dependencies: formatDependencies(analysis),
     conventions: formatConventions(analysis),
+    supportedFrameworks: formatSupportedFrameworks(analysis),
     dependencyGraph: formatDependencyGraph(analysis),
     mermaidDiagram: formatMermaidDiagram(analysis),
     teamKnowledge: TEAM_KNOWLEDGE_PLACEHOLDER,
@@ -91,6 +94,7 @@ export function assembleFinalOutput(
   if (deterministic.dependencyGraph) sections.push("", deterministic.dependencyGraph);
   if (deterministic.mermaidDiagram) sections.push("", deterministic.mermaidDiagram);
   if (deterministic.conventions) sections.push("", deterministic.conventions);
+  if (deterministic.supportedFrameworks) sections.push("", deterministic.supportedFrameworks);
 
   sections.push("", deterministic.teamKnowledge);
 
@@ -384,15 +388,35 @@ function formatDependencies(analysis: StructuredAnalysis): string {
     }
 
     // External (top 10 by import count)
-    const topExternal = pkg.dependencies.external.slice(0, 10);
-    if (topExternal.length > 0) {
-      if (!hasContent && prefix) lines.push("", prefix.trim());
-      lines.push("");
-      lines.push("**External:**");
-      for (const dep of topExternal) {
-        lines.push(`- \`${dep.name}\` (${dep.importCount} imports)`);
+    // For meta-tools, split into core deps vs supported frameworks
+    if (pkg.isMetaTool && pkg.metaToolInfo) {
+      const supportedPkgs = new Set<string>();
+      for (const family of pkg.metaToolInfo.supportedFamilies) {
+        for (const [pkgName, fam] of PACKAGE_TO_FAMILY) {
+          if (fam === family) supportedPkgs.add(pkgName);
+        }
       }
-      hasContent = true;
+      const coreDeps = pkg.dependencies.external.filter(d => !supportedPkgs.has(d.name));
+      if (coreDeps.length > 0) {
+        if (!hasContent && prefix) lines.push("", prefix.trim());
+        lines.push("");
+        lines.push("**Core:**");
+        for (const dep of coreDeps.slice(0, 10)) {
+          lines.push(`- \`${dep.name}\` (${dep.importCount} imports)`);
+        }
+        hasContent = true;
+      }
+    } else {
+      const topExternal = pkg.dependencies.external.slice(0, 10);
+      if (topExternal.length > 0) {
+        if (!hasContent && prefix) lines.push("", prefix.trim());
+        lines.push("");
+        lines.push("**External:**");
+        for (const dep of topExternal) {
+          lines.push(`- \`${dep.name}\` (${dep.importCount} imports)`);
+        }
+        hasContent = true;
+      }
     }
   }
 
@@ -400,13 +424,26 @@ function formatDependencies(analysis: StructuredAnalysis): string {
   return lines.join("\n");
 }
 
+/** Ecosystem detector names whose conventions should be reclassified for meta-tools. */
+const ECOSYSTEM_DETECTORS = new Set(["dataFetching", "database", "webFramework", "buildTool"]);
+
 function formatConventions(analysis: StructuredAnalysis): string {
   // Collect DO rules from conventions, DON'T rules from anti-patterns
   const doRules: string[] = [];
   const dontRules: string[] = [];
 
   for (const pkg of analysis.packages) {
+    const coreFamilySet = new Set(pkg.metaToolInfo?.coreFamilies ?? []);
+
     for (const conv of pkg.conventions) {
+      // For meta-tools, reclassify ecosystem conventions (except core family)
+      if (pkg.isMetaTool && conv.source && ECOSYSTEM_DETECTORS.has(conv.source)) {
+        const isCore = coreFamilySet.size > 0 && [...coreFamilySet].some(
+          family => conv.name.toLowerCase().includes(family),
+        );
+        if (!isCore) continue; // Listed in "Supported Frameworks" section instead
+      }
+
       const desc = stripConventionStats(conv.description);
       if (desc) {
         const examples = conv.examples.length > 0
@@ -449,6 +486,27 @@ function formatConventions(analysis: StructuredAnalysis): string {
     lines.push("");
     lines.push(...dontRules);
   }
+  return lines.join("\n");
+}
+
+function formatSupportedFrameworks(analysis: StructuredAnalysis): string {
+  // Only rendered for meta-tool packages
+  const pkg = analysis.packages[0];
+  if (!pkg?.isMetaTool || !pkg.metaToolInfo) return "";
+
+  const { supportedFamilies, coreFamilies } = pkg.metaToolInfo;
+  // Exclude core families from the "supported" list (they're already in conventions)
+  const coreSet = new Set(coreFamilies);
+  const supported = supportedFamilies.filter(f => !coreSet.has(f));
+  if (supported.length === 0) return "";
+
+  const lines = [
+    "## Supported Frameworks",
+    "",
+    `This package has integrations for ${supported.length} framework ecosystems:`,
+    supported.join(", "),
+    `_These indicate what this tool supports, not conventions to follow._`,
+  ];
   return lines.join("\n");
 }
 
@@ -523,6 +581,7 @@ export function generatePackageDeterministicAgentsMd(
     publicAPI: formatPublicAPI(singleAnalysis),
     dependencies: formatDependencies(singleAnalysis),
     conventions: formatConventions(singleAnalysis),
+    supportedFrameworks: formatSupportedFrameworks(singleAnalysis),
     dependencyGraph: "",  // Root-level only
     mermaidDiagram: "",   // Root-level only
     teamKnowledge: "",    // Root-level only

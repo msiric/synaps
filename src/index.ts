@@ -66,6 +66,8 @@ const DEFAULTS: Omit<ResolvedConfig, "packages"> = {
   conventions: { disable: [] },
   maxPublicAPIEntries: 100,
   verbose: false,
+  metaToolThreshold: 5,
+  noMetaTool: false,
 };
 
 /**

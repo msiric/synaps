@@ -26,6 +26,7 @@ export const webFrameworkDetector: ConventionDetector = (files, _tiers, _warning
       detected.add(framework.name);
       conventions.push({
         category: "ecosystem",
+        source: "webFramework",
         name: `${framework.name} web framework`,
         description: `Uses ${framework.name} (${fw.version}). Middleware: ${framework.middleware}. Routes: ${framework.router}.`,
         confidence: buildConfidence(1, 1),
@@ -38,12 +39,13 @@ export const webFrameworkDetector: ConventionDetector = (files, _tiers, _warning
   for (const [pkg, framework] of Object.entries(FRAMEWORK_MAP)) {
     if (detected.has(framework.name)) continue;
     const importCount = files.filter((f) =>
-      f.imports.some((i) => i.moduleSpecifier === pkg || i.moduleSpecifier.startsWith(pkg + "/")),
+      f.imports.some((i) => !i.isTypeOnly && (i.moduleSpecifier === pkg || i.moduleSpecifier.startsWith(pkg + "/"))),
     ).length;
     if (importCount > 0) {
       detected.add(framework.name);
       conventions.push({
         category: "ecosystem",
+        source: "webFramework",
         name: `${framework.name} web framework`,
         description: `Uses ${framework.name}. Middleware: ${framework.middleware}. Routes: ${framework.router}.`,
         confidence: buildConfidence(importCount, importCount),
