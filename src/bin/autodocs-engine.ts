@@ -18,7 +18,9 @@ const OUTPUT_FILENAMES: Record<string, string> = {
 const HELP_TEXT = `
 autodocs-engine v${ENGINE_VERSION}
 
-Usage: autodocs-engine analyze [paths...] [options]
+Usage:
+  autodocs-engine init                   Auto-detect and generate AGENTS.md (zero-config)
+  autodocs-engine analyze [paths...]     Analyze specific packages (advanced)
 
 Arguments:
   paths                Package directories to analyze (default: current directory)
@@ -57,6 +59,13 @@ async function main() {
 
   if (args.help) {
     process.stdout.write(HELP_TEXT + "\n");
+    process.exit(0);
+  }
+
+  // Handle "init" subcommand — zero-config generation
+  if (args.packages[0] === "init") {
+    const { runInit } = await import("./init.js");
+    await runInit();
     process.exit(0);
   }
 
