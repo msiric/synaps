@@ -1,6 +1,6 @@
 # autodocs-engine
 
-CLI tool — data fetching, validation
+CLI tool — Codebase intelligence engine for generating AI context files
 
 ## Tech Stack
 

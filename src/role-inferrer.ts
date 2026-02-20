@@ -9,7 +9,7 @@ const DOMAIN_SIGNALS: { pattern: RegExp; label: string; actionLabel: string }[] 
   { pattern: /create|add|insert/i, label: "CRUD operations", actionLabel: "adding create/add operations" },
   { pattern: /update|edit|modify|patch/i, label: "CRUD operations", actionLabel: "modifying update/edit operations" },
   { pattern: /delete|remove|destroy/i, label: "CRUD operations", actionLabel: "adding delete/remove operations" },
-  { pattern: /fetch|query|subscription|get(?=[A-Z])/i, label: "data fetching", actionLabel: "adding data fetching or queries" },
+  { pattern: /fetch|query|subscription/i, label: "data fetching", actionLabel: "adding data fetching or queries" },
   { pattern: /permission|access|auth|role/i, label: "permissions/authorization", actionLabel: "modifying permissions or access control" },
   { pattern: /telemetry|scenario|logging|track/i, label: "telemetry/observability", actionLabel: "adding telemetry or logging" },
   { pattern: /render|view|display|layout/i, label: "UI rendering", actionLabel: "modifying UI rendering or layout" },
@@ -56,7 +56,7 @@ export function inferRole(analysis: Omit<PackageAnalysis, "role" | "antiPatterns
 
   for (const signal of DOMAIN_SIGNALS) {
     const matches = exportNames.filter((name) => signal.pattern.test(name));
-    if (matches.length >= 1) {
+    if (matches.length >= 2) {
       domainSignals.add(signal.label);
       actionSignals.add(signal.actionLabel);
       if (matches.length >= 3) {
@@ -110,12 +110,15 @@ export function inferRole(analysis: Omit<PackageAnalysis, "role" | "antiPatterns
     evidence.push("HTTP framework detected (Hono/Express/Fastify/Koa/Nest)");
   }
 
-  // 4. Compose summary
+  // 4. Compose summary — prefer package.json description when available
   const typeLabel = formatPackageType(baseType);
   const domainParts = [...domainSignals].slice(0, 4);
-  const summary = domainParts.length > 0
-    ? `${typeLabel} — ${domainParts.join(", ")}`
-    : typeLabel;
+  const hasDescription = analysis.description && analysis.description.length > 15;
+  const summary = hasDescription
+    ? `${typeLabel} — ${analysis.description}`
+    : domainParts.length > 0
+      ? `${typeLabel} — ${domainParts.join(", ")}`
+      : typeLabel;
 
   // 5. Compose purpose
   const purposeParts: string[] = [];
