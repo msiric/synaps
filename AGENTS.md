@@ -38,6 +38,9 @@ node 18.18.0 | typescript 5.4.0 | vitest 2.0.0
 **After modifying source files**
 Run `npm run test` to verify changes
 
+**When modifying `src/types.ts`**
+Also check: `src/analysis-builder.ts` (17 symbols), `src/ast-parser.ts` (8 symbols), `src/convention-extractor.ts` (7 symbols), and 9 more
+
 ## Domain Terminology
 
 • **AGENTS.md files** - Documentation files that provide structured guidelines and context for AI coding assistants to understand project requirements, coding standards, and domain-specific knowledge.
@@ -74,7 +77,7 @@ Run `npm run test` to verify changes
 
 ### Interfaces
 
-- `Warning` (24 imports)
+- `Warning` (25 imports)
 - `Convention` (18 imports)
 - `PackageAnalysis` (15 imports)
 - `StructuredAnalysis` (14 imports)
@@ -103,7 +106,7 @@ Run `npm run test` to verify changes
 ## Key Dependencies
 
 **External:**
-- `node:path` (34 imports)
+- `node:path` (35 imports)
 - `node:fs` (20 imports)
 - `typescript` (2 imports)
 - `node:child_process` (1 imports)
@@ -113,10 +116,10 @@ Run `npm run test` to verify changes
 ## Conventions
 
 - **DO**: Source files use kebab-case naming convention (e.g., `analysis-builder.ts`)
-- **DO**: Tests use Vitest (e.g., `23 test files`)
-- **DO**: Tests use Vitest 2.0.0 (e.g., `23 test files detected`)
+- **DO**: Tests use Vitest (e.g., `24 test files`)
+- **DO**: Tests use Vitest 2.0.0 (e.g., `24 test files detected`)
 
-- **DON'T**: Do NOT use camelCase or PascalCase for filenames — 49 of 50 (98%) use kebab-case — the codebase exclusively uses kebab-case filenames
+- **DON'T**: Do NOT use camelCase or PascalCase for filenames — 50 of 51 (98%) use kebab-case — the codebase exclusively uses kebab-case filenames
 
 ## Change Impact
 
@@ -135,7 +138,7 @@ Complex functions — these call many other functions:
 | Function | File | Calls | Complexity |
 |----------|------|------:|------------|
 | `formatHierarchicalDeterministic` | `src/index.ts` | 7 | Complex — many dependencies |
-| `runPipeline` | `src/pipeline.ts` | 6 | Moderate complexity |
+| `runPipeline` | `src/pipeline.ts` | 7 | Complex — many dependencies |
 | `formatDeterministic` | `src/index.ts` | 4 | Moderate complexity |
 
 ## Team Knowledge
@@ -143,7 +146,7 @@ Complex functions — these call many other functions:
 _autodocs-engine detected these patterns but needs your input:_
 
 - [ ] `src/detectors/` has 8 detectors files. What's the process for adding a new one?
-- [ ] The codebase has 47 cross-file call relationships. Are there changes that require updating multiple files together?
+- [ ] The codebase has 49 cross-file call relationships. Are there changes that require updating multiple files together?
 - [ ] Are there CLI-specific behaviors, flags, or output formats that AI tools should know about?
 - [ ] What's the contribution workflow? (branch naming, commit conventions, PR process, review requirements)
 - [ ] Are there ordering requirements between commands? (e.g., build before test, lint before commit)

@@ -78,6 +78,7 @@ export interface PackageAnalysis {
   dependencyInsights?: DependencyInsights;
   existingDocs?: ExistingDocs;
   callGraph?: CallGraphEdge[];
+  importChain?: FileImportEdge[];
   patternFingerprints?: PatternFingerprint[];
   examples?: UsageExample[]; // W5-C1: Usage examples extracted from test files
   isMetaTool?: boolean;
@@ -155,6 +156,13 @@ export interface CallGraphEdge {
   to: string;
   fromFile: string;
   toFile: string;
+}
+
+export interface FileImportEdge {
+  importer: string;
+  source: string;
+  symbolCount: number;
+  symbols: string[];
 }
 
 export interface PackageRole {

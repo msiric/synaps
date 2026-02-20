@@ -31,6 +31,7 @@ import { detectExistingDocs } from "./existing-docs.js";
 import { extractExamples } from "./example-extractor.js";
 import { generateDependencyDiagram } from "./mermaid-generator.js";
 import { detectMetaTool } from "./meta-tool-detector.js";
+import { computeImportChain, generateImportChainRules } from "./import-chain.js";
 
 /** Verbose logger — writes to stderr only when verbose is enabled. */
 function vlog(verbose: boolean, msg: string): void {
@@ -116,8 +117,17 @@ export async function runPipeline(
       .filter((d): d is import("./types.js").DependencyInsights => d != null),
     allConventions: packageAnalyses.flatMap((p) => p.conventions),
   });
+  // Add import-chain rules (from file-to-file coupling analysis)
+  const importChainRules = generateImportChainRules(
+    packageAnalyses.flatMap((p) => p.importChain ?? []),
+  );
+  if (importChainRules.length > 0) {
+    vlog(verbose, `Import chain rules: ${importChainRules.length} high-coupling rules generated`);
+    workflowRules.push(...importChainRules);
+  }
+
   if (workflowRules.length > 0) {
-    vlog(verbose, `Workflow rules: ${workflowRules.length} technology-specific rules generated`);
+    vlog(verbose, `Workflow rules: ${workflowRules.length} total rules generated`);
     // For single-package, create a minimal crossPackage to hold the rules
     if (!crossPackage) {
       crossPackage = {
@@ -176,6 +186,12 @@ function analyzePackage(
 
   // Step 3: Symbol Graph Builder (E-39: pass warnings)
   const symbolGraph = buildSymbolGraph(parsed, pkgPath, warnings);
+
+  // Compute file-to-file import coupling before symbolGraph is discarded
+  const importChain = computeImportChain(symbolGraph, pkgPath, warnings);
+  if (importChain.length > 0) {
+    vlog(verbose, `  Import chain: ${importChain.length} high-coupling file pairs`);
+  }
 
   // Step 4: Tier Classifier
   const tiers = classifyTiers(parsed, symbolGraph, symbolGraph.barrelFile);
@@ -361,6 +377,7 @@ function analyzePackage(
     dependencyInsights,
     existingDocs,
     callGraph: symbolGraph.callGraph.length > 0 ? symbolGraph.callGraph : undefined,
+    importChain: importChain.length > 0 ? importChain : undefined,
     patternFingerprints: patternFingerprints.length > 0 ? patternFingerprints : undefined,
     examples: examples.length > 0 ? examples : undefined,
     isMetaTool: metaToolResult.isMetaTool || undefined,
