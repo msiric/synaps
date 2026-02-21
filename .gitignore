@@ -18,3 +18,9 @@ experiments/04-ab-comparison/version-b-input.md
 
 # Debug logs
 *.log
+
+# Local examples/comparisons (not published)
+examples/
+
+# Staleness baseline
+.autodocs-baseline.json
