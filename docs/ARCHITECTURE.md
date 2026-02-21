@@ -13,20 +13,21 @@ Analysis runs as a linear pipeline per package, then cross-package if multiple p
 | 1 | File Discovery | `file-discovery.ts` | Sorted file list via `git ls-files` (or FS walk fallback) |
 | 2 | AST Parsing | `ast-parser.ts` | `ParsedFile[]` — exports, imports, content signals, call refs |
 | 3 | Symbol Graph | `symbol-graph.ts` | Barrel resolution, re-export chain following, cross-file call graph |
-| 4 | Tier Classification | `tier-classifier.ts` | Each file classified as T1 (public API), T2 (internal), T3 (test/generated) |
-| 5 | Public API | `analysis-builder.ts` | `PublicAPIEntry[]` — ranked by kind priority + import count, capped |
-| 6 | Config Analysis | `config-analyzer.ts` | TypeScript settings, build tool, linter, formatter, env vars |
-| 7 | Dependency Analysis | `dependency-analyzer.ts` | Framework versions with guidance, runtime, test framework, bundler |
-| 8 | Meta-Tool Detection | `meta-tool-detector.ts` | 3-signal cascade: peerDeps → dep-placement → family-count fallback |
-| 9 | Convention Extraction | `convention-extractor.ts` | `Convention[]` via 8 detectors (file naming, hooks, testing, ecosystem) |
-| 10 | Command Extraction | `command-extractor.ts` | `CommandSet` — build/test/lint/start with variants |
-| 11 | Architecture Detection | `architecture-detector.ts` | Entry point, directory purposes, package type classification |
-| 12 | Role Inference | `role-inferrer.ts` | Natural-language summary, purpose, "when to use" |
-| 13 | Anti-Patterns | `anti-pattern-detector.ts` | "DO NOT" rules derived from strong conventions |
-| 14 | Contribution Patterns | `contribution-patterns.ts` | "How to add new code" recipes from directory structure |
-| 15 | Impact Classification | `impact-classifier.ts` | Each convention/anti-pattern rated high/medium/low |
-| 16 | Pattern Fingerprinting | `pattern-fingerprinter.ts` | Parameter shapes, return types, internal calls for top exports |
-| 17 | Example Extraction | `example-extractor.ts` | Usage snippets from test files for public exports |
+| 4 | Import Chain | `import-chain.ts` | File-to-file coupling from import graph (before symbol graph is discarded) |
+| 5 | Tier Classification | `tier-classifier.ts` | Each file classified as T1 (public API), T2 (internal), T3 (test/generated) |
+| 6 | Public API | `analysis-builder.ts` | `PublicAPIEntry[]` — ranked by kind priority + import count, capped |
+| 7 | Config Analysis | `config-analyzer.ts` | TypeScript settings, build tool, linter, formatter, env vars |
+| 8 | Dependency Analysis | `dependency-analyzer.ts` | Framework versions with guidance, runtime, test framework, bundler |
+| 9 | Meta-Tool Detection | `meta-tool-detector.ts` | 3-signal cascade: peerDeps → dep-placement → family-count fallback |
+| 10 | Convention Extraction | `convention-extractor.ts` | `Convention[]` via 8 detectors (file naming, hooks, testing, ecosystem) |
+| 11 | Command Extraction | `command-extractor.ts` | `CommandSet` — build/test/lint/start with variants |
+| 12 | Architecture Detection | `architecture-detector.ts` | Entry point, directory purposes, package type classification |
+| 13 | Role Inference | `role-inferrer.ts` | Natural-language summary, purpose, "when to use" |
+| 14 | Anti-Patterns | `anti-pattern-detector.ts` | "DO NOT" rules derived from strong conventions |
+| 15 | Contribution Patterns | `contribution-patterns.ts` | Deep recipes: common imports, naming, registration detection |
+| 16 | Impact Classification | `impact-classifier.ts` | Each convention/anti-pattern rated high/medium/low |
+| 17 | Pattern Fingerprinting | `pattern-fingerprinter.ts` | Parameter shapes, return types, internal calls for top exports |
+| 18 | Example Extraction | `example-extractor.ts` | Usage snippets from test files for public exports |
 
 ### Cross-Package (multi-package only)
 
@@ -75,10 +76,10 @@ PackagePath(s) + Config
 
 The default `agents.md` output uses a **70/30 deterministic model**:
 
-- **14 sections generated in code** (zero hallucination by construction): title, summary, tech stack, commands table, package guide, workflow rules, how to add code, public API, dependencies, conventions, supported frameworks (meta-tools only), dependency graph, mermaid diagram, team knowledge placeholder
-- **2 sections synthesized by micro-LLM** with tightly-scoped inputs: architecture capabilities (receives only directory names + export names + call graph — no technology names), domain terminology (receives only README first paragraph)
+- **13 sections generated in code** (zero hallucination by construction): title, summary, tech stack, commands table, package guide, workflow rules (technology + import-chain), how to add code (deep patterns), public API, dependencies, conventions, change impact (BFS), supported frameworks (meta-tools only), team knowledge prompts
+- **3 sections synthesized by micro-LLM** with tightly-scoped inputs: architecture capabilities (directory names + exports + call graph), domain terminology (README first paragraph), contributing guidelines (CONTRIBUTING.md first 1000 chars)
 
-For packages detected as meta-tools (via the 3-signal cascade), ecosystem conventions are reclassified at format time — moved from the Conventions section to a "Supported Frameworks" section. Analysis data is preserved intact; only the presentation changes.
+For packages detected as meta-tools (via the 3-signal cascade), ecosystem conventions are reclassified at format time. Team Knowledge questions cross-reference against contribution patterns to skip redundant questions.
 
 This architecture was adopted after benchmarking showed the full-LLM approach hallucinated technologies in 3/10 repos despite XML tags, temperature 0, and validation.
 
@@ -103,11 +104,13 @@ Legacy full-LLM mode is available via `--llm-synthesis full`.
 | `dependency-analyzer.ts` | 263 | Framework versions, runtime detection, guidance |
 | `config.ts` | 211 | Config file loading, CLI arg parsing, defaults |
 | `meta-tool-detector.ts` | 175 | 3-signal cascade for analyzer/plugin package detection |
-| `existing-docs.ts` | 197 | README extraction, merge mode, delimiter handling |
+| `existing-docs.ts` | 250 | README + CONTRIBUTING.md extraction, merge mode, delimiter handling |
 | `file-discovery.ts` | 190 | git ls-files, FS walk fallback, symlink handling |
-| `role-inferrer.ts` | 173 | Domain signals, tech signals, role composition |
-| `contribution-patterns.ts` | 172 | "How to add code" recipe detection |
+| `role-inferrer.ts` | 173 | Domain signals, tech signals, role composition (prefers pkg description) |
+| `contribution-patterns.ts` | 230 | Deep recipes: common imports, naming suffix, registration file detection |
 | `workflow-rules.ts` | 158 | Technology-aware workflow rule generation |
+| `import-chain.ts` | 120 | File-to-file coupling + "when modifying X → check Y" rules |
+| `impact-radius.ts` | 160 | BFS on call graph for blast radius + complexity analysis |
 | `example-extractor.ts` | 151 | Usage snippets from test files |
 | `budget-validator.ts` | 150 | Rule counting, style rule detection, budget report |
 | `plugin-loader.ts` | 134 | Plugin discovery and loading for custom detectors |
