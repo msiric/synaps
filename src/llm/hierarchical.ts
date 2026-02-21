@@ -9,14 +9,14 @@ import {
 } from "../templates/agents-md.js";
 import { callLLMWithRetry } from "./client.js";
 import { serializeToMarkdown, serializePackageToMarkdown } from "./serializer.js";
-import { validateAndCorrect, synthesizeArchitecture, synthesizeDomainTerms } from "./adapter.js";
+import { validateAndCorrect, synthesizeArchitecture, synthesizeDomainTerms, synthesizeContributingRules } from "./adapter.js";
 import {
   generateDeterministicAgentsMd,
   generatePackageDeterministicAgentsMd,
   assembleFinalOutput,
   formatArchitectureFallback,
 } from "../deterministic-formatter.js";
-import { extractReadmeContext } from "../existing-docs.js";
+import { extractReadmeContext, extractContributingContext } from "../existing-docs.js";
 
 export interface HierarchicalOutput {
   root: string;
@@ -99,29 +99,32 @@ export async function formatHierarchicalDeterministic(
   // Root AGENTS.md — deterministic sections
   const rootDeterministic = generateDeterministicAgentsMd(analysis);
 
-  // README context for domain terminology
-  const readmeContext = extractReadmeContext(
-    analysis.packages[0]?.relativePath ?? ".",
-    analysis.meta.rootDir,
-  );
+  // Doc context for LLM synthesis
+  const pkgDir = analysis.packages[0]?.relativePath ?? ".";
+  const readmeContext = extractReadmeContext(pkgDir, analysis.meta.rootDir);
+  const contributingContext = extractContributingContext(pkgDir, analysis.meta.rootDir);
 
-  // Micro-LLM calls for root architecture + domain (if API key available)
+  // Micro-LLM calls for root architecture + domain + contributing (if API key available)
   let rootArchitecture: string;
   let rootDomain: string;
+  let rootContributing: string;
 
   if (config.llm.apiKey) {
-    const [archResult, domainResult] = await Promise.all([
+    const [archResult, domainResult, contributingResult] = await Promise.all([
       synthesizeArchitecture(analysis.packages[0], config.llm),
       synthesizeDomainTerms(readmeContext, config.llm),
+      synthesizeContributingRules(contributingContext, config.llm),
     ]);
     rootArchitecture = archResult;
     rootDomain = domainResult;
+    rootContributing = contributingResult;
   } else {
     rootArchitecture = formatArchitectureFallback(analysis.packages[0]);
     rootDomain = "";
+    rootContributing = "";
   }
 
-  const rootContent = assembleFinalOutput(rootDeterministic, rootArchitecture, rootDomain);
+  const rootContent = assembleFinalOutput(rootDeterministic, rootArchitecture, rootDomain, rootContributing);
 
   // Per-package detail files — deterministic + micro-LLM architecture per package
   const packagePromises = analysis.packages.map(async (pkg) => {

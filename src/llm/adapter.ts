@@ -12,7 +12,7 @@ import {
   assembleFinalOutput,
   formatArchitectureFallback,
 } from "../deterministic-formatter.js";
-import { extractReadmeContext } from "../existing-docs.js";
+import { extractReadmeContext, extractContributingContext } from "../existing-docs.js";
 
 // Note: formatHierarchical and HierarchicalOutput are re-exported from the
 // barrel (src/llm-adapter.ts) via hierarchical.ts, not through this module,
@@ -109,30 +109,35 @@ export async function formatDeterministic(
   // Step 1: Deterministic sections (no LLM)
   const deterministic = generateDeterministicAgentsMd(analysis);
 
-  // Step 2: README context for domain terminology
+  // Step 2: Extract context from docs for LLM synthesis
   const pkgDir = analysis.packages[0]?.relativePath ?? ".";
   const readmeContext = extractReadmeContext(pkgDir, rootDir);
+  const contributingContext = extractContributingContext(pkgDir, rootDir);
 
   // Step 3: Micro-LLM calls for synthesis (small, constrained)
   let architectureSection: string;
   let domainSection: string;
+  let contributingSection: string;
 
   if (config.llm.apiKey) {
     // Parallel micro-LLM calls
-    const [archResult, domainResult] = await Promise.all([
+    const [archResult, domainResult, contributingResult] = await Promise.all([
       synthesizeArchitecture(analysis.packages[0], config.llm),
       synthesizeDomainTerms(readmeContext, config.llm),
+      synthesizeContributingRules(contributingContext, config.llm),
     ]);
     architectureSection = archResult;
     domainSection = domainResult;
+    contributingSection = contributingResult;
   } else {
     // No API key: use deterministic fallback
     architectureSection = formatArchitectureFallback(analysis.packages[0]);
     domainSection = "";
+    contributingSection = "";
   }
 
   // Step 4: Assemble final output
-  return assembleFinalOutput(deterministic, architectureSection, domainSection);
+  return assembleFinalOutput(deterministic, architectureSection, domainSection, contributingSection);
 }
 
 /**
@@ -209,6 +214,33 @@ Output as a markdown list. If no domain-specific terms are found, output nothing
     });
     const trimmed = result.trim();
     return trimmed ? `## Domain Terminology\n\n${trimmed}` : "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Extract contributing workflow rules from CONTRIBUTING.md context.
+ * Input is the first 1000 chars of CONTRIBUTING.md content.
+ */
+export async function synthesizeContributingRules(
+  contributingContext: string | undefined,
+  llmConfig: ResolvedConfig["llm"],
+): Promise<string> {
+  if (!contributingContext || contributingContext.length < 50 || !llmConfig.apiKey) return "";
+
+  const systemPrompt = `Extract 4-6 concrete contribution workflow rules from this CONTRIBUTING guide.
+Focus on: PR process, branch naming, commit conventions, setup requirements, testing expectations.
+Format as a markdown bullet list. Only include rules that are specific to this project.
+If the content is just a redirect or generic "contributions welcome" with no process details, output nothing.`;
+
+  try {
+    const result = await callLLMWithRetry(systemPrompt, contributingContext, {
+      ...llmConfig,
+      maxOutputTokens: 400,
+    });
+    const trimmed = result.trim();
+    return trimmed ? `## Contributing Guidelines\n\n${trimmed}` : "";
   } catch {
     return "";
   }

@@ -32,6 +32,7 @@ export interface DeterministicOutput {
   // Left empty — filled by micro-LLM synthesis
   architecture: string;
   domainTerminology: string;
+  contributingGuidelines: string;
 }
 
 const MAX_TEAM_KNOWLEDGE_QUESTIONS = 7;
@@ -64,6 +65,7 @@ export function generateDeterministicAgentsMd(
     teamKnowledge: formatTeamKnowledge(analysis),
     architecture: "",
     domainTerminology: "",
+    contributingGuidelines: "",
   };
 }
 
@@ -76,6 +78,7 @@ export function assembleFinalOutput(
   deterministic: DeterministicOutput,
   architectureSection: string,
   domainSection: string,
+  contributingSection: string = "",
 ): string {
   const sections: string[] = [];
 
@@ -89,6 +92,7 @@ export function assembleFinalOutput(
   if (architectureSection) sections.push("", architectureSection);
   if (deterministic.workflowRules) sections.push("", deterministic.workflowRules);
   if (domainSection) sections.push("", domainSection);
+  if (contributingSection) sections.push("", contributingSection);
   if (deterministic.howToAddCode) sections.push("", deterministic.howToAddCode);
   if (deterministic.publicAPI) sections.push("", deterministic.publicAPI);
   if (deterministic.dependencies) sections.push("", deterministic.dependencies);
@@ -727,6 +731,7 @@ export function generatePackageDeterministicAgentsMd(
     teamKnowledge: "",    // Root-level only
     architecture: "",
     domainTerminology: "",
+    contributingGuidelines: "",
   };
 }
 

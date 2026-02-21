@@ -23,6 +23,7 @@ export interface ParsedArgs {
   diff?: string;
   llmSynthesis?: LLMSynthesisMode;
   noMetaTool?: boolean;
+  saveBaseline?: boolean;
 }
 
 const DEFAULTS: ResolvedConfig = {
@@ -193,7 +194,7 @@ export async function parseCliArgs(
   const mri = (await import("mri")).default;
   const args = mri(argv, {
     alias: { f: "format", o: "output", c: "config", q: "quiet", v: "verbose" },
-    boolean: ["dry-run", "quiet", "verbose", "help", "hierarchical", "flat", "merge", "no-meta-tool"],
+    boolean: ["dry-run", "quiet", "verbose", "help", "hierarchical", "flat", "merge", "no-meta-tool", "save-baseline"],
     string: ["format", "output", "config", "root", "diff", "llm-synthesis"],
   });
 
@@ -213,5 +214,6 @@ export async function parseCliArgs(
     diff: args.diff ?? undefined,
     llmSynthesis: (args["llm-synthesis"] as LLMSynthesisMode) ?? undefined,
     noMetaTool: args["no-meta-tool"] ?? undefined,
+    saveBaseline: args["save-baseline"] ?? undefined,
   };
 }

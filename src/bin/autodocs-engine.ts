@@ -20,6 +20,7 @@ autodocs-engine v${ENGINE_VERSION}
 
 Usage:
   autodocs-engine init                   Auto-detect and generate AGENTS.md (zero-config)
+  autodocs-engine check                  Check if AGENTS.md needs regeneration (for CI)
   autodocs-engine analyze [paths...]     Analyze specific packages (advanced)
 
 Arguments:
@@ -67,6 +68,16 @@ async function main() {
     const { runInit } = await import("./init.js");
     await runInit();
     process.exit(0);
+  }
+
+  // Handle "check" subcommand — staleness detection
+  if (args.packages[0] === "check") {
+    const { runCheck } = await import("./check.js");
+    const isStale = await runCheck({
+      saveBaseline: args.saveBaseline ?? false,
+      quiet: args.quiet,
+    });
+    process.exit(isStale ? 1 : 0);
   }
 
   // Strip "analyze" subcommand if present

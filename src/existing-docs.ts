@@ -96,6 +96,72 @@ export function extractReadmeContext(
 }
 
 /**
+ * Extract contributing context from CONTRIBUTING.md.
+ * Returns up to 1000 chars of meaningful content for micro-LLM synthesis.
+ * Searches: CONTRIBUTING.md, contributing.md, .github/CONTRIBUTING.md
+ */
+export function extractContributingContext(
+  packageDir: string,
+  rootDir?: string,
+): string | undefined {
+  const dirs = rootDir ? [packageDir, rootDir] : [packageDir];
+
+  for (const dir of dirs) {
+    for (const name of [
+      "CONTRIBUTING.md", "contributing.md",
+      join(".github", "CONTRIBUTING.md"), join(".github", "contributing.md"),
+    ]) {
+      const path = join(dir, name);
+      if (existsSync(path)) {
+        try {
+          const content = readFileSync(path, "utf-8");
+          const context = extractMarkdownContent(content, 1000);
+          if (context && context.length >= 50) return context;
+        } catch { continue; }
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Extract meaningful content from markdown, skipping HTML, badges, and headings.
+ * Returns up to `maxChars` characters of prose content.
+ */
+function extractMarkdownContent(markdown: string, maxChars: number): string | undefined {
+  const lines = markdown.split("\n");
+  let inHtmlBlock = false;
+  const contentLines: string[] = [];
+  let totalChars = 0;
+
+  for (const line of lines) {
+    if (totalChars >= maxChars) break;
+    const trimmed = line.trim();
+
+    if (!inHtmlBlock && /^<[a-zA-Z]/.test(trimmed) && !trimmed.includes("</")) {
+      inHtmlBlock = true;
+      continue;
+    }
+    if (inHtmlBlock) {
+      if (/<\/[a-zA-Z]+>/.test(trimmed)) inHtmlBlock = false;
+      continue;
+    }
+
+    if (/^<[a-zA-Z/]/.test(trimmed)) continue;
+    if (/^\[?!\[/.test(trimmed)) continue;
+    if (trimmed === "") { contentLines.push(""); continue; }
+    if (trimmed.length < 10) continue;
+
+    // Keep headings (they provide structure for the LLM) and prose
+    contentLines.push(trimmed);
+    totalChars += trimmed.length;
+  }
+
+  const result = contentLines.join("\n").slice(0, maxChars).trim();
+  return result || undefined;
+}
+
+/**
  * Extract the first meaningful paragraph from markdown content.
  * Skips titles (#), badges ([![), ALL HTML tags/blocks, and empty lines.
  * A "meaningful paragraph" is a line of plain text (not markup) that
