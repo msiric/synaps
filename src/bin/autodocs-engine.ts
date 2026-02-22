@@ -80,6 +80,23 @@ async function main() {
     process.exit(isStale ? 1 : 0);
   }
 
+  // Handle "benchmark" subcommand — AGENTS.md effectiveness measurement
+  if (args.packages[0] === "benchmark") {
+    const { runBenchmark } = await import("./benchmark.js");
+    await runBenchmark({
+      repoPath: args.packages[1],
+      root: args.root,
+      quick: !args.full,
+      full: args.full,
+      model: args.model,
+      output: args.output,
+      verbose: args.verbose,
+      dryRun: args.dryRun,
+      maxTasks: args.maxTasks,
+    });
+    process.exit(0);
+  }
+
   // Strip "analyze" subcommand if present
   if (args.packages[0] === "analyze") {
     args.packages.shift();
