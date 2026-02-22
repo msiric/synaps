@@ -22,6 +22,8 @@ Usage:
   autodocs-engine init                   Auto-detect and generate AGENTS.md (zero-config)
   autodocs-engine check                  Check if AGENTS.md needs regeneration (for CI)
   autodocs-engine analyze [paths...]     Analyze specific packages (advanced)
+  autodocs-engine serve [path]           Start MCP server for live codebase intelligence
+  autodocs-engine benchmark [path]       Measure AGENTS.md effectiveness (A/B testing)
 
 Arguments:
   paths                Package directories to analyze (default: current directory)

@@ -10,7 +10,8 @@ export async function runServe(args: { path?: string; verbose?: boolean }): Prom
   const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
   const { createAutodocsServer } = await import("../mcp/server.js");
 
-  const { server, cache } = createAutodocsServer(projectPath);
+  const verbose = args.verbose ?? Boolean(process.env.AUTODOCS_DEBUG);
+  const { server, cache } = createAutodocsServer(projectPath, { verbose });
   const transport = new StdioServerTransport();
 
   // Connect first — handshake must complete before heavy analysis work

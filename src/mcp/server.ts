@@ -11,20 +11,51 @@ import * as tools from "./tools.js";
 
 export { AnalysisCache } from "./cache.js";
 
+export interface ServerOptions {
+  verbose?: boolean;
+}
+
 /**
  * Create an autodocs-engine MCP server with all tools registered.
  * Call server.connect(transport) then cache.warm() after.
  */
-export function createAutodocsServer(projectPath: string): {
+export function createAutodocsServer(
+  projectPath: string,
+  options: ServerOptions = {},
+): {
   server: McpServer;
   cache: AnalysisCache;
 } {
+  const verbose = options.verbose ?? Boolean(process.env.AUTODOCS_DEBUG);
+
   const server = new McpServer({
     name: "autodocs-engine",
     version: ENGINE_VERSION,
   });
 
   const cache = new AnalysisCache(projectPath);
+
+  /**
+   * Telemetry wrapper: logs tool name, latency, and cache status to stderr.
+   * Active when --verbose is set or AUTODOCS_DEBUG=1.
+   */
+  function withTelemetry(
+    toolName: string,
+    fn: () => Promise<{ content: { type: "text"; text: string }[] }>,
+  ): Promise<{ content: { type: "text"; text: string }[]; isError?: boolean }> {
+    const start = performance.now();
+    return safeToolHandler(fn).then(result => {
+      if (verbose) {
+        const latency = Math.round(performance.now() - start);
+        const cacheStatus = cache.lastWasCacheHit ? "hit" : "miss";
+        const status = result.isError ? " ERROR" : "";
+        process.stderr.write(
+          `[autodocs] tool=${toolName} latency=${latency}ms cache=${cacheStatus}${status}\n`,
+        );
+      }
+      return result;
+    });
+  }
 
   // ─── P0: get_commands ────────────────────────────────────────────────
   server.tool(
@@ -39,10 +70,9 @@ DO NOT CALL:
 - User asks about architecture or where to put code (use get_architecture)
 - User asks about dependencies or what frameworks are used`,
     { packagePath: z.string().optional().describe("Package path or name. Omit for single-package repos.") },
-    async (args) => safeToolHandler(() => {
-      const analysis = cache.get();
-      return analysis.then(a => tools.handleGetCommands(a, args));
-    }),
+    async (args) => withTelemetry("get_commands", () =>
+      cache.get().then(a => tools.handleGetCommands(a, args)),
+    ),
   );
 
   // ─── P0: get_architecture ────────────────────────────────────────────
@@ -59,9 +89,9 @@ DO NOT CALL:
 - User asks about specific file contents or imports (use analyze_impact)
 - User asks about build/test commands (use get_commands)`,
     { packagePath: z.string().optional().describe("Package path or name.") },
-    async (args) => safeToolHandler(() => {
-      return cache.get().then(a => tools.handleGetArchitecture(a, args));
-    }),
+    async (args) => withTelemetry("get_architecture", () =>
+      cache.get().then(a => tools.handleGetArchitecture(a, args)),
+    ),
   );
 
   // ─── P0: analyze_impact ──────────────────────────────────────────────
@@ -86,9 +116,9 @@ DO NOT CALL:
         .describe("Narrow analysis: 'imports' for file importers only, 'callers' for function callers only, 'cochanges' for git history only. Default: all."),
       limit: z.number().min(1).max(50).optional().describe("Max results per section. Default: 20."),
     },
-    async (args) => safeToolHandler(() => {
-      return cache.get().then(a => tools.handleAnalyzeImpact(a, args));
-    }),
+    async (args) => withTelemetry("analyze_impact", () =>
+      cache.get().then(a => tools.handleAnalyzeImpact(a, args)),
+    ),
   );
 
   // ─── P0: get_workflow_rules ──────────────────────────────────────────
@@ -105,9 +135,9 @@ DO NOT CALL:
 - User asks WHICH command runs tests (use get_commands)
 - User asks WHERE to put new code (use get_architecture)`,
     { packagePath: z.string().optional().describe("Package path or name.") },
-    async (args) => safeToolHandler(() => {
-      return cache.get().then(a => tools.handleGetWorkflowRules(a, args));
-    }),
+    async (args) => withTelemetry("get_workflow_rules", () =>
+      cache.get().then(a => tools.handleGetWorkflowRules(a, args)),
+    ),
   );
 
   // ─── P0: list_packages ──────────────────────────────────────────────
@@ -123,9 +153,9 @@ WHEN TO CALL:
 DO NOT CALL:
 - Single-package repos (will return one item, which is fine but unnecessary)`,
     {},
-    async () => safeToolHandler(() => {
-      return cache.get().then(a => tools.handleListPackages(a));
-    }),
+    async () => withTelemetry("list_packages", () =>
+      cache.get().then(a => tools.handleListPackages(a)),
+    ),
   );
 
   // ─── P1: get_contribution_guide ──────────────────────────────────────
@@ -140,9 +170,9 @@ WHEN TO CALL:
       directory: z.string().optional().describe("Filter to patterns in this directory (e.g., 'src/detectors/')"),
       packagePath: z.string().optional().describe("Package path or name."),
     },
-    async (args) => safeToolHandler(() => {
-      return cache.get().then(a => tools.handleGetContributionGuide(a, args));
-    }),
+    async (args) => withTelemetry("get_contribution_guide", () =>
+      cache.get().then(a => tools.handleGetContributionGuide(a, args)),
+    ),
   );
 
   // ─── P1: get_exports ─────────────────────────────────────────────────
@@ -158,9 +188,9 @@ WHEN TO CALL:
       query: z.string().optional().describe("Filter exports by name (substring match)"),
       limit: z.number().min(1).max(100).optional().describe("Max results. Default: 20."),
     },
-    async (args) => safeToolHandler(() => {
-      return cache.get().then(a => tools.handleGetExports(a, args));
-    }),
+    async (args) => withTelemetry("get_exports", () =>
+      cache.get().then(a => tools.handleGetExports(a, args)),
+    ),
   );
 
   // ─── P2: get_conventions ─────────────────────────────────────────────
@@ -171,9 +201,9 @@ WHEN TO CALL:
 WHEN TO CALL:
 - User asks "what patterns does this project follow?", "are there naming conventions?"`,
     { packagePath: z.string().optional().describe("Package path or name.") },
-    async (args) => safeToolHandler(() => {
-      return cache.get().then(a => tools.handleGetConventions(a, args));
-    }),
+    async (args) => withTelemetry("get_conventions", () =>
+      cache.get().then(a => tools.handleGetConventions(a, args)),
+    ),
   );
 
   return { server, cache };

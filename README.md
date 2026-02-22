@@ -229,7 +229,7 @@ Contributions are welcome. Please open an issue first to discuss what you'd like
 git clone https://github.com/msiric/autodocs-engine.git
 cd autodocs-engine
 npm install
-npm test          # Run all 307 tests
+npm test          # Run all 412+ tests
 npm run typecheck # Type check
 npm run build     # Build
 ```

@@ -21,6 +21,10 @@ export class AnalysisCache {
   private lastCheckAt = 0;
   private nonGitEpoch = 0;
   private lastNonGitCheck = 0;
+  private _lastWasCacheHit = false;
+
+  /** Whether the most recent get() call was a cache hit. */
+  get lastWasCacheHit(): boolean { return this._lastWasCacheHit; }
 
   constructor(projectPath: string) {
     this.projectPath = resolve(projectPath);
@@ -50,7 +54,11 @@ export class AnalysisCache {
    */
   async get(): Promise<StructuredAnalysis> {
     const key = this.getCacheKey();
-    if (this.cached?.key === key) return this.cached.analysis;
+    if (this.cached?.key === key) {
+      this._lastWasCacheHit = true;
+      return this.cached.analysis;
+    }
+    this._lastWasCacheHit = false;
 
     // At-most-one concurrent analysis
     if (this.inflight) return this.inflight;
