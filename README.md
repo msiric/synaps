@@ -1,237 +1,183 @@
 # autodocs-engine
 
-Generate research-backed AGENTS.md files that AI coding tools actually follow.
+Deterministic codebase intelligence for AI coding tools.
 
 [![npm version](https://img.shields.io/npm/v/autodocs-engine)](https://www.npmjs.com/package/autodocs-engine)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![CI](https://github.com/msiric/autodocs-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/msiric/autodocs-engine/actions)
 [![Node.js](https://img.shields.io/node/v/autodocs-engine)](https://nodejs.org)
 
-## Why
+## What It Does
 
-90% of engineering teams use AI coding tools. 65% say AI misses critical project context.
+Analyzes TypeScript/JavaScript codebases and extracts actionable intelligence — commands, conventions, file coupling patterns, contribution recipes, architecture — that AI coding tools need to write code that fits your project.
 
-AGENTS.md files fix this — they tell AI tools your project's commands, conventions, and architecture up front. But today they're all hand-written, incomplete, and drift out of sync with the actual codebase.
+Two ways to use it:
 
-autodocs-engine analyzes your TypeScript codebase and generates lean, prioritized context files. Based on [Vercel's research](https://vercel.com/blog/agents-md) showing that a single 8KB index file achieved 100% eval pass rates — outperforming detailed per-skill instructions — fewer, higher-quality rules beat comprehensive documentation.
+1. **MCP Server** — Live codebase queries via Model Context Protocol. AI tools ask for exactly the context they need, on demand.
+2. **AGENTS.md Generator** — Static context file for universal compatibility. Works with every tool that reads AGENTS.md, CLAUDE.md, or .cursorrules.
 
 ## Quick Start
 
 ```bash
-npx autodocs-engine init
+# Generate a focused AGENTS.md (no API key needed)
+npx autodocs-engine init --minimal
+
+# Or start the MCP server for live queries
+npx autodocs-engine serve
 ```
 
-That's it. Auto-detects your project structure (single package or monorepo), finds all workspace packages, and generates AGENTS.md. Zero flags required.
-
-With an API key for richer output:
+### MCP Server Setup (Claude Code)
 
 ```bash
-ANTHROPIC_API_KEY=sk-... npx autodocs-engine init
+claude mcp add autodocs -- npx autodocs-engine serve
 ```
 
-## What It Produces
+This gives Claude Code 8 codebase intelligence tools:
 
-**Hallucination-free output.** 14 of 16 AGENTS.md sections are generated deterministically from your code — no LLM involved, no fabricated technologies. Only the architecture summary and domain terminology use constrained micro-LLM calls.
+| Tool | What It Returns |
+|------|----------------|
+| `get_commands` | Build, test, lint commands with exact flags |
+| `get_architecture` | Directory structure, entry points, package type |
+| `get_conventions` | DO/DON'T rules detected from your code |
+| `get_workflow_rules` | File coupling and co-change patterns |
+| `get_contribution_guide` | How to add new code in a specific directory |
+| `get_exports` | Public API sorted by usage |
+| `analyze_impact` | What breaks if you change a file |
+| `list_packages` | Monorepo package inventory |
 
-**Root AGENTS.md (~80-120 lines):**
-- Exact build/test/lint commands detected from your config files — not guessed
-- Architecture described as capabilities, not file paths
-- Workflow rules AI tools reliably follow (e.g., "Use Biome, not ESLint")
-- Domain terminology AI can't infer from code alone
-- Package guide for monorepos (which package to touch for what task)
-- Supported frameworks section for meta-tools (Knip, ESLint configs, etc.)
+## Why Minimal Mode?
 
-**Per-package detail files** with public API surface, contribution patterns, and conventions split by impact level — what AI should follow vs. what linters already enforce.
+Research shows comprehensive context files can actually **hurt** AI performance:
+
+- LLM-generated AGENTS.md: **-0.5% to -2%** accuracy ([arxiv 2602.11988](https://arxiv.org/abs/2602.11988))
+- Developer-written focused AGENTS.md: **+4%** accuracy, **-29% runtime** ([arxiv 2601.20404](https://arxiv.org/abs/2601.20404))
+
+The difference: developer-written files are short, focused, and only include what the AI can't figure out on its own. That's exactly what `--minimal` generates.
+
+**Minimal mode** (~200-450 tokens) includes only:
+- Exact commands with flags (proven to help, never hurts)
+- Workflow rules from git co-change analysis (patterns the AI can't discover from code)
+- High-confidence conventions (only if ≥95% consistent and non-obvious)
+- Non-obvious directories (with "non-exhaustive" qualifier to prevent anchoring)
+
+**Full mode** (~1,500-2,500 tokens) adds public API, dependency graphs, all conventions, and architecture details. Use `--full` when you need comprehensive documentation.
 
 ## How It Works
 
-Unlike tools that dump raw code into an LLM prompt, autodocs-engine uses a multi-stage pipeline:
+Unlike tools that dump code into an LLM or pack everything into one file, autodocs-engine uses deterministic static analysis:
 
-1. **Parse** — Analyzes your codebase with the TypeScript Compiler API (AST parsing, not type checking — fast even on large repos)
-2. **Classify** — Categorizes every file as Public API, Internal, or Generated noise
-3. **Detect** — Finds conventions via 8 detectors (file naming, hooks, testing, data fetching, databases, web frameworks, build tools)
-4. **Extract** — Pulls exact commands from package.json, lockfiles, and config files. Detects turbo.json, biome.json, tsconfig settings, and more
-5. **Infer** — Determines package roles from export patterns, dependency graphs, and exact framework versions (e.g., "React 19 — use() hook available")
-6. **Graph** — Builds a lightweight call graph tracking which exported functions call which
-7. **Detect meta-tools** — Identifies packages that support multiple frameworks (like Knip, ESLint configs) and reclassifies their conventions
-8. **Generate** — Produces a lean AGENTS.md with 14 deterministic sections + 2 micro-LLM synthesis sections
+1. **Parse** — AST analysis via TypeScript Compiler API
+2. **Detect** — 8 convention detectors (naming, hooks, testing, frameworks, etc.)
+3. **Extract** — Commands from package.json, turbo.json, biome.json, and 10+ config formats
+4. **Graph** — Call graph, import chains, and git co-change analysis (Jaccard similarity)
+5. **Score** — Inferability scoring decides what's worth including vs. what the AI already knows
+6. **Generate** — 14/16 sections are deterministic (no LLM). Only architecture summary and domain terms use optional micro-LLM calls.
 
-Analysis completes in under 2 seconds even for 3,700-file codebases. The LLM receives only narrowly-scoped data for the 2 synthesis sections — it literally cannot hallucinate technology names because it never sees them.
+**No API key needed** for minimal mode or JSON output. The analysis is pure computation.
 
 ## Output Formats
 
-| Format | Flag | Needs API Key? | Use Case |
-|--------|------|---------------|----------|
-| JSON | `--format json` (default) | No | CI pipelines, custom tooling |
-| AGENTS.md | `--format agents.md` | Yes | Claude Code, Agentic tools |
-| CLAUDE.md | `--format claude.md` | Yes | Claude Code (legacy format) |
-| .cursorrules | `--format cursorrules` | Yes | Cursor IDE |
-
-When `ANTHROPIC_API_KEY` is set and no `--format` is specified, defaults to `agents.md`.
-
-## Multi-Package / Monorepo
-
-For monorepos, `init` auto-detects workspace packages:
-
 ```bash
-npx autodocs-engine init    # auto-detects from workspaces/pnpm-workspace.yaml
+npx autodocs-engine init --minimal              # Focused AGENTS.md (~300 tokens)
+npx autodocs-engine init                         # Full AGENTS.md (needs API key)
+npx autodocs-engine analyze . --format json      # Raw analysis JSON
+npx autodocs-engine analyze . --format claude.md # CLAUDE.md format
+npx autodocs-engine analyze . --format cursorrules # .cursorrules format
 ```
 
-Or use `analyze` for explicit control:
+## Monorepo Support
+
+Auto-detects workspace packages from `pnpm-workspace.yaml`, `workspaces` field in package.json, `turbo.json`, or `nx.json`:
+
+```bash
+npx autodocs-engine init --minimal    # Works for monorepos too
+```
+
+For explicit control:
 
 ```bash
 npx autodocs-engine analyze packages/app packages/hooks packages/ui \
   --format agents.md --hierarchical --root .
 ```
 
-Produces:
-- **Root `AGENTS.md`** — Cross-package overview, dependency graph, workflow rules, shared conventions
-- **Per-package detail files** — `packages/app.md`, `packages/hooks.md`, etc.
+## Staleness Detection
 
-The root file stays lean. Package-specific detail lives in each package directory where AI tools discover it contextually.
+Check if your AGENTS.md needs updating (for CI):
+
+```bash
+npx autodocs-engine check
+```
+
+Returns exit code 1 if conventions have drifted. Useful in CI pipelines to keep context files honest.
 
 ## Tested On
 
-| Repo | Stars | Files | Meta-Tool | Hallucinations | Time |
-|------|------:|------:|-----------|---------------|------|
-| [sanity-io/sanity](https://github.com/sanity-io/sanity) | 6K | 3,746 | No | None | 1.6s |
-| [medusajs/medusa](https://github.com/medusajs/medusa) | 32K | 720 | No | None | 316ms |
-| [vercel/ai](https://github.com/vercel/ai) | 22K | 355 | No | None | 331ms |
-| [modelcontextprotocol/typescript-sdk](https://github.com/modelcontextprotocol/typescript-sdk) | 12K | 24 | No | None | 78ms |
-| [webpro-nl/knip](https://github.com/webpro-nl/knip) | 10K | 2,427 | **Yes** (16 families) | None | 638ms |
-| [unjs/nitro](https://github.com/unjs/nitro) | 10K | 469 | **Yes** (9 families) | None | 220ms |
-| [openstatusHQ/openstatus](https://github.com/openstatusHQ/openstatus) | 8K | — | No | None | 5ms |
-| [documenso/documenso](https://github.com/documenso/documenso) | 12K | 474 | No | None | 364ms |
-| [Effect-TS/effect](https://github.com/Effect-TS/effect) | 13K | 958 | No | None | 1.0s |
-| [excalidraw/excalidraw](https://github.com/excalidraw/excalidraw) | 117K | 386 | No | None | 406ms |
+| Repo | Files | Time | Token Count (minimal) |
+|------|------:|-----:|:-----:|
+| autodocs-engine | 115 | 450ms | ~443 |
+| vitest | 1,200+ | 1.2s | ~307 |
+| nitro | 469 | 220ms | ~121 |
+| sanity | 3,746 | 1.6s | — |
+| medusa | 720 | 316ms | — |
 
-Zero technology hallucinations across all 10 repos. Zero false positives on meta-tool detection. Knip correctly identified as a meta-tool (16 framework ecosystems) with conventions reclassified to "Supported Frameworks."
-
-## Configuration
-
-Create an optional `autodocs.config.json` in your project root:
-
-```json
-{
-  "exclude": ["**/vendor/**", "**/generated/**"],
-  "maxPublicAPIEntries": 100,
-  "conventions": {
-    "disable": ["telemetry-patterns"]
-  }
-}
-```
-
-Most options are auto-detected. Zero config is the default and works well for the majority of projects.
-
-## CLI Reference
-
-```
-autodocs-engine init                     Auto-detect and generate AGENTS.md
-autodocs-engine analyze [paths...] [options]
-
-Options:
-  --format, -f         json | agents.md | claude.md | cursorrules
-  --output, -o         Output directory (default: .)
-  --config, -c         Path to config file
-  --root               Monorepo root (for root-level command extraction)
-  --hierarchical       Root + per-package output (default for multi-package)
-  --flat               Single file even for multi-package
-  --verbose, -v        Timing and budget validation details
-  --merge              Preserve human-written sections when regenerating
-  --no-meta-tool       Disable meta-tool detection
-  --dry-run            Print analysis to stdout (no LLM, no file writes)
-  --quiet, -q          Suppress warnings
-```
+501 tests. Zero type errors. Zero technology hallucinations across all tested repos.
 
 ## Library API
 
 ```typescript
-import { analyze, formatDeterministic, formatHierarchicalDeterministic } from 'autodocs-engine';
+import { analyze, generateMinimalAgentsMd } from 'autodocs-engine';
 
-// Step 1: Analyze (pure computation, no API key needed)
-const analysis = await analyze({
-  packages: ['./packages/my-pkg'],
-  verbose: true,
-});
+// Analyze (pure computation, no API key)
+const analysis = await analyze({ packages: ['./packages/my-pkg'] });
 
-// Step 2: Format as AGENTS.md (deterministic — recommended)
-const agentsMd = await formatDeterministic(analysis, {
-  output: { format: 'agents.md', dir: '.' },
-  llm: {
-    provider: 'anthropic',
-    model: 'claude-sonnet-4-20250514',
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  },
-});
+// Generate minimal AGENTS.md (no API key)
+const minimal = generateMinimalAgentsMd(analysis);
 
-// Step 2 (alt): Hierarchical output for monorepos
-const hierarchy = await formatHierarchicalDeterministic(analysis, {
-  output: { format: 'agents.md', dir: './output' },
-  llm: {
-    provider: 'anthropic',
-    model: 'claude-sonnet-4-20250514',
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  },
-});
-// hierarchy.root — root AGENTS.md content
-// hierarchy.packages — { filename, content }[]
+// Or use the full deterministic format (optional API key for 2 LLM sections)
+import { formatDeterministic } from 'autodocs-engine';
+const full = await formatDeterministic(analysis, config);
 ```
 
-All types are exported:
+## Configuration
 
-```typescript
-import type {
-  StructuredAnalysis,
-  PackageAnalysis,
-  Convention,
-  CommandSet,
-  PublicAPIEntry,
-  CrossPackageAnalysis,
-} from 'autodocs-engine';
+Optional `autodocs.config.json`:
+
+```json
+{
+  "exclude": ["**/vendor/**", "**/generated/**"],
+  "conventions": { "disable": ["telemetry-patterns"] }
+}
 ```
 
-## GitHub Action
+Most options are auto-detected. Zero config is the default.
 
-Add to your workflow to get AGENTS.md analysis on every PR:
+## CLI Reference
 
-```yaml
-# .github/workflows/autodocs.yml
-name: AGENTS.md Analysis
-on: [pull_request]
-
-jobs:
-  analyze:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: msiric/autodocs-engine@v1
-        with:
-          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}  # optional
 ```
+autodocs-engine init [--minimal]           Generate AGENTS.md (zero-config)
+autodocs-engine serve [path]               Start MCP server
+autodocs-engine check                      Check if AGENTS.md needs regeneration
+autodocs-engine analyze [paths...] [options]
 
-Posts a PR comment with detected commands, conventions, workflow rules, and public API summary. Updates the same comment on subsequent pushes (no spam).
-
-## Backed by Research
-
-This tool's design is informed by real-world research on AI context files:
-
-- **[Vercel: AGENTS.md](https://vercel.com/blog/agents-md)** — An 8KB index file achieved 100% pass rate in agent evals, outperforming detailed per-skill instructions
-- **[HumanLayer: Instruction Budget](https://humanlayer.dev/blog/agents-md)** — LLMs follow ~100-200 rules reliably; beyond that, compliance drops
-- **[Builder.io: What AI Actually Follows](https://www.builder.io/blog/cursor-tips)** — Commands and concrete patterns outperform style guidelines
-
-The engine enforces these findings: lean output, prioritized by impact, within the instruction budget.
+Options:
+  --minimal          Focused output (<500 tokens, no API key needed)
+  --format, -f       json | agents.md | claude.md | cursorrules
+  --output, -o       Output directory (default: .)
+  --root             Monorepo root directory
+  --hierarchical     Root + per-package output
+  --merge            Preserve human-written sections when regenerating
+  --verbose, -v      Timing details
+  --dry-run          Print to stdout (no file writes)
+```
 
 ## Contributing
-
-Contributions are welcome. Please open an issue first to discuss what you'd like to change.
 
 ```bash
 git clone https://github.com/msiric/autodocs-engine.git
 cd autodocs-engine
 npm install
-npm test          # Run all 412+ tests
-npm run typecheck # Type check
-npm run build     # Build
+npm test          # 501 tests
+npm run typecheck # Zero errors
+npm run build
 ```
 
 ## License

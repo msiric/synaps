@@ -1,9 +1,12 @@
 // src/bin/benchmark.ts — CLI entry point for the benchmark command
 // Usage: autodocs-engine benchmark [repo-path] [options]
+// Modes: --mode synthetic (v1, default) or --mode pr (v2, PR-based ground truth)
 
 import { resolve } from "node:path";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import type { ResolvedConfig } from "../types.js";
 import { orchestrateBenchmark } from "../benchmark/runner.js";
+import { runPRBenchmark, generatePRReport } from "../benchmark/pr-runner.js";
 import type { BenchmarkOptions } from "../benchmark/types.js";
 
 interface BenchmarkArgs {
@@ -16,10 +19,17 @@ interface BenchmarkArgs {
   verbose?: boolean;
   dryRun?: boolean;
   maxTasks?: number;
+  benchmarkMode?: "synthetic" | "pr";
 }
 
 export async function runBenchmark(args: BenchmarkArgs): Promise<void> {
   const repoPath = resolve(args.repoPath ?? ".");
+
+  // Route to PR-based benchmark if --mode pr
+  if (args.benchmarkMode === "pr") {
+    await runPRBenchmarkCLI(repoPath, args);
+    return;
+  }
 
   const options: BenchmarkOptions = {
     repoPath,
@@ -100,6 +110,119 @@ export async function runBenchmark(args: BenchmarkArgs): Promise<void> {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Benchmark failed: ${msg}\n`);
+    process.exit(1);
+  }
+}
+
+// ─── PR-Based Benchmark ───────────────────────────────────────────────────
+
+async function runPRBenchmarkCLI(repoPath: string, args: BenchmarkArgs): Promise<void> {
+  const apiKey = process.env.ANTHROPIC_API_KEY ?? process.env.OPENAI_API_KEY;
+  if (!apiKey && !args.dryRun) {
+    process.stderr.write(
+      "Error: ANTHROPIC_API_KEY is required for PR benchmark.\n"
+      + "Set it: export ANTHROPIC_API_KEY=sk-...\n"
+      + "Or use --dry-run to preview mined tasks without LLM calls.\n"
+    );
+    process.exit(1);
+  }
+
+  const llmConfig: ResolvedConfig["llm"] = {
+    provider: "anthropic",
+    model: args.model ?? process.env.AUTODOCS_LLM_MODEL ?? "claude-sonnet-4-20250514",
+    apiKey: apiKey ?? "",
+    maxOutputTokens: 4096,
+  };
+
+  // Step 1: Generate AGENTS.md for this repo
+  process.stderr.write(`\n[PR Benchmark] Analyzing ${repoPath}...\n`);
+  const { analyze, formatDeterministic } = await import("../index.js");
+  const { resolveConfig } = await import("../config.js");
+
+  const analysisConfig = {
+    packages: [repoPath],
+    output: { format: "agents.md" as const, dir: "." },
+    llm: llmConfig,
+  };
+
+  const analysis = await analyze(analysisConfig);
+  const agentsMd = await formatDeterministic(analysis, analysisConfig, repoPath);
+  process.stderr.write(`[PR Benchmark] AGENTS.md generated (${agentsMd.length} chars)\n`);
+
+  // Step 2: Run PR benchmark
+  try {
+    const results = await runPRBenchmark(
+      {
+        repoPath,
+        mode: args.full ? "full" : "quick",
+        model: llmConfig.model,
+        maxTasks: args.maxTasks,
+        agentsMd,
+        verbose: args.verbose,
+        dryRun: args.dryRun,
+      },
+      llmConfig,
+    );
+
+    // Step 3: Print summary
+    const s = results.summary;
+    process.stderr.write(`\n`);
+    process.stderr.write(`PR Benchmark: ${repoPath.split("/").pop()} (${results.meta.mode})\n`);
+    process.stderr.write(`Model: ${results.meta.model} | Tasks: ${results.meta.tasksRun}\n`);
+    process.stderr.write(`\n`);
+
+    process.stderr.write(`  Condition                Mean Placement  Mean Tokens\n`);
+    process.stderr.write(`  ─────────────────────    ──────────────  ───────────\n`);
+
+    const condLabels: Record<string, string> = {
+      "treatment": "A: AGENTS.md + source",
+      "realistic-control": "B: Source only",
+      "impoverished-control": "C: Dir listing only",
+    };
+
+    for (const c of ["treatment", "realistic-control", "impoverished-control"] as const) {
+      const d = s.conditions[c];
+      if (!d) continue;
+      const label = condLabels[c].padEnd(25);
+      const placement = (d.meanPlacement.toFixed(1) + "%").padStart(14);
+      const tokens = String(d.meanTokens).padStart(11);
+      process.stderr.write(`  ${label}${placement}${tokens}\n`);
+    }
+
+    process.stderr.write(`\n`);
+    process.stderr.write(`  Headline (A-B): ${s.headlineDelta >= 0 ? "+" : ""}${s.headlineDelta.toFixed(1)}% file placement\n`);
+    process.stderr.write(`  A win rate: ${s.aWinRate}%\n`);
+
+    if (s.stats.ci95) {
+      process.stderr.write(`  95% CI: [${s.stats.ci95[0] >= 0 ? "+" : ""}${s.stats.ci95[0]}%, ${s.stats.ci95[1] >= 0 ? "+" : ""}${s.stats.ci95[1]}%]\n`);
+    }
+    if (s.stats.effectSize != null) {
+      process.stderr.write(`  Effect size (d): ${s.stats.effectSize}\n`);
+    }
+    if (s.stats.pWilcoxon != null) {
+      process.stderr.write(`  p (Wilcoxon): ${s.stats.pWilcoxon}\n`);
+    }
+
+    // Step 4: Save results
+    const outputDir = resolve(args.output ?? "./benchmark-results/pr");
+    mkdirSync(outputDir, { recursive: true });
+
+    writeFileSync(
+      resolve(outputDir, "results.json"),
+      JSON.stringify(results, null, 2),
+    );
+    writeFileSync(
+      resolve(outputDir, "REPORT.md"),
+      generatePRReport(results),
+    );
+
+    process.stderr.write(`\n`);
+    process.stderr.write(`  Results: ${outputDir}/results.json\n`);
+    process.stderr.write(`  Report:  ${outputDir}/REPORT.md\n`);
+
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`PR Benchmark failed: ${msg}\n`);
     process.exit(1);
   }
 }

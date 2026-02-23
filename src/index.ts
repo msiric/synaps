@@ -52,6 +52,7 @@ export { wrapWithDelimiters, mergeWithExisting, readExistingAgentsMd } from "./e
 export { validateOutput } from "./output-validator.js";
 export { fingerprintTopExports } from "./pattern-fingerprinter.js";
 export { diffAnalyses } from "./diff-analyzer.js";
+export { generateMinimalAgentsMd } from "./deterministic-formatter.js";
 
 export { ENGINE_VERSION } from "./types.js";
 

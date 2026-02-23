@@ -5,6 +5,7 @@ import type {
   StructuredAnalysis,
   PackageAnalysis,
   Convention,
+  Command,
 } from "./types.js";
 import { ENGINE_VERSION } from "./types.js";
 import { sanitize, stripConventionStats } from "./llm/serializer.js";
@@ -803,5 +804,251 @@ export function generatePackageDeterministicAgentsMd(
     domainTerminology: "",
     contributingGuidelines: "",
   };
+}
+
+// ─── Minimal Mode ─────────────────────────────────────────────────────────
+// Generates a focused <500 token AGENTS.md matching developer-written file
+// characteristics. No LLM calls. No API key required.
+// Research-backed: comprehensive files hurt (-2%); focused files help (+4%, -29% runtime).
+
+const MIN_CONVENTION_CONFIDENCE = 95;
+const MAX_MINIMAL_COMMANDS = 6;
+const MAX_MINIMAL_WORKFLOW_RULES = 5;
+const MAX_MINIMAL_CONVENTIONS = 2;
+const MAX_MINIMAL_ANTI_PATTERNS = 1;
+const MAX_MINIMAL_DIRECTORIES = 5;
+const MAX_MINIMAL_PACKAGES = 5;
+
+/**
+ * Generate a minimal (<500 token) AGENTS.md from analysis data.
+ * Includes only non-inferrable, high-value information:
+ * - Commands (proven to help, never hurts)
+ * - Workflow rules (co-change patterns the AI can't discover from code)
+ * - Conventions (only if non-obvious AND high-confidence)
+ * - Architecture (only non-obvious directories)
+ * - Package guide (monorepo only)
+ * - One example pointer (if registration patterns exist)
+ *
+ * Returns empty string if analysis has no packages.
+ */
+export function generateMinimalAgentsMd(analysis: StructuredAnalysis): string {
+  const pkg = analysis.packages[0];
+  if (!pkg) return "";
+
+  const sections: string[] = [];
+
+  // 1. Title + description (always)
+  sections.push(`# ${pkg.name}`);
+  if (pkg.description) {
+    sections.push(pkg.description);
+  }
+
+  // 2. Commands (always, capped, triviality-checked)
+  const commands = formatMinimalCommands(analysis);
+
+  // 3. Workflow rules (conditional)
+  const workflow = formatMinimalWorkflowRules(analysis);
+
+  // 4. Conventions (conditional: boolean signal gate + high confidence)
+  const conventions = shouldIncludeMinimalConventions(pkg)
+    ? formatMinimalConventions(pkg)
+    : "";
+
+  // 5. Architecture (conditional: non-obvious dirs)
+  const architecture = shouldIncludeMinimalArchitecture(pkg)
+    ? formatMinimalArchitecture(pkg)
+    : "";
+
+  // 6. Package guide (conditional: monorepo 3+ packages)
+  const packages = formatMinimalPackageGuide(analysis);
+
+  // 7. Example pointer (conditional: has registration pattern)
+  const example = formatExamplePointer(pkg);
+
+  // Assemble non-empty sections
+  const optionalSections = [commands, workflow, conventions, architecture, packages, example]
+    .filter(s => s.length > 0);
+
+  // Kill switch: if we have very little non-title content, add standard note
+  const hasSubstantiveContent = optionalSections.some(s =>
+    s.includes("## Workflow") || s.includes("## Conventions") || s.includes("## Key Directories"),
+  );
+
+  if (!hasSubstantiveContent) {
+    sections.push("Standard project structure — conventions are inferrable from source code.");
+  }
+
+  sections.push(...optionalSections);
+
+  return sections.join("\n\n");
+}
+
+// ─── Minimal: Boolean Signal Gates ──────────────────────────────────────────
+
+function shouldIncludeMinimalConventions(pkg: PackageAnalysis): boolean {
+  const patterns = pkg.contributionPatterns ?? [];
+  const hasRegistration = patterns.some(p => p.registrationFile);
+  const hasNonStandardImports = patterns.some(p =>
+    (p.commonImports?.length ?? 0) > 0,
+  );
+  return hasRegistration || hasNonStandardImports;
+}
+
+function shouldIncludeMinimalArchitecture(pkg: PackageAnalysis): boolean {
+  return pkg.architecture.directories.some(d => !isObviousDirectory(d.path));
+}
+
+// ─── Minimal: Section Formatters ────────────────────────────────────────────
+
+function formatMinimalCommands(analysis: StructuredAnalysis): string {
+  const pkg = analysis.packages[0];
+  if (!pkg) return "";
+
+  const cs = analysis.crossPackage?.rootCommands ?? pkg.commands;
+  const pm = cs.packageManager;
+  const cmds: { label: string; run: string }[] = [];
+
+  if (cs.build) cmds.push({ label: "Build", run: cs.build.run });
+  if (cs.test) {
+    cmds.push({ label: "Test", run: cs.test.run });
+    for (const v of cs.test.variants ?? []) {
+      cmds.push({ label: `Test (${v.name})`, run: v.run });
+    }
+  }
+  if (cs.lint) cmds.push({ label: "Lint", run: cs.lint.run });
+
+  // Add typecheck from "other" commands if present
+  for (const cmd of cs.other) {
+    if (/type-?check/i.test(cmd.run) || /\btsc\b/i.test(cmd.run)) {
+      cmds.push({ label: "Type check", run: cmd.run });
+      break;
+    }
+  }
+
+  if (cs.start) cmds.push({ label: "Dev", run: cs.start.run });
+
+  // Fill remaining slots with non-duplicate "other" commands
+  const addedRuns = new Set(cmds.map(c => c.run));
+  for (const cmd of cs.other) {
+    if (cmds.length >= MAX_MINIMAL_COMMANDS) break;
+    if (addedRuns.has(cmd.run)) continue;
+    cmds.push({ label: sanitize(cmd.source, 30), run: cmd.run });
+    addedRuns.add(cmd.run);
+  }
+
+  const capped = cmds.slice(0, MAX_MINIMAL_COMMANDS);
+  if (capped.length === 0) return "";
+
+  // Triviality check: if ALL commands are trivial, just note it
+  const allTrivial = capped.every(c => isCommandTrivial(c.run, pm));
+  if (allTrivial) {
+    return `## Commands\n\nStandard \`${pm}\` scripts — see \`package.json\` for details.`;
+  }
+
+  const lines = ["## Commands", ""];
+  for (const cmd of capped) {
+    lines.push(`- **${cmd.label}**: \`${cmd.run}\``);
+  }
+  return lines.join("\n");
+}
+
+function formatMinimalWorkflowRules(analysis: StructuredAnalysis): string {
+  const rules: string[] = [];
+
+  // From cross-package workflow rules (git co-change based)
+  for (const rule of analysis.crossPackage?.workflowRules ?? []) {
+    if (rules.length >= MAX_MINIMAL_WORKFLOW_RULES) break;
+    rules.push(`- ${rule.trigger} → ${rule.action}`);
+  }
+
+  // From contribution patterns with registration files
+  const pkg = analysis.packages[0];
+  if (pkg) {
+    const seen = new Set(rules);
+    for (const pattern of pkg.contributionPatterns ?? []) {
+      if (rules.length >= MAX_MINIMAL_WORKFLOW_RULES) break;
+      if (!pattern.registrationFile) continue;
+      const rule = `- When adding to \`${pattern.directory}/\` → register in \`${pattern.registrationFile}\``;
+      if (!seen.has(rule)) {
+        rules.push(rule);
+        seen.add(rule);
+      }
+    }
+  }
+
+  if (rules.length === 0) return "";
+  return ["## Workflow Rules", "", ...rules].join("\n");
+}
+
+function formatMinimalConventions(pkg: PackageAnalysis): string {
+  const doRules: string[] = [];
+  const dontRules: string[] = [];
+
+  // Filter to ≥95% confidence, sorted by confidence descending
+  const highConf = pkg.conventions
+    .filter(c => c.confidence.percentage >= MIN_CONVENTION_CONFIDENCE)
+    .sort((a, b) => b.confidence.percentage - a.confidence.percentage);
+
+  for (const conv of highConf) {
+    if (doRules.length >= MAX_MINIMAL_CONVENTIONS) break;
+    const desc = stripConventionStats(conv.description);
+    if (!desc) continue;
+    const ex = conv.examples.length > 0
+      ? ` (e.g., \`${sanitize(conv.examples[0], 40)}\`)`
+      : "";
+    doRules.push(`- **DO**: ${desc}${ex}`);
+  }
+
+  for (const ap of pkg.antiPatterns) {
+    if (dontRules.length >= MAX_MINIMAL_ANTI_PATTERNS) break;
+    dontRules.push(`- **DON'T**: ${sanitize(ap.rule, 120)}`);
+  }
+
+  if (doRules.length === 0 && dontRules.length === 0) return "";
+  return ["## Conventions", "", ...doRules, ...dontRules].join("\n");
+}
+
+function formatMinimalArchitecture(pkg: PackageAnalysis): string {
+  const nonObvious = pkg.architecture.directories
+    .filter(d => !isObviousDirectory(d.path))
+    .slice(0, MAX_MINIMAL_DIRECTORIES);
+
+  if (nonObvious.length === 0) return "";
+
+  const lines = ["## Key Directories (non-exhaustive)", ""];
+  for (const dir of nonObvious) {
+    lines.push(`- \`${dir.path}/\` — ${dir.purpose}`);
+  }
+  return lines.join("\n");
+}
+
+function formatMinimalPackageGuide(analysis: StructuredAnalysis): string {
+  if (analysis.packages.length < 3) return "";
+
+  const lines = ["## Packages", ""];
+  const pkgs = analysis.packages.slice(0, MAX_MINIMAL_PACKAGES);
+  for (const p of pkgs) {
+    const desc = p.description || p.role || p.architecture.packageType;
+    lines.push(`- \`${p.relativePath}\` — ${desc}`);
+  }
+
+  const remaining = analysis.packages.length - MAX_MINIMAL_PACKAGES;
+  if (remaining > 0) {
+    lines.push(`- ...and ${remaining} other packages`);
+  }
+  return lines.join("\n");
+}
+
+function formatExamplePointer(pkg: PackageAnalysis): string {
+  const pattern = (pkg.contributionPatterns ?? []).find(p => p.registrationFile);
+  if (!pattern) return "";
+  return `> **Example**: See \`${pattern.exampleFile}\` for the canonical pattern (register in \`${pattern.registrationFile}\`).`;
+}
+
+function isCommandTrivial(run: string, pm: string): boolean {
+  const parts = run.trim().split(/\s+/);
+  if (parts.length <= 2 && parts[0] === pm) return true;
+  if (parts.length === 3 && parts[0] === pm && parts[1] === "run") return true;
+  return false;
 }
 

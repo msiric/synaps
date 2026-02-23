@@ -29,6 +29,7 @@ Arguments:
   paths                Package directories to analyze (default: current directory)
 
 Options:
+  --minimal            Focused output (<500 tokens, no API key needed — recommended)
   --format, -f         Output format: json, agents.md, claude.md, cursorrules
                        (default: json, or agents.md if ANTHROPIC_API_KEY is set)
   --output, -o         Output directory (default: current directory)
@@ -37,24 +38,21 @@ Options:
   --hierarchical       Produce root AGENTS.md + per-package detail files (default for multi-package)
   --flat               Force single-file output even for multi-package
   --merge              Preserve human-written sections in existing AGENTS.md (uses delimiters)
-  --llm-synthesis      LLM synthesis mode: deterministic (default) or full
-                       deterministic: 13 sections in code, 2 via micro-LLM (accurate)
-                       full: entire output via LLM (legacy, may hallucinate)
   --diff <path>        Compare against previous analysis JSON and output a diff report
   --quiet, -q          Suppress warnings
   --verbose, -v        Print detailed timing and budget validation
-  --dry-run            Print structured analysis to stdout (no LLM call, no file write)
+  --dry-run            Print to stdout (no file writes)
   --help               Show this help text
 
 Environment Variables:
-  ANTHROPIC_API_KEY    Required for agents.md/claude.md/cursorrules output
+  ANTHROPIC_API_KEY    Optional. Enables richer output (architecture + domain synthesis)
 
 Examples:
-  npx autodocs-engine analyze ./packages/my-pkg
-  npx autodocs-engine analyze ./packages/my-pkg --format agents.md
-  npx autodocs-engine analyze ./packages/pkg-a ./packages/pkg-b --hierarchical
-  npx autodocs-engine analyze ./packages/pkg-a ./packages/pkg-b --flat
-  npx autodocs-engine analyze ./packages/my-pkg --root . --dry-run
+  npx autodocs-engine init --minimal                    # Focused AGENTS.md, no API key
+  npx autodocs-engine init                              # Full AGENTS.md (needs API key)
+  npx autodocs-engine serve                             # Start MCP server
+  npx autodocs-engine analyze . --minimal --dry-run     # Preview minimal output
+  npx autodocs-engine check                             # CI staleness check
 `.trim();
 
 async function main() {
@@ -95,6 +93,7 @@ async function main() {
       verbose: args.verbose,
       dryRun: args.dryRun,
       maxTasks: args.maxTasks,
+      benchmarkMode: args.benchmarkMode,
     });
     process.exit(0);
   }
@@ -130,9 +129,14 @@ async function main() {
     }
   }
 
-  // Dry-run: print JSON to stdout
+  // Dry-run: print to stdout
   if (args.dryRun) {
-    process.stdout.write(JSON.stringify(analysis, mapReplacer, 2) + "\n");
+    if (args.minimal) {
+      const { generateMinimalAgentsMd } = await import("../deterministic-formatter.js");
+      process.stdout.write(generateMinimalAgentsMd(analysis) + "\n");
+    } else {
+      process.stdout.write(JSON.stringify(analysis, mapReplacer, 2) + "\n");
+    }
     process.exit(0);
   }
 
@@ -200,6 +204,24 @@ async function writeFlatOutput(
   config: import("../types.js").ResolvedConfig,
   args: import("../config.js").ParsedArgs,
 ): Promise<void> {
+  // Minimal mode: pure deterministic, no LLM, <500 tokens
+  if (args.minimal) {
+    const { generateMinimalAgentsMd } = await import("../deterministic-formatter.js");
+    const minimalContent = generateMinimalAgentsMd(analysis);
+    if (args.verbose)
+      process.stderr.write(`[INFO] Minimal mode: ${minimalContent.split("\n").length} lines, ~${Math.round(minimalContent.length / 3.5)} tokens\n`);
+    if (args.dryRun) {
+      process.stdout.write(minimalContent + "\n");
+      return;
+    }
+    const filename = OUTPUT_FILENAMES[config.output.format] ?? "AGENTS.md";
+    const outputPath = resolve(config.output.dir, filename);
+    writeFileSafe(outputPath, minimalContent);
+    if (!args.quiet)
+      process.stderr.write(`Written to ${outputPath}\n`);
+    return;
+  }
+
   // Determine synthesis mode: default is "deterministic" for agents.md
   const synthesisMode = args.llmSynthesis ?? (config.output.format === "agents.md" ? "deterministic" : "full");
 
