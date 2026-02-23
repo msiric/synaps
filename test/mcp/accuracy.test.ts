@@ -56,10 +56,12 @@ describe("MCP accuracy: get_architecture", () => {
   it("lists real directories", () => {
     const result = tools.handleGetArchitecture(analysis, {});
     const text = result.content[0].text;
-    // These directories actually exist in our project
+    // Non-obvious directories should be listed (detectors, mcp, benchmark, llm)
+    // Obvious directories (bin, test) are filtered out by design
     expect(text).toContain("detectors");
     expect(text).toContain("mcp");
-    expect(text).toContain("bin");
+    // "bin" is in OBVIOUS_DIR_NAMES so it's filtered — check for standard dirs note instead
+    expect(text).toMatch(/standard director|non-exhaustive/i);
   });
 
   it("shows correct entry point", () => {

@@ -35,6 +35,15 @@ export function handleGetCommands(
   return { content: [{ type: "text", text: lines.join("\n") }] };
 }
 
+// Standard directory names that AI can infer without guidance
+const OBVIOUS_DIR_NAMES = new Set([
+  "src", "lib", "dist", "build", "out", "components", "utils", "util",
+  "types", "hooks", "styles", "assets", "public", "pages", "app", "api",
+  "config", "constants", "test", "tests", "__tests__", "middleware",
+  "services", "store", "context", "common", "shared", "core", "server",
+  "client", "bin", "cli",
+]);
+
 export function handleGetArchitecture(
   analysis: StructuredAnalysis,
   args: { packagePath?: string },
@@ -47,12 +56,37 @@ export function handleGetArchitecture(
   lines.push(`Type: ${arch.packageType} | Entry: ${arch.entryPoint}`);
   lines.push("");
 
-  for (const dir of arch.directories) {
-    const exportsStr = dir.exports.length > 0
-      ? ` — exports: ${dir.exports.slice(0, 5).join(", ")}${dir.exports.length > 5 ? `, +${dir.exports.length - 5} more` : ""}`
-      : "";
-    lines.push(`  ${dir.path}/ (${dir.fileCount} files) — ${dir.purpose}${exportsStr}`);
-    if (dir.pattern) lines.push(`    Pattern: ${dir.pattern}`);
+  // Separate non-obvious from obvious directories
+  const nonObvious = arch.directories.filter(dir => {
+    const name = dir.path.replace(/\/$/, "").split("/").pop()?.toLowerCase() ?? "";
+    return !OBVIOUS_DIR_NAMES.has(name);
+  });
+  const obviousCount = arch.directories.length - nonObvious.length;
+
+  if (nonObvious.length > 0) {
+    lines.push("Key directories (non-exhaustive — explore the source tree for additional directories):");
+    lines.push("");
+    for (const dir of nonObvious) {
+      const exportsStr = dir.exports.length > 0
+        ? ` — exports: ${dir.exports.slice(0, 5).join(", ")}${dir.exports.length > 5 ? `, +${dir.exports.length - 5} more` : ""}`
+        : "";
+      lines.push(`  ${dir.path}/ (${dir.fileCount} files) — ${dir.purpose}${exportsStr}`);
+      if (dir.pattern) lines.push(`    Pattern: ${dir.pattern}`);
+    }
+    if (obviousCount > 0) {
+      lines.push("");
+      lines.push(`Plus ${obviousCount} standard directories with conventional purposes.`);
+    }
+  } else {
+    lines.push("All directories:");
+    for (const dir of arch.directories) {
+      const exportsStr = dir.exports.length > 0
+        ? ` — exports: ${dir.exports.slice(0, 5).join(", ")}${dir.exports.length > 5 ? `, +${dir.exports.length - 5} more` : ""}`
+        : "";
+      lines.push(`  ${dir.path}/ (${dir.fileCount} files) — ${dir.purpose}${exportsStr}`);
+    }
+    lines.push("");
+    lines.push("Standard project structure — explore the source tree for details.");
   }
 
   return { content: [{ type: "text", text: lines.join("\n") }] };

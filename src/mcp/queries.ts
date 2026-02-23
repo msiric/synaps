@@ -190,3 +190,6 @@ export function getTechStackSummary(
   }
   return parts.join(" | ") || "TypeScript";
 }
+
+export { computeInferabilityScore } from "../inferability.js";
+export type { InferabilityScore } from "../inferability.js";

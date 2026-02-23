@@ -48,8 +48,8 @@ function makeMinimalAnalysis(overrides: Partial<PackageAnalysis> = {}): Structur
           {
             category: "file-naming",
             name: "kebab-case",
-            description: "All files use kebab-case naming 34 of 34 files (100%)",
-            confidence: { matched: 34, total: 34, percentage: 100, description: "34 of 34 files (100%)" },
+            description: "Most files use kebab-case naming 24 of 34 files (71%)",
+            confidence: { matched: 24, total: 34, percentage: 71, description: "24 of 34 files (71%)" },
             examples: ["user-profile.ts", "auth-handler.ts"],
             impact: "high",
           },
@@ -69,7 +69,10 @@ function makeMinimalAnalysis(overrides: Partial<PackageAnalysis> = {}): Structur
           entryPoint: "index.ts",
           directories: [
             { path: "src/hooks", purpose: "React hooks", fileCount: 4, exports: ["useAuth", "useToggle"] },
-            { path: "src/api", purpose: "API client", fileCount: 3, exports: ["fetchData", "postData"] },
+            { path: "src/adapters", purpose: "Framework adapters", fileCount: 5, exports: ["reactAdapter"] },
+            { path: "src/protocols", purpose: "Wire protocols", fileCount: 3, exports: ["httpProtocol"] },
+            { path: "src/orchestrators", purpose: "Pipeline orchestrators", fileCount: 4, exports: ["runPipeline"] },
+            { path: "src/detectors", purpose: "Convention detectors", fileCount: 8, exports: ["fileNaming"] },
           ],
           packageType: "library",
           hasJSX: true,
@@ -105,6 +108,19 @@ function makeMinimalAnalysis(overrides: Partial<PackageAnalysis> = {}): Structur
             testPattern: "use-*.test.ts",
             exampleFile: "src/hooks/use-auth.ts",
             steps: ["Create hook file", "Export from index.ts", "Add test"],
+            commonImports: [{ specifier: "../types.js", symbols: ["HookConfig"], coverage: 0.9 }],
+            exportSuffix: "Hook",
+            registrationFile: "src/hooks/index.ts",
+          },
+          {
+            type: "function",
+            directory: "src/detectors",
+            filePattern: "{name}-detector.ts",
+            exampleFile: "src/detectors/file-naming.ts",
+            steps: ["Create detector", "Register in extractor"],
+            commonImports: [{ specifier: "../types.js", symbols: ["Convention"], coverage: 0.85 }],
+            exportSuffix: "Detector",
+            registrationFile: "src/convention-extractor.ts",
           },
         ],
         dependencyInsights: {
@@ -232,7 +248,7 @@ describe("deterministic-formatter", () => {
       const analysis = makeMinimalAnalysis();
       const result = generateDeterministicAgentsMd(analysis);
       expect(result.howToAddCode).toContain("## How to Add New Code");
-      expect(result.howToAddCode).toContain("### hooks"); // directory name as header
+      expect(result.howToAddCode).toContain("### Hook"); // exportSuffix as header
       expect(result.howToAddCode).toContain("src/hooks/use-auth.ts"); // example file
     });
 
@@ -388,8 +404,11 @@ describe("deterministic-formatter", () => {
       expect(result).toContain("## Architecture");
       expect(result).toContain("library");
       expect(result).toContain("index.ts");
-      expect(result).toContain("React hooks");
-      expect(result).toContain("useAuth");
+      // Non-obvious directories should be listed
+      expect(result).toContain("Framework adapters");
+      expect(result).toContain("Wire protocols");
+      // Obvious directories (hooks, api) are filtered — should mention standard dirs
+      expect(result).toMatch(/standard director|non-exhaustive/i);
     });
   });
 

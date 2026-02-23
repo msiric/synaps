@@ -10,6 +10,45 @@ import { ENGINE_VERSION } from "./types.js";
 import { sanitize, stripConventionStats } from "./llm/serializer.js";
 import { PACKAGE_TO_FAMILY } from "./meta-tool-detector.js";
 import { computeImpactRadius, impactLabel, complexityLabel } from "./impact-radius.js";
+import { computeInferabilityScore } from "./inferability.js";
+
+// ─── Directory Inferability ──────────────────────────────────────────────────
+// Directories with these names are "obvious" — AI can infer their purpose
+// from the name alone. Non-obvious directories benefit from AGENTS.md listing.
+
+const OBVIOUS_DIR_NAMES = new Set([
+  "src", "lib", "dist", "build", "out", "coverage",
+  "components", "component", "utils", "util", "utilities", "helpers", "helper",
+  "types", "typings", "interfaces", "models", "model",
+  "hooks", "hook",
+  "styles", "css", "assets", "images", "icons", "fonts",
+  "public", "static",
+  "pages", "page", "views", "view", "screens",
+  "app", "apps",
+  "api", "apis", "routes", "route", "controllers", "controller",
+  "config", "configs", "configuration", "settings",
+  "constants", "const",
+  "test", "tests", "__tests__", "spec", "specs", "__test__",
+  "middleware", "middlewares",
+  "services", "service",
+  "store", "stores", "state",
+  "context", "contexts", "providers",
+  "actions", "reducers", "selectors",
+  "layouts", "layout",
+  "features", "modules",
+  "common", "shared", "core",
+  "server", "client",
+  "bin", "cli", "cmd",
+]);
+
+/**
+ * Check if a directory name is "obvious" — the AI can infer its purpose
+ * without AGENTS.md telling it.
+ */
+function isObviousDirectory(dirPath: string): boolean {
+  const name = dirPath.replace(/\/$/, "").split("/").pop()?.toLowerCase() ?? "";
+  return OBVIOUS_DIR_NAMES.has(name);
+}
 
 // ─── Output Type ─────────────────────────────────────────────────────────────
 
@@ -47,22 +86,35 @@ const MAX_TEAM_KNOWLEDGE_QUESTIONS = 7;
 export function generateDeterministicAgentsMd(
   analysis: StructuredAnalysis,
 ): DeterministicOutput {
+  // Compute inferability score to decide which sections to include.
+  // High score = AI can infer patterns from source → skip pattern sections.
+  // Low score = non-obvious patterns → include everything.
+  const primaryPkg = analysis.packages[0];
+  const inferability = primaryPkg ? computeInferabilityScore(primaryPkg) : null;
+  const rec = inferability?.recommendation ?? "full";
+
   return {
     title: formatTitle(analysis),
     summary: formatSummary(analysis),
     techStack: formatTechStack(analysis),
-    commands: formatCommands(analysis),
-    packageGuide: formatPackageGuide(analysis),
-    workflowRules: formatWorkflowRules(analysis),
-    howToAddCode: formatContributionPatterns(analysis),
-    publicAPI: formatPublicAPI(analysis),
-    dependencies: formatDependencies(analysis),
-    conventions: formatConventions(analysis),
-    changeImpact: formatChangeImpact(analysis),
+    commands: formatCommands(analysis),                           // Always include
+    packageGuide: formatPackageGuide(analysis),                   // Always include
+    workflowRules: formatWorkflowRules(analysis),                 // Always include
+    howToAddCode: rec !== "skip"
+      ? formatContributionPatterns(analysis)                      // Skip if highly inferable
+      : "",
+    publicAPI: rec === "full"
+      ? formatPublicAPI(analysis)                                 // Only for non-obvious repos
+      : "",
+    dependencies: formatDependencies(analysis),                   // Always include (lightweight)
+    conventions: rec === "full"
+      ? formatConventions(analysis)                               // Only for non-obvious repos
+      : "",
+    changeImpact: formatChangeImpact(analysis),                   // Always include
     supportedFrameworks: formatSupportedFrameworks(analysis),
     dependencyGraph: formatDependencyGraph(analysis),
     mermaidDiagram: formatMermaidDiagram(analysis),
-    teamKnowledge: formatTeamKnowledge(analysis),
+    teamKnowledge: formatTeamKnowledge(analysis),                 // Always include
     architecture: "",
     domainTerminology: "",
     contributingGuidelines: "",
@@ -683,15 +735,33 @@ export function formatArchitectureFallback(pkg: PackageAnalysis): string {
   lines.push(`**Entry point:** \`${pkg.architecture.entryPoint}\``);
   lines.push("");
 
-  for (const dir of pkg.architecture.directories) {
-    if (dir.exports && dir.exports.length > 0) {
-      const exportList = dir.exports.length <= 5
-        ? dir.exports.join(", ")
-        : `${dir.exports.slice(0, 5).join(", ")} (+${dir.exports.length - 5} more)`;
-      lines.push(`- **${dir.purpose}** (\`${dir.path}/\`): ${exportList}`);
-    } else {
-      lines.push(`- **${dir.purpose}** (\`${dir.path}/\`, ${dir.fileCount} files)`);
+  // Filter to non-obvious directories only — obvious dirs (src/, lib/, utils/)
+  // are inferable by AI from source code. Listing them creates an anchoring effect
+  // that can HURT performance by blocking exploration of unlisted directories.
+  const nonObviousDirs = pkg.architecture.directories.filter(
+    dir => !isObviousDirectory(dir.path),
+  );
+  const obviousCount = pkg.architecture.directories.length - nonObviousDirs.length;
+
+  if (nonObviousDirs.length > 0) {
+    lines.push("Key directories (non-exhaustive — explore the source tree for additional directories):");
+    lines.push("");
+    for (const dir of nonObviousDirs) {
+      if (dir.exports && dir.exports.length > 0) {
+        const exportList = dir.exports.length <= 5
+          ? dir.exports.join(", ")
+          : `${dir.exports.slice(0, 5).join(", ")} (+${dir.exports.length - 5} more)`;
+        lines.push(`- **${dir.purpose}** (\`${dir.path}/\`): ${exportList}`);
+      } else {
+        lines.push(`- **${dir.purpose}** (\`${dir.path}/\`, ${dir.fileCount} files)`);
+      }
     }
+    if (obviousCount > 0) {
+      lines.push("");
+      lines.push(`Plus ${obviousCount} standard directories (src/, lib/, etc.) with conventional purposes.`);
+    }
+  } else {
+    lines.push("Standard project structure — directory purposes are inferable from names and contents.");
   }
 
   return lines.join("\n");
