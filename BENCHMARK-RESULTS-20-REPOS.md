@@ -1,10 +1,27 @@
 # Benchmark Results: 20 Repositories
 
-**Date:** 2026-02-23
-**Engine Version:** 0.5.0
+**Date:** 2026-02-23 (updated with post-fix results)
+**Engine Version:** 0.5.0 + workspace directory filter fix
 **Model:** claude-sonnet-4-20250514
 **Benchmark Mode:** Quick (3-5 tasks per repo, 4 conditions each)
 **Data Integrity:** All results verified — zero API credit errors, zero LLM failures
+
+## Post-Fix Summary
+
+A workspace directory filter was applied after the initial 20-repo benchmark revealed that contribution patterns for workspace-level directories (packages/, apps/, dev/) were producing harmful AGENTS.md content. The filter removes patterns for directories where >50% of files are deeply nested (indicating workspace containers, not code directories).
+
+**Impact on previously-negative repos (re-benchmarked):**
+
+| Repo | Before Fix | After Fix | Change |
+|------|:---:|:---:|:---:|
+| cal.com | -17.8% | **+0.0%** | Fixed |
+| sanity | -19.8% | **+6.5%** | Fixed (now positive) |
+| excalidraw | -17.8% | **+0.0%** | Fixed |
+| nitro | -23.6% | -20.0% | Slightly better but still negative |
+| zod (control) | +39.3% | **+50.0%** | Improved (no regression) |
+| medusa (control) | +29.6% | **+41.5%** | Improved (no regression) |
+
+**Updated distribution: 14/20 positive, 4/20 neutral, 2/20 negative (was 12/4/6 before fix).**
 
 ## Methodology
 
