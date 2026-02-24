@@ -235,13 +235,26 @@ export function getBarrelFile(
 ): string | null {
   const pkg = resolvePackage(analysis, packagePath);
   const dir = directory.replace(/\/$/, "");
-  // Check if index.ts or index.tsx exists in this directory
+  const rootDir = analysis.meta?.rootDir;
+  // Check if index.ts or index.tsx exists AND actually contains re-exports
+  // (index.ts files that are entry points, not barrels, should be skipped)
   const allFiles = [
     ...pkg.files.byTier.tier1.files,
     ...pkg.files.byTier.tier2.files,
   ];
-  for (const barrel of [`${dir}/index.ts`, `${dir}/index.tsx`]) {
-    if (allFiles.includes(barrel)) return barrel;
+  for (const barrelPath of [`${dir}/index.ts`, `${dir}/index.tsx`]) {
+    if (!allFiles.includes(barrelPath)) continue;
+    // Verify it has re-export statements
+    if (rootDir) {
+      try {
+        const content = readFileSync(resolve(rootDir, barrelPath), "utf-8");
+        if (/export\s+(?:\*|\{[^}]+\})\s+from\s+["']/.test(content)) {
+          return barrelPath;
+        }
+      } catch { /* can't read — skip */ }
+    } else {
+      return barrelPath; // No rootDir to verify — trust the file list
+    }
   }
   return null;
 }
@@ -433,11 +446,13 @@ export function getRegistrationInsertions(
     try {
       const content = readFileSync(resolve(rootDir, barrelPath), "utf-8");
       const lastExportLine = findLastExportFromLine(content);
-      const moduleRef = "./" + fileBase + ".js";
+      // Use .ts extension if barrel uses .ts imports (e.g., nitro), else .js
+      const useTsExtension = content.includes('.ts"') || content.includes(".ts'");
+      const moduleRef = "./" + fileBase + (useTsExtension ? ".ts" : ".js");
 
       barrelResult = {
         path: barrelPath,
-        lastExportLine,
+        lastExportLine: lastExportLine || content.split("\n").length, // Append at end if no prior exports
         exportStatement: `export * from "${moduleRef}";`,
       };
     } catch { /* barrel file not readable */ }
