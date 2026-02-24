@@ -394,8 +394,9 @@ export function handlePlanChange(
     const dir = file.replace(/\/[^/]+$/, "");
     const patterns = Q.getContributionPatterns(analysis, args.packagePath, dir);
     for (const p of patterns) {
-      if (p.registrationFile && !inputSet.has(p.registrationFile)) {
-        registrationFiles.set(p.registrationFile, `registration file for ${p.directory}/`);
+      // Only include registration if the file is actually IN this pattern's directory
+      if (p.registrationFile && !inputSet.has(p.registrationFile) && file.startsWith(p.directory)) {
+        registrationFiles.set(p.registrationFile, `registration file for ${p.directory}`);
       }
     }
     const barrel = Q.getBarrelFile(analysis, dir, args.packagePath);

@@ -8,7 +8,7 @@ import { resolveModuleSpecifier } from "./symbol-graph.js";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const DEFAULT_MIN_SYMBOLS = 5;
+const DEFAULT_MIN_SYMBOLS = 1;  // Track all import edges for MCP tools (analyze_impact, plan_change)
 const DEFAULT_MIN_DEPENDENTS = 3;
 const DEFAULT_MAX_RULES = 5;
 const MAX_DISPLAY_SYMBOLS = 5;
@@ -76,6 +76,8 @@ export function computeImportChain(
  * Generate "when modifying X → check Y, Z, W" workflow rules from import chain data.
  * Groups by source file: if types.ts has 8 high-coupling importers, one rule covers all.
  */
+const HIGH_COUPLING_SYMBOLS = 5;  // Only high-coupling edges generate workflow rules
+
 export function generateImportChainRules(
   importChain: FileImportEdge[],
   minDependents: number = DEFAULT_MIN_DEPENDENTS,
@@ -83,9 +85,12 @@ export function generateImportChainRules(
 ): WorkflowRule[] {
   if (importChain.length === 0) return [];
 
+  // Filter to high-coupling edges for rule generation (≥5 symbols)
+  const highCoupling = importChain.filter(e => e.symbolCount >= HIGH_COUPLING_SYMBOLS);
+
   // Group edges by source file
   const bySource = new Map<string, FileImportEdge[]>();
-  for (const edge of importChain) {
+  for (const edge of highCoupling) {
     const list = bySource.get(edge.source) ?? [];
     list.push(edge);
     bySource.set(edge.source, list);
