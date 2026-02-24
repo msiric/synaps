@@ -134,7 +134,10 @@ WHEN TO CALL:
 DO NOT CALL:
 - User asks WHICH command runs tests (use get_commands)
 - User asks WHERE to put new code (use get_architecture)`,
-    { packagePath: z.string().optional().describe("Package path or name.") },
+    {
+      filePath: z.string().optional().describe("Filter to rules mentioning this file (e.g., 'src/types.ts')"),
+      packagePath: z.string().optional().describe("Package path or name."),
+    },
     async (args) => withTelemetry("get_workflow_rules", () =>
       cache.get().then(a => tools.handleGetWorkflowRules(a, args)),
     ),
@@ -200,7 +203,10 @@ WHEN TO CALL:
 
 WHEN TO CALL:
 - User asks "what patterns does this project follow?", "are there naming conventions?"`,
-    { packagePath: z.string().optional().describe("Package path or name.") },
+    {
+      category: z.string().optional().describe("Filter by convention category (e.g., 'file-naming', 'hooks', 'testing', 'ecosystem')"),
+      packagePath: z.string().optional().describe("Package path or name."),
+    },
     async (args) => withTelemetry("get_conventions", () =>
       cache.get().then(a => tools.handleGetConventions(a, args)),
     ),

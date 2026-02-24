@@ -107,8 +107,15 @@ export function getCoChangesForFile(
     .sort((a, b) => b.jaccard - a.jaccard);
 }
 
-export function getWorkflowRules(analysis: StructuredAnalysis): WorkflowRule[] {
-  return analysis.crossPackage?.workflowRules ?? [];
+export function getWorkflowRules(
+  analysis: StructuredAnalysis,
+  filePath?: string,
+): WorkflowRule[] {
+  const rules = analysis.crossPackage?.workflowRules ?? [];
+  if (!filePath) return rules;
+  return rules.filter(r =>
+    r.trigger.includes(filePath) || r.action.includes(filePath),
+  );
 }
 
 export function getContributionPatterns(
@@ -142,12 +149,16 @@ export function getPublicAPI(
 export function getConventions(
   analysis: StructuredAnalysis,
   packagePath?: string,
+  category?: string,
 ): { conventions: Convention[]; antiPatterns: AntiPattern[] } {
   const pkg = resolvePackage(analysis, packagePath);
   // Filter to non-style conventions (architecture patterns, not naming/formatting)
-  const conventions = (pkg.conventions ?? []).filter(c =>
+  let conventions = (pkg.conventions ?? []).filter(c =>
     c.category !== "file-naming" || (c.confidence.percentage >= 95),
   );
+  if (category) {
+    conventions = conventions.filter(c => c.category === category);
+  }
   return {
     conventions,
     antiPatterns: pkg.antiPatterns ?? [],

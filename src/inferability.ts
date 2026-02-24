@@ -74,6 +74,14 @@ export function computeInferabilityScore(pkg: PackageAnalysis): InferabilityScor
     recommendation = "skip";     // Standard patterns → omit pattern sections
   }
 
+  // Floor rule: if most directories are non-obvious, never "skip" — the repo
+  // has structure worth documenting even if patterns are standard.
+  // Calibrated against 20-repo benchmark: vitest (directoryObviousness=25, delta=+13.2%)
+  // was incorrectly recommended "skip" without this rule.
+  if (directoryObviousness < 40 && recommendation === "skip") {
+    recommendation = "minimal";
+  }
+
   return {
     score,
     factors: { directoryObviousness, namingConsistency, patternUniqueness, registrationComplexity },

@@ -172,9 +172,9 @@ export function handleAnalyzeImpact(
 
 export function handleGetWorkflowRules(
   analysis: StructuredAnalysis,
-  _args: { packagePath?: string },
+  args: { packagePath?: string; filePath?: string },
 ): ToolResult {
-  const rules = Q.getWorkflowRules(analysis);
+  const rules = Q.getWorkflowRules(analysis, args.filePath);
 
   const lines: string[] = [];
   lines.push("## Workflow Rules");
@@ -282,9 +282,9 @@ export function handleGetExports(
 
 export function handleGetConventions(
   analysis: StructuredAnalysis,
-  args: { packagePath?: string },
+  args: { packagePath?: string; category?: string },
 ): ToolResult {
-  const { conventions, antiPatterns } = Q.getConventions(analysis, args.packagePath);
+  const { conventions, antiPatterns } = Q.getConventions(analysis, args.packagePath, args.category);
 
   const lines: string[] = [];
   lines.push("## Conventions");
