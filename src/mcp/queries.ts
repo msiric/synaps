@@ -2,6 +2,8 @@
 // Isolates tool handlers from analysis schema internals.
 // When analysis types change, update here — not in every tool handler.
 
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import type {
   StructuredAnalysis,
   PackageAnalysis,
@@ -222,6 +224,105 @@ export function getTechStackSummary(
     }
   }
   return parts.join(" | ") || "TypeScript";
+}
+
+// ─── Plan Change / Test Info Queries ────────────────────────────────────────
+
+export function getBarrelFile(
+  analysis: StructuredAnalysis,
+  directory: string,
+  packagePath?: string,
+): string | null {
+  const pkg = resolvePackage(analysis, packagePath);
+  const dir = directory.replace(/\/$/, "");
+  // Check if index.ts or index.tsx exists in this directory
+  const allFiles = [
+    ...pkg.files.byTier.tier1.files,
+    ...pkg.files.byTier.tier2.files,
+  ];
+  for (const barrel of [`${dir}/index.ts`, `${dir}/index.tsx`]) {
+    if (allFiles.includes(barrel)) return barrel;
+  }
+  return null;
+}
+
+export interface TestFileInfo {
+  testFile: string | null;
+  exists: boolean;
+  framework: string;
+  command: string;
+  pattern: string;
+}
+
+export function resolveTestFile(
+  analysis: StructuredAnalysis,
+  sourceFilePath: string,
+  packagePath?: string,
+): TestFileInfo {
+  const pkg = resolvePackage(analysis, packagePath);
+  const dir = sourceFilePath.replace(/\/[^/]+$/, "");
+  const baseName = sourceFilePath.replace(/\.[^.]+$/, "");
+  const ext = sourceFilePath.slice(sourceFilePath.lastIndexOf("."));
+
+  // 1. Try contribution pattern's testPattern
+  const patterns = pkg.contributionPatterns ?? [];
+  const pattern = patterns.find(p =>
+    sourceFilePath.startsWith(p.directory) || dir.includes(p.directory),
+  );
+
+  // 2. Candidate test paths (in priority order)
+  const candidates = [
+    `${baseName}.test${ext}`,                    // Co-located: foo.test.ts
+    `${baseName}.spec${ext}`,                    // Co-located: foo.spec.ts
+    `test/${sourceFilePath.replace(/^src\//, "")}`.replace(/\.[^.]+$/, `.test${ext}`), // test/ mirror
+  ];
+
+  // 3. Check which exists — test files are often in tier3 (no file list),
+  // so fall back to existsSync against the repo root
+  const rootDir = analysis.meta?.rootDir;
+  let testFile: string | null = null;
+  let exists = false;
+  for (const candidate of candidates) {
+    if (rootDir && existsSync(resolve(rootDir, candidate))) {
+      testFile = candidate;
+      exists = true;
+      break;
+    }
+  }
+  // If none found on disk, suggest the first candidate
+  if (!testFile) testFile = candidates[0];
+
+  // 4. Detect framework from test command + dependencies
+  const testCmd = pkg.commands.test?.run ?? "";
+  const testSource = pkg.commands.test?.source ?? "";
+  const testFrameworkDep = pkg.dependencyInsights?.testFramework?.name ?? "";
+  const frameworkSignal = `${testCmd} ${testSource} ${testFrameworkDep}`.toLowerCase();
+  let framework = "unknown";
+  if (/vitest/i.test(frameworkSignal)) framework = "vitest";
+  else if (/jest/i.test(frameworkSignal)) framework = "jest";
+  else if (/mocha/i.test(frameworkSignal)) framework = "mocha";
+  else if (/ava/i.test(frameworkSignal)) framework = "ava";
+
+  // 5. Construct per-file command
+  const pm = pkg.commands.packageManager;
+  let command: string;
+  if (framework === "vitest") {
+    command = `npx vitest run ${testFile}`;
+  } else if (framework === "jest") {
+    command = `npx jest ${testFile}`;
+  } else if (testCmd) {
+    command = `${testCmd} -- ${testFile}`;
+  } else {
+    command = `${pm} test -- ${testFile}`;
+  }
+
+  const patternDesc = pattern?.testPattern
+    ? `Pattern: ${pattern.testPattern}`
+    : exists
+      ? "Co-located test file"
+      : "No test pattern detected";
+
+  return { testFile, exists, framework, command, pattern: patternDesc };
 }
 
 export { computeInferabilityScore } from "../inferability.js";

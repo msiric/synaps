@@ -220,5 +220,48 @@ WHEN TO CALL:
     ),
   );
 
+  // ─── New: plan_change ──────────────────────────────────────────────
+  server.tool(
+    "plan_change",
+    `Analyze what files need updating when you change specific files. Returns dependent files (import graph), co-change partners (git history), registration/barrel files that need updating, corresponding test files, blast radius, and an ordered checklist.
+
+WHEN TO CALL:
+- Before making multi-file changes to understand the full impact
+- After editing files, to check what else needs updating
+- When planning a refactor or significant change
+
+DO NOT CALL:
+- For single-line changes in isolated utility files
+- When you just need test commands (use get_test_info instead)`,
+    {
+      files: z.array(z.string()).describe("Files being edited (repo-relative paths, e.g. ['src/types.ts', 'src/pipeline.ts'])"),
+      packagePath: z.string().optional().describe("Package path or name"),
+    },
+    async (args) => withTelemetry("plan_change", () =>
+      cache.get().then(a => tools.handlePlanChange(a, args)),
+    ),
+  );
+
+  // ─── New: get_test_info ───────────────────────────────────────────
+  server.tool(
+    "get_test_info",
+    `Get the test file path and exact run command for a specific source file. Maps source files to their corresponding test files using detected patterns.
+
+WHEN TO CALL:
+- After modifying a file, to know which test to run
+- When adding a new file, to know where the test should go and how to run it
+
+DO NOT CALL:
+- When you want to run the full test suite (use get_commands instead)
+- When you need test conventions for the whole project (use get_conventions with category='testing')`,
+    {
+      filePath: z.string().describe("Source file path (e.g., 'src/detectors/file-naming.ts')"),
+      packagePath: z.string().optional().describe("Package path or name"),
+    },
+    async (args) => withTelemetry("get_test_info", () =>
+      cache.get().then(a => tools.handleGetTestInfo(a, args)),
+    ),
+  );
+
   return { server, cache };
 }

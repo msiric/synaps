@@ -348,6 +348,176 @@ export function handleGetConventions(
   return { content: [{ type: "text", text: lines.join("\n") }] };
 }
 
+// ─── New Tools: plan_change + get_test_info ─────────────────────────────────
+
+const MAX_SECTION_ITEMS = 10;
+const CO_CHANGE_THRESHOLD = 0.25;
+
+export function handlePlanChange(
+  analysis: StructuredAnalysis,
+  args: { files: string[]; packagePath?: string },
+): ToolResult {
+  const inputSet = new Set(args.files);
+  const lines: string[] = [];
+
+  // Collect data across all input files
+  const dependents = new Map<string, { symbols: string[]; symbolCount: number }>();
+  const coChanges = new Map<string, { jaccard: number; count: number }>();
+  const registrationFiles = new Map<string, string>(); // file → reason
+  const barrelFiles = new Set<string>();
+  const testFiles = new Map<string, string>(); // source → test command
+
+  for (const file of args.files) {
+    // 1. Importers (who depends on this file)
+    const importers = Q.getImportersForFile(analysis, file, args.packagePath);
+    for (const imp of importers) {
+      if (inputSet.has(imp.importer)) continue;
+      const existing = dependents.get(imp.importer);
+      if (!existing || imp.symbolCount > existing.symbolCount) {
+        dependents.set(imp.importer, { symbols: imp.symbols, symbolCount: imp.symbolCount });
+      }
+    }
+
+    // 2. Co-change partners (git history)
+    const edges = Q.getCoChangesForFile(analysis, file, args.packagePath);
+    for (const edge of edges) {
+      const partner = edge.file1 === file ? edge.file2 : edge.file1;
+      if (inputSet.has(partner) || dependents.has(partner)) continue;
+      if (edge.jaccard < CO_CHANGE_THRESHOLD) continue;
+      const existing = coChanges.get(partner);
+      if (!existing || edge.jaccard > existing.jaccard) {
+        coChanges.set(partner, { jaccard: edge.jaccard, count: edge.coChangeCount });
+      }
+    }
+
+    // 3. Registration + barrel files
+    const dir = file.replace(/\/[^/]+$/, "");
+    const patterns = Q.getContributionPatterns(analysis, args.packagePath, dir);
+    for (const p of patterns) {
+      if (p.registrationFile && !inputSet.has(p.registrationFile)) {
+        registrationFiles.set(p.registrationFile, `registration file for ${p.directory}/`);
+      }
+    }
+    const barrel = Q.getBarrelFile(analysis, dir, args.packagePath);
+    if (barrel && !inputSet.has(barrel)) {
+      barrelFiles.add(barrel);
+    }
+
+    // 4. Test files
+    const testInfo = Q.resolveTestFile(analysis, file, args.packagePath);
+    if (testInfo.testFile) {
+      testFiles.set(file, testInfo.command);
+    }
+  }
+
+  // Blast radius
+  const totalAffected = dependents.size + coChanges.size + registrationFiles.size + barrelFiles.size;
+  const radius = totalAffected <= 5 ? "Small" : totalAffected <= 15 ? "Medium" : "Large";
+
+  lines.push("## Change Plan");
+  lines.push("");
+  lines.push(`**Blast radius: ${radius}** — ${dependents.size} dependents, ${coChanges.size} co-change partners, ${registrationFiles.size + barrelFiles.size} registration/barrel updates.`);
+
+  // Dependents
+  if (dependents.size > 0) {
+    lines.push("");
+    lines.push("### Dependent Files (import graph)");
+    const sorted = [...dependents.entries()].sort((a, b) => b[1].symbolCount - a[1].symbolCount);
+    for (const [file, info] of sorted.slice(0, MAX_SECTION_ITEMS)) {
+      lines.push(`- \`${file}\` — ${info.symbolCount} symbols: ${info.symbols.join(", ")}`);
+    }
+    if (sorted.length > MAX_SECTION_ITEMS) {
+      lines.push(`- ...and ${sorted.length - MAX_SECTION_ITEMS} more`);
+    }
+  }
+
+  // Co-changes
+  if (coChanges.size > 0) {
+    lines.push("");
+    lines.push("### Co-Change Partners (git history)");
+    const sorted = [...coChanges.entries()].sort((a, b) => b[1].jaccard - a[1].jaccard);
+    for (const [file, info] of sorted.slice(0, MAX_SECTION_ITEMS)) {
+      const pct = Math.round(info.jaccard * 100);
+      lines.push(`- \`${file}\` — Jaccard ${pct}%, co-changed ${info.count} times`);
+    }
+  }
+
+  // Registration + barrel
+  if (registrationFiles.size > 0 || barrelFiles.size > 0) {
+    lines.push("");
+    lines.push("### Registration / Barrel Updates");
+    for (const [file, reason] of registrationFiles) {
+      lines.push(`- \`${file}\` — ${reason}`);
+    }
+    for (const barrel of barrelFiles) {
+      lines.push(`- \`${barrel}\` — barrel file (add re-export)`);
+    }
+  }
+
+  // Test files
+  if (testFiles.size > 0) {
+    lines.push("");
+    lines.push("### Test Files");
+    for (const [source, command] of testFiles) {
+      lines.push(`- \`${source}\` → \`${command}\``);
+    }
+  }
+
+  // Checklist
+  const checklist: string[] = [];
+  checklist.push("1. Edit the primary files");
+  for (const barrel of barrelFiles) {
+    checklist.push(`${checklist.length + 1}. Update barrel: \`${barrel}\``);
+  }
+  for (const [file] of registrationFiles) {
+    checklist.push(`${checklist.length + 1}. Update registration: \`${file}\``);
+  }
+  if (coChanges.size > 0) {
+    const top = [...coChanges.entries()].sort((a, b) => b[1].jaccard - a[1].jaccard)[0];
+    checklist.push(`${checklist.length + 1}. Verify co-change partner: \`${top[0]}\``);
+  }
+  if (testFiles.size > 0) {
+    const firstCmd = [...testFiles.values()][0];
+    checklist.push(`${checklist.length + 1}. Run tests: \`${firstCmd}\``);
+  }
+
+  if (checklist.length > 1) {
+    lines.push("");
+    lines.push("### Checklist");
+    lines.push(...checklist);
+  }
+
+  if (totalAffected === 0 && testFiles.size === 0) {
+    lines.push("");
+    lines.push("No dependent files, co-change partners, or registration points found. This change appears isolated.");
+  }
+
+  return { content: [{ type: "text", text: lines.join("\n") }] };
+}
+
+export function handleGetTestInfo(
+  analysis: StructuredAnalysis,
+  args: { filePath: string; packagePath?: string },
+): ToolResult {
+  const info = Q.resolveTestFile(analysis, args.filePath, args.packagePath);
+  const lines: string[] = [];
+
+  lines.push(`## Test Info: ${args.filePath}`);
+  lines.push("");
+
+  if (info.testFile) {
+    lines.push(`**Test file:** \`${info.testFile}\` (${info.exists ? "exists" : "suggested — does not exist yet"})`);
+  } else {
+    lines.push("**Test file:** Not found");
+  }
+
+  lines.push(`**Framework:** ${info.framework}`);
+  lines.push(`**Run command:** \`${info.command}\``);
+  lines.push(`**${info.pattern}**`);
+
+  return { content: [{ type: "text", text: lines.join("\n") }] };
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const MAX_EXAMPLE_LINES = 15;
