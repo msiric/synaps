@@ -24,6 +24,7 @@ import { dataFetchingDetector } from "./detectors/data-fetching.js";
 import { databaseDetector } from "./detectors/database.js";
 import { webFrameworkDetector } from "./detectors/web-framework.js";
 import { buildToolDetector } from "./detectors/build-tool.js";
+import { importOrderingDetector } from "./detectors/import-ordering.js";
 
 const DETECTOR_REGISTRY: Record<string, ConventionDetector> = {
   // Core
@@ -36,6 +37,7 @@ const DETECTOR_REGISTRY: Record<string, ConventionDetector> = {
   database: databaseDetector,
   webFramework: webFrameworkDetector,
   buildTool: buildToolDetector,
+  importOrdering: importOrderingDetector,
 };
 
 /**

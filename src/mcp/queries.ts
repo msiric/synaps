@@ -261,25 +261,58 @@ export function resolveTestFile(
 ): TestFileInfo {
   const pkg = resolvePackage(analysis, packagePath);
   const dir = sourceFilePath.replace(/\/[^/]+$/, "");
-  const baseName = sourceFilePath.replace(/\.[^.]+$/, "");
+  const fileBase = sourceFilePath.replace(/.*\//, "").replace(/\.[^.]+$/, "");
   const ext = sourceFilePath.slice(sourceFilePath.lastIndexOf("."));
+  const rootDir = analysis.meta?.rootDir;
 
-  // 1. Try contribution pattern's testPattern
+  // Find contribution pattern for export suffix
   const patterns = pkg.contributionPatterns ?? [];
   const pattern = patterns.find(p =>
     sourceFilePath.startsWith(p.directory) || dir.includes(p.directory),
   );
 
-  // 2. Candidate test paths (in priority order)
-  const candidates = [
-    `${baseName}.test${ext}`,                    // Co-located: foo.test.ts
-    `${baseName}.spec${ext}`,                    // Co-located: foo.spec.ts
-    `test/${sourceFilePath.replace(/^src\//, "")}`.replace(/\.[^.]+$/, `.test${ext}`), // test/ mirror
+  // Build comprehensive candidate list covering all common test patterns:
+  // 1. Co-located in same directory
+  // 2. Separate test/ directory mirroring src/ structure
+  // 3. Separate test/ directory flattened (no subdirs)
+  // 4. Separate test/ with export-suffix naming
+  // 5. __tests__/ subdirectory
+  const strippedPath = sourceFilePath.replace(/^src\//, "");
+  const strippedBase = strippedPath.replace(/\.[^.]+$/, "");
+
+  const candidates: string[] = [
+    // Co-located: src/foo.ts → src/foo.test.ts
+    `${dir}/${fileBase}.test${ext}`,
+    `${dir}/${fileBase}.spec${ext}`,
+
+    // Separate test/ mirroring src/ subdirectories: src/mcp/tools.ts → test/mcp/tools.test.ts
+    `test/${strippedBase}.test${ext}`,
+    `test/${strippedBase}.spec${ext}`,
+
+    // Separate test/ flattened: src/detectors/foo.ts → test/foo.test.ts
+    `test/${fileBase}.test${ext}`,
+    `test/${fileBase}.spec${ext}`,
+
+    // __tests__ subdirectory: src/foo.ts → src/__tests__/foo.test.ts
+    `${dir}/__tests__/${fileBase}.test${ext}`,
+    `${dir}/__tests__/${fileBase}.spec${ext}`,
+
+    // tests/ (plural) variants of all above
+    `tests/${strippedBase}.test${ext}`,
+    `tests/${fileBase}.test${ext}`,
   ];
 
-  // 3. Check which exists — test files are often in tier3 (no file list),
-  // so fall back to existsSync against the repo root
-  const rootDir = analysis.meta?.rootDir;
+  // If pattern has export suffix, also try test named with suffix
+  // e.g., src/detectors/foo.ts with suffix "Detector" → test/foo-detector.test.ts
+  if (pattern?.exportSuffix) {
+    const suffix = pattern.exportSuffix.replace(/^[A-Z]/, c => c.toLowerCase());
+    candidates.push(
+      `test/${fileBase}-${suffix}.test${ext}`,
+      `test/${fileBase}-${suffix}.spec${ext}`,
+    );
+  }
+
+  // Check which exists on disk (test files are in tier3, no file list)
   let testFile: string | null = null;
   let exists = false;
   for (const candidate of candidates) {
@@ -289,10 +322,14 @@ export function resolveTestFile(
       break;
     }
   }
-  // If none found on disk, suggest the first candidate
-  if (!testFile) testFile = candidates[0];
+  // Suggest the most likely candidate: mirrored test/ dir if src/ file, else co-located
+  if (!testFile) {
+    testFile = sourceFilePath.startsWith("src/")
+      ? `test/${strippedBase}.test${ext}`
+      : `${dir}/${fileBase}.test${ext}`;
+  }
 
-  // 4. Detect framework from test command + dependencies
+  // Detect framework from test command + dependencies
   const testCmd = pkg.commands.test?.run ?? "";
   const testSource = pkg.commands.test?.source ?? "";
   const testFrameworkDep = pkg.dependencyInsights?.testFramework?.name ?? "";
@@ -303,8 +340,7 @@ export function resolveTestFile(
   else if (/mocha/i.test(frameworkSignal)) framework = "mocha";
   else if (/ava/i.test(frameworkSignal)) framework = "ava";
 
-  // 5. Construct per-file command
-  const pm = pkg.commands.packageManager;
+  // Construct per-file command
   let command: string;
   if (framework === "vitest") {
     command = `npx vitest run ${testFile}`;
@@ -313,14 +349,14 @@ export function resolveTestFile(
   } else if (testCmd) {
     command = `${testCmd} -- ${testFile}`;
   } else {
-    command = `${pm} test -- ${testFile}`;
+    command = `${pkg.commands.packageManager} test -- ${testFile}`;
   }
 
-  const patternDesc = pattern?.testPattern
-    ? `Pattern: ${pattern.testPattern}`
-    : exists
-      ? "Co-located test file"
-      : "No test pattern detected";
+  const patternDesc = exists
+    ? `Test file found at ${testFile}`
+    : pattern?.testPattern
+      ? `Pattern: ${pattern.testPattern} (test file does not exist yet)`
+      : "No test file found";
 
   return { testFile, exists, framework, command, pattern: patternDesc };
 }
