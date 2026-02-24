@@ -31,18 +31,20 @@ npx autodocs-engine serve
 claude mcp add autodocs -- npx autodocs-engine serve
 ```
 
-This gives Claude Code 8 codebase intelligence tools:
+This gives Claude Code 10 codebase intelligence tools:
 
 | Tool | What It Returns |
 |------|----------------|
 | `get_commands` | Build, test, lint commands with exact flags |
 | `get_architecture` | Directory structure, entry points, package type |
-| `get_conventions` | DO/DON'T rules detected from your code |
-| `get_workflow_rules` | File coupling and co-change patterns |
-| `get_contribution_guide` | How to add new code in a specific directory |
-| `get_exports` | Public API sorted by usage |
-| `analyze_impact` | What breaks if you change a file |
+| `get_conventions` | DO/DON'T rules with confidence levels (filterable by category) |
+| `get_workflow_rules` | File coupling and co-change patterns (filterable by file) |
+| `get_contribution_guide` | How to add new code, with inline example snippets |
+| `get_exports` | Public API with usage examples and parameter shapes |
+| `analyze_impact` | Blast radius + importers + co-change partners for a file |
 | `list_packages` | Monorepo package inventory |
+| **`plan_change`** | **Full change plan: dependents, co-changes, registrations, tests, checklist** |
+| **`get_test_info`** | **Test file path + exact per-file run command for any source file** |
 
 ## Why Minimal Mode?
 
@@ -119,7 +121,7 @@ Returns exit code 1 if conventions have drifted. Useful in CI pipelines to keep 
 | sanity | 3,746 | 1.6s | — |
 | medusa | 720 | 316ms | — |
 
-501 tests. Zero type errors. Zero technology hallucinations across all tested repos.
+501 tests. Zero type errors. 10 MCP tools. Zero technology hallucinations across all tested repos.
 
 ## Library API
 

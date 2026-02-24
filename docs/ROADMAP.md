@@ -1,31 +1,34 @@
 # Roadmap
 
-## Current State (v0.5.0)
+## Current State (v0.6.0)
 
-**501 tests. ~18K lines. 65+ modules. Zero technology hallucinations.**
+**501 tests. ~18K lines. 65+ modules. 10 MCP tools. Zero technology hallucinations.**
 
-The engine produces focused AGENTS.md files via deterministic static analysis:
+- **MCP server** — 10 tools with path-scoped filtering, blast radius, confidence levels, example code, freshness metadata
+- **Flagship tools**: `plan_change` (full change impact analysis) and `get_test_info` (per-file test mapping)
 - **Minimal mode** (`--minimal`) — <500 token output matching developer-written file characteristics
 - **Full mode** — 14 deterministic sections + 2 optional micro-LLM sections
-- **MCP server** — 8 tools with path-scoped filtering for live codebase queries
 - **Staleness detection** — `check` command for CI pipelines
+- **Published on npm** — `npx autodocs-engine serve` / `npx autodocs-engine init --minimal`
 
 ## Priorities
 
-### Ship (Now)
-- [ ] npm publish v0.5.0
+### Get Users (Now)
 - [ ] Blog post: "What We Learned Measuring AGENTS.md Effectiveness"
+- [ ] HN launch: Show HN with honest benchmark data
 - [ ] GitHub Action wrapping `check` command for drift detection
+- [ ] Collect user feedback on which MCP tools get used
 
 ### Validate (Next)
-- [ ] Get 10-20 real users
-- [ ] Track which MCP tools get called and how often
+- [ ] Track MCP tool invocation frequency
 - [ ] Measure user retention (do they keep it in their workflow?)
+- [ ] Identify which tools are never called (candidates for removal)
 
 ### Expand (Later, driven by user feedback)
 - [ ] Python support via tree-sitter (researched, 4-5 week effort)
-- [ ] Additional MCP tools: `get_test_command`, `get_examples`, `get_task_context`
+- [ ] Additional MCP tools: `check_registration`, `get_dependency_path`, `get_recent_changes`
 - [ ] Convention enforcement in CI (PR review comments)
+- [ ] Session memory — learn project-specific workflow patterns
 - [ ] HTTP transport for MCP server
 
 ## Research Findings

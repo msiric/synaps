@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.6.0 (2026-02-24)
+
+### New MCP Tools
+
+- **`plan_change`** — The flagship tool. Given files being edited, returns full blast radius: dependent files (import graph), co-change partners (git history), registration/barrel files that need updating, corresponding test files, and an ordered checklist. Provides information AI tools literally cannot get from reading source code alone.
+
+- **`get_test_info`** — Maps any source file to its corresponding test file with the exact per-file run command. Detects vitest, jest, mocha, ava. Tries co-located tests, spec variants, and test/ directory mirrors.
+
+### MCP Tool Improvements
+
+- **`analyze_impact`** — Now shows blast radius summary at the top ("Medium — 8 direct importers, 3 co-change partners")
+- **`get_conventions`** — Shows confidence percentages and strength labels (strong ≥95%, moderate ≥80%, weak)
+- **`get_exports`** — Includes top usage example from test files + parameter shapes from pattern fingerprints
+- **`get_contribution_guide`** — Inlines first 15 lines of example file as code snippet
+- **All tools** — Freshness metadata appended (analyzed timestamp, commit SHA, fresh/stale indicator)
+- **`get_conventions`** — Filterable by category (file-naming, hooks, testing, ecosystem)
+- **`get_workflow_rules`** — Filterable by filePath (only rules mentioning that file)
+
+### Minimal Mode
+
+- **`--minimal` flag** — Generates <500 token AGENTS.md matching developer-written file characteristics. No API key needed. Research-backed: comprehensive files hurt (-2%); focused files help (+4%, -29% runtime).
+- Boolean signal gates instead of uncalibrated weighted scores
+- Commands capped at 6 with triviality check
+- Conventions require ≥95% confidence
+- Kill switch: "Standard project" note when output would be mostly inferrable
+
+### Other
+
+- Inferability thresholds calibrated against 20-repo benchmark dataset
+- MCP handshake fix for large repos (deferred cache warmup prevents timeout)
+- PR-based benchmark v2 with real commit ground truth
+- Repo cleaned up: 30 planning docs moved to docs/ subdirectories
+- 501 tests, 0 type errors, 10 MCP tools
+
 ## 0.5.0 (2026-02-22)
 
 ### Major Features
