@@ -24,3 +24,6 @@ examples/
 
 # Staleness baseline
 .autodocs-baseline.json
+
+# Benchmark results (large, repo-specific data — regenerate with `benchmark` command)
+benchmark-results/
