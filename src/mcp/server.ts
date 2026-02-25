@@ -54,6 +54,31 @@ function writeTelemetryEvent(session: SessionTelemetry, event: Record<string, un
   }
 }
 
+// ─── Server Instructions ────────────────────────────────────────────────────
+// Injected into Claude's system prompt via the MCP initialize handshake.
+// This is what makes Claude actually call our tools instead of using grep/read.
+
+const SERVER_INSTRUCTIONS = `autodocs-engine provides pre-computed codebase intelligence that cannot be derived from reading files or running grep. The tools use import graph analysis, git co-change history (Jaccard similarity), and call graph data to answer structural questions.
+
+Recommended workflow:
+
+ONBOARDING (new codebase):
+- Call get_commands for build/test/lint commands and tech stack
+- Call get_conventions for project-specific DO/DON'T rules
+- Call get_architecture for directory structure and entry points
+
+BEFORE MODIFYING FILES:
+- Call plan_change with the files you plan to edit — it returns dependent files from the import graph, co-change partners from git history, registration/barrel files that need updating, and an ordered checklist. This information is NOT available from reading files or grep.
+
+WHEN TESTS FAIL:
+- Call diagnose IMMEDIATELY with the error text — it traces backward through the import graph and git co-change history to rank suspect files by structural evidence. This catches "missing co-change" (files that usually change together but one was forgotten) which no amount of error text reading can reveal.
+
+WHEN ADDING NEW FILES:
+- Call get_contribution_guide to learn the project's file patterns, naming conventions, registration requirements, and see inline code examples from similar files.
+- After creating files, call review_changes to verify pattern compliance, then auto_register for exact registration/barrel insertion code.
+
+These tools return pre-computed structural analysis. They are faster and more accurate than manually searching with grep or reading individual files, especially for understanding cross-file dependencies and historical change patterns.`;
+
 /**
  * Create an autodocs-engine MCP server with all tools registered.
  * Call server.connect(transport) then cache.warm() after.
@@ -69,10 +94,10 @@ export function createAutodocsServer(
   const verbose = options.verbose ?? Boolean(process.env.AUTODOCS_DEBUG);
   const telemetryEnabled = options.telemetry ?? process.env.AUTODOCS_TELEMETRY === "1";
 
-  const server = new McpServer({
-    name: "autodocs-engine",
-    version: ENGINE_VERSION,
-  });
+  const server = new McpServer(
+    { name: "autodocs-engine", version: ENGINE_VERSION },
+    { instructions: SERVER_INSTRUCTIONS },
+  );
 
   const cache = new AnalysisCache(projectPath);
 
