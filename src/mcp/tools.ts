@@ -3,6 +3,7 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import ts from "typescript";
 import type { StructuredAnalysis } from "../types.js";
 import * as Q from "./queries.js";
 
@@ -575,9 +576,7 @@ export function handleReviewChanges(
     const dir = file.path.replace(/\/[^/]+$/, "");
     const fileBase = file.path.replace(/.*\//, "").replace(/\.[^.]+$/, "");
     const patterns = Q.getContributionPatterns(analysis, args.packagePath, dir);
-    const pattern = patterns.find(p =>
-      file.path.startsWith(p.directory) || dir.includes(p.directory),
-    );
+    const pattern = Q.findBestPattern(patterns, file.path);
 
     lines.push(`### ${file.path}`);
 
@@ -588,7 +587,6 @@ export function handleReviewChanges(
     }
 
     // Parse the file content
-    const ts = require("typescript") as typeof import("typescript");
     const sf = ts.createSourceFile(file.path, file.content, ts.ScriptTarget.Latest, true);
 
     // Extract exports
