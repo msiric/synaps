@@ -137,13 +137,30 @@ describe("computeCoChangeEdges", () => {
     expect(edges).toHaveLength(3);
   });
 
-  it("filters by minimum co-change count", () => {
+  it("allows 2 co-changes in young repos (adaptive threshold)", () => {
     const commits = [
       { hash: "1", timestamp: NOW - 50, files: ["a.ts", "b.ts"] },
       { hash: "2", timestamp: NOW, files: ["a.ts", "b.ts"] },
     ];
 
+    // 2 commits = young repo → minCoChanges drops to 2
     const { edges } = computeCoChangeEdges(commits, 30, 0.7, 50, []);
+    expect(edges).toHaveLength(1);
+  });
+
+  it("filters by minimum co-change count in mature repos", () => {
+    // 30+ commits = mature repo → requires MIN_CO_CHANGES (3)
+    const commits = [
+      { hash: "1", timestamp: NOW - 50, files: ["a.ts", "b.ts"] },
+      { hash: "2", timestamp: NOW, files: ["a.ts", "b.ts"] },
+      // Pad to 30 commits with unrelated files to cross the threshold
+      ...Array.from({ length: 28 }, (_, i) => ({
+        hash: `pad${i}`, timestamp: NOW - i * 10, files: [`other${i}.ts`],
+      })),
+    ];
+
+    const { edges } = computeCoChangeEdges(commits, 30, 0.7, 50, []);
+    // a.ts and b.ts only co-changed 2 times — below the mature threshold of 3
     expect(edges).toHaveLength(0);
   });
 

@@ -6,6 +6,7 @@ import { join } from "node:path";
 import type { StructuredAnalysis, PackageAnalysis } from "../../src/types.js";
 import * as tools from "../../src/mcp/tools.js";
 import { findBestPattern, getRegistrationInsertions } from "../../src/mcp/queries.js";
+import { formatSessionSummary, type SessionTelemetry } from "../../src/mcp/server.js";
 
 // ─── Fixture ─────────────────────────────────────────────────────────────────
 
@@ -372,5 +373,52 @@ describe("getRegistrationInsertions: nested directory fallback", () => {
       "src/core/something.ts",
     );
     expect(result.registrationFile).toBeNull();
+  });
+});
+
+// ─── Session Telemetry ──────────────────────────────────────────────────────
+
+describe("formatSessionSummary", () => {
+  function makeSession(overrides: Partial<SessionTelemetry> = {}): SessionTelemetry {
+    const calls = new Map<string, number>();
+    calls.set("get_commands", 3);
+    calls.set("diagnose", 2);
+    calls.set("plan_change", 1);
+    return {
+      startTime: Date.now() - 42_000,
+      calls,
+      totalInputTokens: 230,
+      totalOutputTokens: 4120,
+      errors: 0,
+      seq: 6,
+      runId: "test-run",
+      telemetryPath: null,
+      ...overrides,
+    };
+  }
+
+  it("formats session with correct totals", () => {
+    const summary = formatSessionSummary(makeSession());
+    expect(summary).toContain("6 calls");
+    expect(summary).toContain("230");
+    expect(summary).toContain("4.1K");
+    expect(summary).toContain("42s");
+  });
+
+  it("lists tools sorted by frequency", () => {
+    const summary = formatSessionSummary(makeSession());
+    // get_commands (3) should come before diagnose (2) before plan_change (1)
+    const toolsLine = summary.split("\n").find(l => l.includes("Tools:"))!;
+    expect(toolsLine).toMatch(/get_commands.*diagnose.*plan_change/);
+  });
+
+  it("uses Object.fromEntries for Map serialization", () => {
+    const session = makeSession();
+    const obj = Object.fromEntries(session.calls);
+    expect(obj).toEqual({ get_commands: 3, diagnose: 2, plan_change: 1 });
+    // Verify JSON.stringify works (Map would produce {})
+    const json = JSON.stringify({ tools: obj });
+    expect(json).toContain("get_commands");
+    expect(json).toContain("3");
   });
 });

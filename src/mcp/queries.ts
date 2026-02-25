@@ -586,8 +586,9 @@ export function parseErrorText(errorText: string, rootDir?: string): ParsedError
       continue;
     }
 
-    // Generic: "src/path/file.ts:123" or similar project-relative path
-    if ((m = line.match(/\b((?:src|lib|test|tests)\/[^\s:]+\.[jt]sx?):(\d+)/))) {
+    // Generic: any relative path with a directory separator, ending in .ts/.js:line
+    // Covers app/, pages/, components/, packages/, server/, api/, etc.
+    if ((m = line.match(/\b([a-zA-Z][^\s:]*\/[^\s:]+\.[jt]sx?):(\d+)/))) {
       addProjectFile(fileSet, m[1], rootDir);
     }
   }

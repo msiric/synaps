@@ -117,13 +117,28 @@ src/validator.ts(18,10): error TS2322: Type 'number' is not assignable.`;
     expect(result.files).toContain("src/pipeline.ts");
   });
 
-  it("parses generic src/ path patterns", () => {
+  it("parses generic path patterns (src/, lib/)", () => {
     const text = `Error in src/validator.ts:55 — validation failed
 Also see lib/helpers.ts:12 for context`;
 
     const result = Q.parseErrorText(text);
     expect(result.files).toContain("src/validator.ts");
     expect(result.files).toContain("lib/helpers.ts");
+  });
+
+  it("parses non-standard directory prefixes (app/, pages/, components/)", () => {
+    const text = `Error at app/api/auth/route.ts:23
+  in pages/index.tsx:45
+  from components/Button.tsx:12
+  via packages/shared/utils.ts:8
+  and server/middleware.ts:15`;
+
+    const result = Q.parseErrorText(text);
+    expect(result.files).toContain("app/api/auth/route.ts");
+    expect(result.files).toContain("pages/index.tsx");
+    expect(result.files).toContain("components/Button.tsx");
+    expect(result.files).toContain("packages/shared/utils.ts");
+    expect(result.files).toContain("server/middleware.ts");
   });
 
   it("filters out node_modules and node internals", () => {

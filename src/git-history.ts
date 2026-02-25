@@ -439,10 +439,15 @@ export function computeCoChangeEdges(
   const recencyCutoff = newestCommit - (RECENCY_DAYS * 86400);
 
   // Compute Jaccard and filter
+  // Adaptive thresholds: young repos (<30 commits) get lower minimums
+  // so they produce some co-change edges instead of none
+  const isYoungRepo = totalCommits < 30;
+  const minCoChanges = isYoungRepo ? 2 : MIN_CO_CHANGES;
+  const minJaccard = isYoungRepo ? 0.1 : MIN_JACCARD;
   const edges: CoChangeEdge[] = [];
 
   for (const [key, coChangeCount] of pairCounts) {
-    if (coChangeCount < MIN_CO_CHANGES) continue;
+    if (coChangeCount < minCoChanges) continue;
 
     const lastTs = pairLastTimestamp.get(key) ?? 0;
     // Recency filter: skip pairs with no co-change in the recent window
@@ -454,7 +459,7 @@ export function computeCoChangeEdges(
     const union = file1Commits + file2Commits - coChangeCount;
     const jaccard = union > 0 ? coChangeCount / union : 0;
 
-    if (jaccard < MIN_JACCARD) continue;
+    if (jaccard < minJaccard) continue;
 
     edges.push({ file1, file2, coChangeCount, file1Commits, file2Commits, jaccard, lastCoChangeTimestamp: lastTs });
   }

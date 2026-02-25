@@ -26,6 +26,8 @@ export interface ParsedArgs {
   saveBaseline?: boolean;
   // Output mode
   minimal?: boolean;
+  // Telemetry
+  telemetry?: boolean;
   // Benchmark-specific
   full?: boolean;
   model?: string;
@@ -201,7 +203,7 @@ export async function parseCliArgs(
   const mri = (await import("mri")).default;
   const args = mri(argv, {
     alias: { f: "format", o: "output", c: "config", q: "quiet", v: "verbose" },
-    boolean: ["dry-run", "quiet", "verbose", "help", "hierarchical", "flat", "merge", "no-meta-tool", "save-baseline", "full", "minimal"],
+    boolean: ["dry-run", "quiet", "verbose", "help", "hierarchical", "flat", "merge", "no-meta-tool", "save-baseline", "full", "minimal", "telemetry"],
     string: ["format", "output", "config", "root", "diff", "llm-synthesis", "model", "max-tasks", "mode"],
   });
 
@@ -223,6 +225,7 @@ export async function parseCliArgs(
     noMetaTool: args["no-meta-tool"] ?? undefined,
     saveBaseline: args["save-baseline"] ?? undefined,
     minimal: args.minimal ?? undefined,
+    telemetry: args.telemetry ?? undefined,
     full: args.full ?? undefined,
     model: args.model ?? undefined,
     maxTasks: args["max-tasks"] ? parseInt(args["max-tasks"] as string, 10) : undefined,

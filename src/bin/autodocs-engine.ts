@@ -41,6 +41,7 @@ Options:
   --diff <path>        Compare against previous analysis JSON and output a diff report
   --quiet, -q          Suppress warnings
   --verbose, -v        Print detailed timing and budget validation
+  --telemetry          Enable session telemetry (writes to ~/.autodocs/telemetry/)
   --dry-run            Print to stdout (no file writes)
   --help               Show this help text
 
@@ -104,6 +105,7 @@ async function main() {
     await runServe({
       path: args.packages[1],
       verbose: args.verbose,
+      telemetry: args.telemetry,
     });
     // Don't exit — server stays alive until client disconnects
     return;
