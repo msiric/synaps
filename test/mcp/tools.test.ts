@@ -1,6 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { StructuredAnalysis, PackageAnalysis } from "../../src/types.js";
 import * as tools from "../../src/mcp/tools.js";
+import { findBestPattern, getRegistrationInsertions } from "../../src/mcp/queries.js";
 
 // ─── Fixture ─────────────────────────────────────────────────────────────────
 
@@ -223,5 +228,149 @@ describe("handleGetConventions", () => {
     expect(text).toContain("DO");
     expect(text).toContain("DO NOT");
     expect(text).toContain("camelCase");
+  });
+});
+
+// ─── findBestPattern + nested directory matching ────────────────────────────
+
+describe("findBestPattern", () => {
+  const patterns = [
+    {
+      type: "class", directory: "src/adapters/", filePattern: "{name}.ts",
+      exampleFile: "src/adapters/fs.ts",
+      steps: ["Create"], commonImports: [], exportSuffix: "Adapter",
+      registrationFile: "src/index.ts",
+    },
+    {
+      type: "class", directory: "src/adapters/llm/", filePattern: "{name}.ts",
+      exampleFile: "src/adapters/llm/claude.ts",
+      steps: ["Create"], commonImports: [], exportSuffix: "LLMAdapter",
+    },
+    {
+      type: "function", directory: "src/utils/", filePattern: "{name}.ts",
+      exampleFile: "src/utils/retry.ts",
+      steps: ["Create"], commonImports: [],
+    },
+  ] as any[];
+
+  it("selects most-specific pattern for nested directory", () => {
+    const result = findBestPattern(patterns, "src/adapters/llm/openai.ts");
+    expect(result).toBeDefined();
+    expect(result!.directory).toBe("src/adapters/llm/");
+    expect(result!.exportSuffix).toBe("LLMAdapter");
+  });
+
+  it("selects parent pattern when file is in parent directory", () => {
+    const result = findBestPattern(patterns, "src/adapters/fs-adapter.ts");
+    expect(result).toBeDefined();
+    expect(result!.directory).toBe("src/adapters/");
+    expect(result!.exportSuffix).toBe("Adapter");
+  });
+
+  it("returns undefined when file matches no pattern", () => {
+    const result = findBestPattern(patterns, "src/core/engine.ts");
+    expect(result).toBeUndefined();
+  });
+
+  it("matches utils directory correctly", () => {
+    const result = findBestPattern(patterns, "src/utils/logger.ts");
+    expect(result).toBeDefined();
+    expect(result!.directory).toBe("src/utils/");
+  });
+});
+
+describe("getRegistrationInsertions: nested directory fallback", () => {
+  let tmpDir: string;
+
+  beforeAll(() => {
+    // Create temp project with a real registration file
+    tmpDir = mkdtempSync(join(tmpdir(), "autodocs-test-"));
+    mkdirSync(join(tmpDir, "src"), { recursive: true });
+    writeFileSync(join(tmpDir, "src/index.ts"), [
+      'import { FsAdapter } from "./adapters/fs.js";',
+      "",
+      "export const adapters = [FsAdapter];",
+      "",
+    ].join("\n"));
+  });
+
+  afterAll(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  function makeNestedAnalysis(): StructuredAnalysis {
+    return {
+      meta: { engineVersion: "0.8.0", analyzedAt: "", rootDir: tmpDir, config: {} as any, timingMs: 0 },
+      packages: [{
+        name: "test-pkg",
+        version: "1.0.0",
+        description: "",
+        relativePath: ".",
+        files: { total: 5, byTier: { tier1: { count: 5, lines: 500, files: ["src/adapters/fs.ts", "src/adapters/llm/claude.ts"] }, tier2: { count: 0, lines: 0, files: [] }, tier3: { count: 0, lines: 0 } }, byExtension: { ".ts": 5 } },
+        publicAPI: [],
+        conventions: [],
+        commands: { packageManager: "npm" as const, other: [] },
+        architecture: { entryPoint: "src/index.ts", directories: [], packageType: "library" as const, hasJSX: false },
+        dependencies: { internal: [], external: [], totalUniqueDependencies: 0 },
+        role: { summary: "", purpose: "", whenToUse: "", inferredFrom: [] },
+        antiPatterns: [],
+        contributionPatterns: [
+          {
+            type: "class", directory: "src/adapters/", filePattern: "{name}.ts",
+            exampleFile: "src/adapters/fs.ts",
+            steps: ["Create adapter"],
+            commonImports: [{ specifier: "../../core/types.js", symbols: ["Config"], coverage: 0.8 }],
+            exportSuffix: "Adapter",
+            registrationFile: "src/index.ts",
+          },
+          {
+            type: "class", directory: "src/adapters/llm/", filePattern: "{name}.ts",
+            exampleFile: "src/adapters/llm/claude.ts",
+            steps: ["Create LLM adapter"],
+            commonImports: [],
+            exportSuffix: "LLMAdapter",
+            // No registrationFile — this is the edge case
+          },
+        ],
+      } as any],
+      crossPackage: undefined,
+      warnings: [],
+    };
+  }
+
+  it("falls back to parent registrationFile when child has none", () => {
+    const result = getRegistrationInsertions(
+      makeNestedAnalysis(),
+      "src/adapters/llm/openai.ts",
+    );
+    expect(result.registrationFile).not.toBeNull();
+    expect(result.registrationFile?.path).toBe("src/index.ts");
+  });
+
+  it("preserves child exportSuffix when falling back for registration", () => {
+    const result = getRegistrationInsertions(
+      makeNestedAnalysis(),
+      "src/adapters/llm/openai.ts",
+    );
+    // Export name should use the CHILD pattern's suffix (LLMAdapter), not the parent's
+    expect(result.exportName).toBe("openaiLLMAdapter");
+  });
+
+  it("uses direct pattern when it has registrationFile", () => {
+    const result = getRegistrationInsertions(
+      makeNestedAnalysis(),
+      "src/adapters/new-adapter.ts",
+    );
+    expect(result.registrationFile).not.toBeNull();
+    expect(result.registrationFile?.path).toBe("src/index.ts");
+    expect(result.exportName).toBe("newAdapterAdapter");
+  });
+
+  it("returns null registration when no pattern matches", () => {
+    const result = getRegistrationInsertions(
+      makeNestedAnalysis(),
+      "src/core/something.ts",
+    );
+    expect(result.registrationFile).toBeNull();
   });
 });

@@ -5,6 +5,7 @@
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import ts from "typescript";
 import type {
   StructuredAnalysis,
   PackageAnalysis,
@@ -279,11 +280,9 @@ export function resolveTestFile(
   const ext = sourceFilePath.slice(sourceFilePath.lastIndexOf("."));
   const rootDir = analysis.meta?.rootDir;
 
-  // Find contribution pattern for export suffix
+  // Find contribution pattern for export suffix (most-specific match)
   const patterns = pkg.contributionPatterns ?? [];
-  const pattern = patterns.find(p =>
-    sourceFilePath.startsWith(p.directory) || dir.includes(p.directory),
-  );
+  const pattern = findBestPattern(patterns, sourceFilePath);
 
   // Build comprehensive candidate list covering all common test patterns:
   // 1. Co-located in same directory
@@ -401,28 +400,33 @@ export function getRegistrationInsertions(
   const dir = newFilePath.replace(/\/[^/]+$/, "");
   const rootDir = analysis.meta?.rootDir ?? ".";
 
-  // Find contribution pattern for this directory
+  // Find contribution pattern for this directory (most-specific match)
   const patterns = pkg.contributionPatterns ?? [];
-  const pattern = patterns.find(p =>
-    newFilePath.startsWith(p.directory) || dir.includes(p.directory),
-  );
+  const pattern = findBestPattern(patterns, newFilePath);
 
-  // Infer export name from filename + pattern suffix
+  // For registration: if the most-specific pattern has no registrationFile,
+  // walk up to the nearest parent that does (child may inherit parent's registration)
+  const regPattern = pattern?.registrationFile ? pattern : patterns
+    .filter(p => newFilePath.startsWith(p.directory) && p.registrationFile
+      && (!pattern || p.directory.length < pattern.directory.length))
+    .sort((a, b) => b.directory.length - a.directory.length)[0];
+
+  // Infer export name from most-specific pattern's suffix
   const fileBase = newFilePath.replace(/.*\//, "").replace(/\.[^.]+$/, "");
   const exportName = pattern?.exportSuffix
     ? kebabToCamel(fileBase) + pattern.exportSuffix
     : kebabToCamel(fileBase);
 
-  // Registration file insertions
+  // Registration file insertions (may come from parent pattern)
   let regResult: RegistrationInsertions["registrationFile"] = null;
-  if (pattern?.registrationFile) {
-    const regPath = resolve(rootDir, pattern.registrationFile);
+  if (regPattern?.registrationFile) {
+    const regPath = resolve(rootDir, regPattern.registrationFile);
     try {
       const content = readFileSync(regPath, "utf-8");
       const { lastImportLine, firstNonImportLine } = findImportBoundary(content);
 
       // Compute relative path from registration file to new file
-      const regDir = pattern.registrationFile.replace(/\/[^/]+$/, "");
+      const regDir = regPattern.registrationFile.replace(/\/[^/]+$/, "");
       let relPath = newFilePath;
       if (newFilePath.startsWith(regDir + "/")) {
         relPath = "./" + newFilePath.slice(regDir.length + 1);
@@ -432,7 +436,7 @@ export function getRegistrationInsertions(
       relPath = relPath.replace(/\.tsx?$/, ".js"); // .ts → .js for imports
 
       regResult = {
-        path: pattern.registrationFile,
+        path: regPattern.registrationFile,
         lastImportLine,
         importStatement: `import { ${exportName} } from "${relPath}";`,
         registryHintLine: firstNonImportLine,
@@ -462,6 +466,23 @@ export function getRegistrationInsertions(
   return { registrationFile: regResult, barrelFile: barrelResult, exportName };
 }
 
+// ─── Pattern Matching Helper ────────────────────────────────────────────────
+
+/**
+ * Find the most-specific contribution pattern matching a file path.
+ * Patterns are matched by directory prefix and sorted by specificity (longest first).
+ * This avoids the array-order dependency of `.find()` when nested directories
+ * both have patterns (e.g., src/adapters/ and src/adapters/llm/).
+ */
+export function findBestPattern(
+  patterns: ContributionPattern[],
+  filePath: string,
+): ContributionPattern | undefined {
+  return patterns
+    .filter(p => filePath.startsWith(p.directory))
+    .sort((a, b) => b.directory.length - a.directory.length)[0];
+}
+
 // ─── Auto-Register Helpers ──────────────────────────────────────────────────
 
 function kebabToCamel(kebab: string): string {
@@ -469,7 +490,6 @@ function kebabToCamel(kebab: string): string {
 }
 
 function findImportBoundary(content: string): { lastImportLine: number; firstNonImportLine: number } {
-  const ts = require("typescript") as typeof import("typescript");
   const sf = ts.createSourceFile("file.ts", content, ts.ScriptTarget.Latest, true);
   let lastImportLine = 0;
   let firstNonImportLine = 0;
