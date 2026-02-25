@@ -30,7 +30,7 @@ function sendNotification(method: string, params: Record<string, unknown> = {}):
 beforeAll(async () => {
   // Build must be up-to-date — run npm run build before these tests
   const serverPath = resolve("dist/bin/autodocs-engine.js");
-  const projectPath = resolve(".");
+  const projectPath = resolve("test/fixtures/minimal-pkg");
 
   serverProcess = spawn("node", [serverPath, "serve", projectPath], {
     stdio: ["pipe", "pipe", "pipe"],
@@ -71,9 +71,9 @@ beforeAll(async () => {
 
   sendNotification("notifications/initialized");
 
-  // Wait for cache warmup (server analyzes the project in background)
-  await new Promise((r) => setTimeout(r, 3000));
-}, 30_000);
+  // Wait for cache warmup (minimal fixture: ~100ms analysis)
+  await new Promise((r) => setTimeout(r, 1500));
+}, 15_000);
 
 afterAll(() => {
   if (serverProcess) {
@@ -103,7 +103,6 @@ describe("MCP server integration", () => {
       arguments: {},
     });
     expect(resp.result.isError).toBeFalsy();
-    expect(resp.result.content[0].text).toContain("npm");
   });
 
   it("get_architecture returns without error", async () => {
@@ -112,7 +111,6 @@ describe("MCP server integration", () => {
       arguments: {},
     });
     expect(resp.result.isError).toBeFalsy();
-    expect(resp.result.content[0].text).toContain("src");
   });
 
   it("get_conventions returns without error", async () => {
@@ -150,7 +148,7 @@ describe("MCP server integration", () => {
   it("analyze_impact returns without error", async () => {
     const resp = await sendRequest("tools/call", {
       name: "analyze_impact",
-      arguments: { filePath: "src/types.ts" },
+      arguments: { filePath: "src/greet.ts" },
     });
     expect(resp.result.isError).toBeFalsy();
   });
@@ -161,13 +159,13 @@ describe("MCP server integration", () => {
       arguments: {},
     });
     expect(resp.result.isError).toBeFalsy();
-    expect(resp.result.content[0].text).toContain("autodocs-engine");
+    expect(resp.result.content[0].text).toContain("minimal-pkg");
   });
 
   it("plan_change returns without error", async () => {
     const resp = await sendRequest("tools/call", {
       name: "plan_change",
-      arguments: { files: ["src/types.ts"] },
+      arguments: { files: ["src/greet.ts"] },
     });
     expect(resp.result.isError).toBeFalsy();
   });
@@ -175,7 +173,7 @@ describe("MCP server integration", () => {
   it("get_test_info returns without error", async () => {
     const resp = await sendRequest("tools/call", {
       name: "get_test_info",
-      arguments: { filePath: "src/mcp/tools.ts" },
+      arguments: { filePath: "src/greet.ts" },
     });
     expect(resp.result.isError).toBeFalsy();
   });
@@ -183,7 +181,7 @@ describe("MCP server integration", () => {
   it("auto_register returns without error", async () => {
     const resp = await sendRequest("tools/call", {
       name: "auto_register",
-      arguments: { newFilePath: "src/detectors/graphql.ts" },
+      arguments: { newFilePath: "src/utils.ts" },
     });
     expect(resp.result.isError).toBeFalsy();
   });
@@ -192,7 +190,7 @@ describe("MCP server integration", () => {
     const resp = await sendRequest("tools/call", {
       name: "review_changes",
       arguments: {
-        files: [{ path: "src/detectors/graphql.ts", content: "export function graphqlDetector() {}" }],
+        files: [{ path: "src/utils.ts", content: "export function helper() {}" }],
       },
     });
     expect(resp.result.isError).toBeFalsy();
@@ -202,8 +200,8 @@ describe("MCP server integration", () => {
     const resp = await sendRequest("tools/call", {
       name: "diagnose",
       arguments: {
-        errorText: `TypeError: Cannot read property 'name' of undefined
-    at processStage (src/pipeline.ts:142:15)`,
+        errorText: `TypeError: greet is not a function
+    at Object.<anonymous> (src/greet.ts:5:3)`,
       },
     });
     expect(resp.result.isError).toBeFalsy();

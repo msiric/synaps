@@ -41,7 +41,8 @@ Arguments:
   paths                Package directories to analyze (default: current directory)
 
 Options:
-  --minimal            Focused output (<500 tokens, no API key needed — recommended)
+  --minimal            Focused output (<500 tokens, no API key needed — default for init)
+  --full               Comprehensive output (requires ANTHROPIC_API_KEY)
   --format, -f         Output format: json, agents.md, claude.md, cursorrules
                        (default: json, or agents.md if ANTHROPIC_API_KEY is set)
   --output, -o         Output directory (default: current directory)
@@ -61,8 +62,8 @@ Environment Variables:
   ANTHROPIC_API_KEY    Optional. Enables richer output (architecture + domain synthesis)
 
 Examples:
-  npx autodocs-engine init --minimal                    # Focused AGENTS.md, no API key
-  npx autodocs-engine init                              # Full AGENTS.md (needs API key)
+  npx autodocs-engine init                              # Focused AGENTS.md, no API key
+  npx autodocs-engine init --full                       # Comprehensive AGENTS.md (needs API key)
   npx autodocs-engine serve                             # Start MCP server
   npx autodocs-engine analyze . --minimal --dry-run     # Preview minimal output
   npx autodocs-engine check                             # CI staleness check
@@ -79,7 +80,7 @@ async function main() {
   // Handle "init" subcommand — zero-config generation
   if (args.packages[0] === "init") {
     const { runInit } = await import("./init.js");
-    await runInit();
+    await runInit({ full: args.full });
     process.exit(0);
   }
 

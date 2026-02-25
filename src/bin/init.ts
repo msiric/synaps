@@ -3,8 +3,7 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { analyze, formatDeterministic, formatHierarchicalDeterministic } from "../index.js";
-import type { OutputFormat } from "../types.js";
+import { analyze, formatDeterministic, formatHierarchicalDeterministic, generateMinimalAgentsMd } from "../index.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -18,7 +17,7 @@ interface ProjectStructure {
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
-export async function runInit(): Promise<void> {
+export async function runInit(options: { full?: boolean } = {}): Promise<void> {
   const cwd = process.cwd();
 
   // Step 1: Detect project structure
@@ -31,39 +30,50 @@ export async function runInit(): Promise<void> {
     stderr(`  Packages: ${relPkgs.join(", ")} (${project.packages.length} found)`);
   }
   stderr(`  Package manager: ${project.packageManager}`);
-
-  // Step 2: Check API key
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  const format: OutputFormat = apiKey ? "agents.md" : "json";
-  stderr(`  API key: ${apiKey ? "set" : "not set (will generate JSON only)"}`);
   stderr("");
 
-  // Step 3: Analyze
+  // Step 2: Analyze
   stderr(`  Analyzing ${project.packages.length} package(s)...`);
   const analysisStart = performance.now();
 
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   const analysis = await analyze({
     packages: project.packages,
     rootDir: project.root,
-    output: { format, dir: "." },
-    llm: {
-      provider: "anthropic",
-      model: process.env.AUTODOCS_LLM_MODEL ?? "claude-sonnet-4-20250514",
-      maxOutputTokens: 4096,
-      apiKey,
-    },
+    output: { format: "agents.md", dir: "." },
+    llm: apiKey
+      ? {
+          provider: "anthropic",
+          model: process.env.AUTODOCS_LLM_MODEL ?? "claude-sonnet-4-20250514",
+          maxOutputTokens: 4096,
+          apiKey,
+        }
+      : undefined,
   });
 
   const analysisMs = Math.round(performance.now() - analysisStart);
   stderr(`  Analysis complete (${(analysisMs / 1000).toFixed(1)}s)`);
 
-  // Step 4: Generate and write output
-  if (!apiKey) {
-    const outPath = resolve(cwd, "autodocs-analysis.json");
-    writeFileSafe(outPath, JSON.stringify(analysis, mapReplacer, 2));
-    stderr(`\n  Written: ${relative(cwd, outPath)}`);
-    stderr(`\n  To generate AGENTS.md, set ANTHROPIC_API_KEY and run again.`);
+  // Step 3: Generate output
+  // Default: minimal AGENTS.md (no API key needed, research-backed)
+  // --full: comprehensive AGENTS.md (requires API key for 2 LLM sections)
+  if (!options.full) {
+    const content = generateMinimalAgentsMd(analysis);
+    const outPath = resolve(cwd, "AGENTS.md");
+    writeFileSafe(outPath, content);
+    const tokens = Math.round(content.length / 3.5);
+    stderr(`\n  Written: ./AGENTS.md (${content.split("\n").length} lines, ~${tokens} tokens)`);
+    if (apiKey) {
+      stderr(`  Tip: Use --full for comprehensive output with LLM-enhanced sections.`);
+    }
     return;
+  }
+
+  // --full mode: requires API key
+  if (!apiKey) {
+    stderr(`\n  Error: --full mode requires ANTHROPIC_API_KEY to be set.`);
+    stderr(`  Run without --full for minimal output (no API key needed).`);
+    process.exit(1);
   }
 
   const llmConfig = {
@@ -77,7 +87,7 @@ export async function runInit(): Promise<void> {
   };
 
   if (project.isMonorepo && project.packages.length > 1) {
-    stderr(`  Generating AGENTS.md (hierarchical)...`);
+    stderr(`  Generating AGENTS.md (hierarchical, full)...`);
     const genStart = performance.now();
     const result = await formatHierarchicalDeterministic(analysis, llmConfig);
     stderr(`  Generation complete (${((performance.now() - genStart) / 1000).toFixed(1)}s)`);
@@ -94,7 +104,7 @@ export async function runInit(): Promise<void> {
       stderr(`    ./packages/${pkg.filename} (${pkg.content.split("\n").length} lines)`);
     }
   } else {
-    stderr(`  Generating AGENTS.md...`);
+    stderr(`  Generating AGENTS.md (full)...`);
     const genStart = performance.now();
     const content = await formatDeterministic(analysis, llmConfig, project.root);
     stderr(`  Generation complete (${((performance.now() - genStart) / 1000).toFixed(1)}s)`);
