@@ -19,7 +19,7 @@ Two ways to use it:
 
 ```bash
 # Generate a focused AGENTS.md (no API key needed)
-npx autodocs-engine init --minimal
+npx autodocs-engine init
 
 # Or start the MCP server for live queries
 npx autodocs-engine serve
@@ -82,8 +82,8 @@ Unlike tools that dump code into an LLM or pack everything into one file, autodo
 ## Output Formats
 
 ```bash
-npx autodocs-engine init --minimal              # Focused AGENTS.md (~300 tokens)
-npx autodocs-engine init                         # Full AGENTS.md (needs API key)
+npx autodocs-engine init                         # Focused AGENTS.md (~300 tokens, no API key)
+npx autodocs-engine init --full                  # Comprehensive AGENTS.md (needs API key)
 npx autodocs-engine analyze . --format json      # Raw analysis JSON
 npx autodocs-engine analyze . --format claude.md # CLAUDE.md format
 npx autodocs-engine analyze . --format cursorrules # .cursorrules format
@@ -94,7 +94,7 @@ npx autodocs-engine analyze . --format cursorrules # .cursorrules format
 Auto-detects workspace packages from `pnpm-workspace.yaml`, `workspaces` field in package.json, `turbo.json`, or `nx.json`:
 
 ```bash
-npx autodocs-engine init --minimal    # Works for monorepos too
+npx autodocs-engine init    # Works for monorepos too
 ```
 
 For explicit control:
@@ -124,7 +124,7 @@ Returns exit code 1 if conventions have drifted. Useful in CI pipelines to keep 
 | sanity | 3,746 | 1.6s | — |
 | medusa | 720 | 316ms | — |
 
-538 tests. Zero type errors. 13 MCP tools. Zero technology hallucinations across all tested repos.
+569 tests. Zero type errors. 13 MCP tools. Zero technology hallucinations across all tested repos.
 
 ## Library API
 
@@ -158,13 +158,15 @@ Most options are auto-detected. Zero config is the default.
 ## CLI Reference
 
 ```
-autodocs-engine init [--minimal]           Generate AGENTS.md (zero-config)
+autodocs-engine init [--full]              Generate AGENTS.md (minimal by default, no API key)
 autodocs-engine serve [path]               Start MCP server
 autodocs-engine check                      Check if AGENTS.md needs regeneration
 autodocs-engine analyze [paths...] [options]
 
 Options:
-  --minimal          Focused output (<500 tokens, no API key needed)
+  --full             Comprehensive output (requires ANTHROPIC_API_KEY)
+  --minimal          Focused output (<500 tokens, no API key needed — default for init)
+  --telemetry        Enable session telemetry (writes to ~/.autodocs/telemetry/)
   --format, -f       json | agents.md | claude.md | cursorrules
   --output, -o       Output directory (default: .)
   --root             Monorepo root directory
@@ -180,7 +182,7 @@ Options:
 git clone https://github.com/msiric/autodocs-engine.git
 cd autodocs-engine
 npm install
-npm test          # 538 tests
+npm test          # 569 tests
 npm run typecheck # Zero errors
 npm run build
 ```

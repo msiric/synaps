@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.9.2 (2026-02-25)
+
+### Improvements
+
+- **`init` defaults to minimal** — `npx autodocs-engine init` now produces focused AGENTS.md (~300 tokens, no API key). Use `--full` for comprehensive output. Research-backed: focused files improve AI performance by 4% and reduce runtime by 29%.
+- **Session telemetry** — Opt-in per-call JSONL logging (`--telemetry` or `AUTODOCS_TELEMETRY=1`). Session summary on stderr at shutdown. Writes to `~/.autodocs/telemetry/`.
+- **MCP integration tests** — Real ESM server process over JSON-RPC stdio, verifying all 13 tools work in production.
+- **Diagnose hardening** — Broader error parsing (any relative path, not just `src/`), empirical validation (83% hit rate on real bug-fix commits), adaptive co-change thresholds for young repos.
+- **Security hardening** — `execSync` → `execFileSync` with argument arrays, `safeReadFile` with path boundary validation, 100KB cap on `parseErrorText` input.
+- **Agent readiness 89%** — Biome (lint+format), Husky pre-commit hooks, CodeQL, Dependabot, knip dead code detection, coverage config, CONTRIBUTING.md, SECURITY.md, CLAUDE.md, CODEOWNERS.
+- **Pattern matching fix** — `findBestPattern` sorts by directory specificity. Registration falls back to parent pattern while preserving child's export suffix.
+- **ESM fix** — `require("typescript")` → proper `import` (was silently broken in MCP server since v0.7.0).
+
+### Stats
+
+- 569 tests, 0 type errors, 0 Biome lint errors, 13 MCP tools
+- 89% agent readiness (31/35 checks)
+- 83% diagnose accuracy on real bug-fix commits
+
 ## 0.8.0 (2026-02-24)
 
 ### New MCP Tool
