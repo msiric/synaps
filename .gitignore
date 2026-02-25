@@ -3,9 +3,14 @@ dist/
 
 # Secrets
 .env
-.env.*
+.env.local
+.env.*.local
 *.env
 experiments/**/.env
+
+# Keep .env.example files (documentation, not secrets)
+!.env.example
+!**/.env.example
 
 # Experiment outputs
 experiments/**/results.json
