@@ -2,9 +2,9 @@
 // Isolates tool handlers from analysis schema internals.
 // When analysis types change, update here — not in every tool handler.
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 import ts from "typescript";
 import { computeImpactRadius } from "../impact-radius.js";
 import type {
@@ -212,18 +212,13 @@ export function getBarrelFile(analysis: StructuredAnalysis, directory: string, p
   const rootDir = analysis.meta?.rootDir;
   // Check if index.ts or index.tsx exists AND actually contains re-exports
   // (index.ts files that are entry points, not barrels, should be skipped)
-  const allFiles = [...pkg.files.byTier.tier1.files, ...pkg.files.byTier.tier2.files];
+  const allFiles = new Set(pkg.files.byTier.tier1.files.concat(pkg.files.byTier.tier2.files));
   for (const barrelPath of [`${dir}/index.ts`, `${dir}/index.tsx`]) {
-    if (!allFiles.includes(barrelPath)) continue;
-    // Verify it has re-export statements
+    if (!allFiles.has(barrelPath)) continue;
     if (rootDir) {
-      try {
-        const content = readFileSync(resolve(rootDir, barrelPath), "utf-8");
-        if (/export\s+(?:\*|\{[^}]+\})\s+from\s+["']/.test(content)) {
-          return barrelPath;
-        }
-      } catch {
-        /* can't read — skip */
+      const content = safeReadFile(rootDir, barrelPath);
+      if (content && /export\s+(?:\*|\{[^}]+\})\s+from\s+["']/.test(content)) {
+        return barrelPath;
       }
     } else {
       return barrelPath; // No rootDir to verify — trust the file list
@@ -390,29 +385,30 @@ export function getRegistrationInsertions(
   // Registration file insertions (may come from parent pattern)
   let regResult: RegistrationInsertions["registrationFile"] = null;
   if (regPattern?.registrationFile) {
-    const regPath = resolve(rootDir, regPattern.registrationFile);
-    try {
-      const content = readFileSync(regPath, "utf-8");
-      const { lastImportLine, firstNonImportLine } = findImportBoundary(content);
+    const content = safeReadFile(rootDir, regPattern.registrationFile);
+    if (content) {
+      try {
+        const { lastImportLine, firstNonImportLine } = findImportBoundary(content);
 
-      // Compute relative path from registration file to new file
-      const regDir = regPattern.registrationFile.replace(/\/[^/]+$/, "");
-      let relPath = newFilePath;
-      if (newFilePath.startsWith(`${regDir}/`)) {
-        relPath = `./${newFilePath.slice(regDir.length + 1)}`;
-      } else {
-        relPath = `./${newFilePath}`;
+        // Compute relative path from registration file to new file
+        const regDir = regPattern.registrationFile.replace(/\/[^/]+$/, "");
+        let relPath = newFilePath;
+        if (newFilePath.startsWith(`${regDir}/`)) {
+          relPath = `./${newFilePath.slice(regDir.length + 1)}`;
+        } else {
+          relPath = `./${newFilePath}`;
+        }
+        relPath = relPath.replace(/\.tsx?$/, ".js"); // .ts → .js for imports
+
+        regResult = {
+          path: regPattern.registrationFile,
+          lastImportLine,
+          importStatement: `import { ${exportName} } from "${relPath}";`,
+          registryHintLine: firstNonImportLine,
+        };
+      } catch {
+        /* findImportBoundary failed */
       }
-      relPath = relPath.replace(/\.tsx?$/, ".js"); // .ts → .js for imports
-
-      regResult = {
-        path: regPattern.registrationFile,
-        lastImportLine,
-        importStatement: `import { ${exportName} } from "${relPath}";`,
-        registryHintLine: firstNonImportLine,
-      };
-    } catch {
-      /* registration file not readable */
     }
   }
 
@@ -420,20 +416,18 @@ export function getRegistrationInsertions(
   let barrelResult: RegistrationInsertions["barrelFile"] = null;
   const barrelPath = getBarrelFile(analysis, dir, packagePath);
   if (barrelPath) {
-    try {
-      const content = readFileSync(resolve(rootDir, barrelPath), "utf-8");
-      const lastExportLine = findLastExportFromLine(content);
+    const barrelContent = safeReadFile(rootDir, barrelPath);
+    if (barrelContent) {
+      const lastExportLine = findLastExportFromLine(barrelContent);
       // Use .ts extension if barrel uses .ts imports (e.g., nitro), else .js
-      const useTsExtension = content.includes('.ts"') || content.includes(".ts'");
+      const useTsExtension = barrelContent.includes('.ts"') || barrelContent.includes(".ts'");
       const moduleRef = `./${fileBase}${useTsExtension ? ".ts" : ".js"}`;
 
       barrelResult = {
         path: barrelPath,
-        lastExportLine: lastExportLine || content.split("\n").length, // Append at end if no prior exports
+        lastExportLine: lastExportLine || barrelContent.split("\n").length,
         exportStatement: `export * from "${moduleRef}";`,
       };
-    } catch {
-      /* barrel file not readable */
     }
   }
 
@@ -491,6 +485,12 @@ function findLastExportFromLine(content: string): number {
 
 // ─── Diagnose Queries ───────────────────────────────────────────────────────
 
+// Scoring thresholds (validated by adversarial review, 10 models)
+const MISSING_CO_CHANGE_MIN_COUNT = 5; // Minimum co-change frequency to activate signal
+const MISSING_CO_CHANGE_MIN_JACCARD = 0.4; // Minimum Jaccard coupling for missing co-change
+const RECENCY_DECAY_LAMBDA = 0.05; // Exponential decay: half-life ~14 hours
+const RECENCY_FLOOR = 0.05; // Minimum recency score (prevents zero for old changes)
+
 export interface ParsedError {
   files: string[];
   testFile: string | null;
@@ -527,10 +527,13 @@ export function parseErrorText(errorText: string, rootDir?: string): ParsedError
   let testFile: string | null = null;
   let message: string | null = null;
 
-  const msgMatch = errorText.match(/(?:TypeError|ReferenceError|Error|SyntaxError):\s*(.+)/);
+  // Cap input to prevent DoS from pathologically large error strings
+  const text = errorText.length > 100_000 ? errorText.slice(0, 100_000) : errorText;
+
+  const msgMatch = text.match(/(?:TypeError|ReferenceError|Error|SyntaxError):\s*(.+)/);
   if (msgMatch) message = msgMatch[1].trim();
 
-  for (const line of errorText.split("\n")) {
+  for (const line of text.split("\n")) {
     let m: RegExpMatchArray | null;
 
     // Vitest FAIL header: "FAIL  test/foo.test.ts > ..."
@@ -577,8 +580,9 @@ export function getRecentFileChanges(rootDir: string): FileChange[] {
 
   try {
     // Uncommitted: staged + unstaged
-    const unstaged = execGit("git diff --name-only", rootDir);
-    const staged = execGit("git diff --cached --name-only", rootDir);
+    const gitOpts = { cwd: rootDir, encoding: "utf-8" as const, timeout: 5000 };
+    const unstaged = execFileSync("git", ["diff", "--name-only"], gitOpts).trim();
+    const staged = execFileSync("git", ["diff", "--cached", "--name-only"], gitOpts).trim();
     const uncommitted = new Set([...unstaged.split("\n"), ...staged.split("\n")].filter(Boolean));
 
     for (const file of uncommitted) {
@@ -586,20 +590,24 @@ export function getRecentFileChanges(rootDir: string): FileChange[] {
     }
 
     // Committed: last 50 commits within 7 days
-    const log = execGit('git log --pretty=format:"COMMIT:%H|%at|%s" --name-only -n 50 --since="7 days ago"', rootDir);
+    const log = execFileSync(
+      "git",
+      ["log", "--pretty=format:COMMIT:%H|%at|%s", "--name-only", "-n", "50", "--since", "7 days ago"],
+      gitOpts,
+    ).trim();
 
     if (log) {
       const seen = new Set(uncommitted);
       let current: { timestamp: number; message: string } | null = null;
 
       for (const line of log.split("\n")) {
-        if (line.startsWith("COMMIT:") || line.startsWith('"COMMIT:')) {
-          const clean = line.replace(/^"?COMMIT:/, "");
-          const sep1 = clean.indexOf("|");
-          const sep2 = clean.indexOf("|", sep1 + 1);
+        if (line.startsWith("COMMIT:")) {
+          const rest = line.slice(7); // Strip "COMMIT:" prefix
+          const sep1 = rest.indexOf("|");
+          const sep2 = rest.indexOf("|", sep1 + 1);
           current = {
-            timestamp: parseInt(clean.slice(sep1 + 1, sep2), 10),
-            message: clean.slice(sep2 + 1).replace(/"$/, ""),
+            timestamp: parseInt(rest.slice(sep1 + 1, sep2), 10),
+            message: rest.slice(sep2 + 1),
           };
         } else if (line.trim() && current) {
           const file = line.trim();
@@ -731,7 +739,7 @@ export function buildSuspectList(
     for (const edge of coChangeEdges) {
       const partner = edge.file1 === changedFile ? edge.file2 : edge.file2 === changedFile ? edge.file1 : null;
       if (!partner) continue;
-      if (edge.coChangeCount < 5 || edge.jaccard <= 0.4) continue;
+      if (edge.coChangeCount < MISSING_CO_CHANGE_MIN_COUNT || edge.jaccard <= MISSING_CO_CHANGE_MIN_JACCARD) continue;
       if (changedFiles.has(partner)) continue;
 
       setMax(missingCoChange, partner, edge.jaccard);
@@ -753,7 +761,7 @@ export function buildSuspectList(
 
     const signals = {
       missingCoChange: missingCoChange.get(file) ?? 0,
-      recency: change ? Math.max(0.05, Math.exp(-0.05 * change.hoursAgo)) : 0,
+      recency: change ? Math.max(RECENCY_FLOOR, Math.exp(-RECENCY_DECAY_LAMBDA * change.hoursAgo)) : 0,
       coupling: candidateCoupling.get(file) ?? 0,
       dependency: Math.min((candidateSymbols.get(file) ?? 0) / 10, 1),
       workflow: workflowRules.some((r) => r.trigger.includes(file) || r.action.includes(file)) ? 1.0 : 0,
@@ -827,8 +835,15 @@ function addProjectFile(files: Set<string>, raw: string, rootDir?: string): void
   if (/\.[jt]sx?$/.test(normalized)) files.add(normalized);
 }
 
-function execGit(command: string, cwd: string): string {
-  return execSync(command, { cwd, encoding: "utf-8", timeout: 5000 }).trim();
+/** Read a file only if it's within rootDir (prevents path traversal). */
+function safeReadFile(rootDir: string, filePath: string): string | null {
+  const absPath = resolve(rootDir, filePath);
+  if (relative(rootDir, absPath).startsWith("..")) return null;
+  try {
+    return readFileSync(absPath, "utf-8");
+  } catch {
+    return null;
+  }
 }
 
 function setMax(map: Map<string, number>, key: string, value: number): void {

@@ -28,21 +28,23 @@ export function computeImportChain(
   minSymbols: number = DEFAULT_MIN_SYMBOLS,
 ): FileImportEdge[] {
   const edges: FileImportEdge[] = [];
+  const specCache = new Map<string, string | undefined>(); // Memoize path resolution
 
   for (const [importerFile, imports] of symbolGraph.importGraph) {
     // Group imported symbols by resolved source file
     const symbolsBySource = new Map<string, Set<string>>();
+    const fromDir = dirname(resolve(packageDir, importerFile));
 
     for (const imp of imports) {
       if (!imp.moduleSpecifier.startsWith(".")) continue; // Skip external
       if (imp.importedNames.length === 0) continue; // Skip bare imports
 
-      const sourceFile = resolveModuleSpecifier(
-        imp.moduleSpecifier,
-        dirname(resolve(packageDir, importerFile)),
-        packageDir,
-        warnings,
-      );
+      const cacheKey = `${imp.moduleSpecifier}\0${fromDir}`;
+      let sourceFile = specCache.get(cacheKey);
+      if (sourceFile === undefined && !specCache.has(cacheKey)) {
+        sourceFile = resolveModuleSpecifier(imp.moduleSpecifier, fromDir, packageDir, warnings);
+        specCache.set(cacheKey, sourceFile);
+      }
       if (!sourceFile) continue;
       if (sourceFile === importerFile) continue; // Skip self-imports
 
