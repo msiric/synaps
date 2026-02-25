@@ -3,7 +3,7 @@
 // Produces WorkflowRule entries: "When modifying X → also check Y, Z"
 // Uses Jaccard similarity for symmetric, unbiased co-change scoring.
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import type { CoChangeEdge, GitHistoryAnalysis, Warning, WorkflowRule } from "./types.js";
@@ -313,14 +313,20 @@ export function detectClusters(edges: CoChangeEdge[]): string[][] {
 /** Run git log and return raw output, or null on failure. */
 function runGitLog(dir: string, maxCommits: number, maxDays: number): string | null {
   try {
-    return execSync(
-      `git log --name-status --diff-filter=AMCR --format="COMMIT:%H %at" --no-merges -n ${maxCommits} --since="${maxDays} days ago"`,
-      {
-        cwd: dir,
-        encoding: "utf-8",
-        timeout: 10_000,
-        stdio: ["pipe", "pipe", "pipe"],
-      },
+    return execFileSync(
+      "git",
+      [
+        "log",
+        "--name-status",
+        "--diff-filter=AMCR",
+        "--format=COMMIT:%H %at",
+        "--no-merges",
+        "-n",
+        String(maxCommits),
+        "--since",
+        `${maxDays} days ago`,
+      ],
+      { cwd: dir, encoding: "utf-8", timeout: 10_000, stdio: ["pipe", "pipe", "pipe"] },
     );
   } catch {
     return null;
@@ -460,7 +466,7 @@ export function computeCoChangeEdges(
 /** Resolve git repository root directory. */
 function resolveGitRoot(dir: string): string | null {
   try {
-    return execSync("git rev-parse --show-toplevel", {
+    return execFileSync("git", ["rev-parse", "--show-toplevel"], {
       cwd: dir,
       encoding: "utf-8",
       timeout: 5000,
@@ -474,7 +480,7 @@ function resolveGitRoot(dir: string): string | null {
 /** Detect shallow clone. */
 function isShallowClone(dir: string): boolean {
   try {
-    const result = execSync("git rev-parse --is-shallow-repository", {
+    const result = execFileSync("git", ["rev-parse", "--is-shallow-repository"], {
       cwd: dir,
       encoding: "utf-8",
       timeout: 5000,
