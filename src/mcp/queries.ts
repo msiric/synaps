@@ -388,7 +388,9 @@ export function getRegistrationInsertions(
     const content = safeReadFile(rootDir, regPattern.registrationFile);
     if (content) {
       try {
-        const { lastImportLine, firstNonImportLine } = findImportBoundary(content);
+        const boundary = findImportBoundary(content);
+        // If file has no imports, insert at line 1 (top of file)
+        const insertLine = boundary.lastImportLine || 1;
 
         // Compute relative path from registration file to new file
         const regDir = regPattern.registrationFile.replace(/\/[^/]+$/, "");
@@ -402,9 +404,9 @@ export function getRegistrationInsertions(
 
         regResult = {
           path: regPattern.registrationFile,
-          lastImportLine,
+          lastImportLine: insertLine,
           importStatement: `import { ${exportName} } from "${relPath}";`,
-          registryHintLine: firstNonImportLine,
+          registryHintLine: boundary.firstNonImportLine || insertLine + 1,
         };
       } catch {
         /* findImportBoundary failed */
@@ -605,10 +607,10 @@ export function getRecentFileChanges(rootDir: string): FileChange[] {
           const rest = line.slice(7); // Strip "COMMIT:" prefix
           const sep1 = rest.indexOf("|");
           const sep2 = rest.indexOf("|", sep1 + 1);
-          current = {
-            timestamp: parseInt(rest.slice(sep1 + 1, sep2), 10),
-            message: rest.slice(sep2 + 1),
-          };
+          if (sep1 === -1 || sep2 === -1) continue; // Malformed line
+          const ts = Number.parseInt(rest.slice(sep1 + 1, sep2), 10);
+          if (Number.isNaN(ts)) continue; // Invalid timestamp
+          current = { timestamp: ts, message: rest.slice(sep2 + 1) };
         } else if (line.trim() && current) {
           const file = line.trim();
           if (!seen.has(file)) {
