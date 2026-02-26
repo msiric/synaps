@@ -1,6 +1,6 @@
 {
   "name": "autodocs-engine",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "description": "Codebase intelligence engine for generating AI context files",
   "type": "module",
   "main": "dist/index.js",
