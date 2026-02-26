@@ -535,7 +535,8 @@ export const ENGINE_VERSION = "0.8.0";
 export const DEFAULT_EXCLUDE_DIRS = [
   "node_modules",
   "dist",
-  "lib",
+  // "lib" intentionally removed — was excluding monorepo source dirs (e.g., packages/lib/).
+  // Build output in lib/ is already excluded by .gitignore via git ls-files --exclude-standard.
   "build",
   "out",
   "coverage",
