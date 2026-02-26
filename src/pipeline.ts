@@ -353,6 +353,7 @@ function analyzePackage(pkgPath: string, config: ResolvedConfig, warnings: Warni
     tiers,
     architecture.directories,
     symbolGraph.barrelFile,
+    pkgPath,
   );
   vlog(verbose, `  Contribution patterns: ${contributionPatterns.length} detected`);
 

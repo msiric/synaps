@@ -35,9 +35,13 @@ export function resolvePackage(analysis: StructuredAnalysis, packagePath?: strin
   }
   const pkg = analysis.packages.find((p) => p.relativePath === packagePath || p.name === packagePath);
   if (!pkg) {
+    // Single-package monorepos: return the only package regardless of the path hint
+    if (analysis.packages.length === 1) return analysis.packages[0];
     throw new ToolError("PACKAGE_NOT_FOUND", `Package '${packagePath}' not found.`, [
       `Available: ${analysis.packages.map((p) => p.name).join(", ")}`,
-      "Call list_packages for full details",
+      analysis.packages.length === 1
+        ? "This project is analyzed as a single package — omit packagePath"
+        : "Call list_packages for full details",
     ]);
   }
   return pkg;
@@ -749,10 +753,13 @@ export function buildSuspectList(
     }
   }
 
-  // 3. Dynamic weights
+  // 3. Dynamic weights — adapt to available signals
   const hasRecentChanges = recentChanges.some((c) => c.hoursAgo < 24);
+  const hasCoChangeData = coChangeEdges.length > 0;
   const w = hasRecentChanges
-    ? { missingCoChange: 35, recency: 25, coupling: 20, dependency: 10, workflow: 10 }
+    ? hasCoChangeData
+      ? { missingCoChange: 35, recency: 25, coupling: 20, dependency: 10, workflow: 10 }
+      : { missingCoChange: 0, recency: 40, dependency: 35, coupling: 0, workflow: 25 }
     : { missingCoChange: 0, recency: 0, coupling: 50, dependency: 35, workflow: 15 };
 
   // 4. Score each candidate

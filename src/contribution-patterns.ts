@@ -2,6 +2,8 @@
 // Detects "how to add new code" patterns from existing directory structure.
 // Deep patterns: analyzes common imports, export naming, and registration files.
 
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { ContributionPattern, DirectoryInfo, ParsedFile, PublicAPIEntry, TierInfo } from "./types.js";
 
 const COMMON_IMPORT_THRESHOLD = 0.8; // ≥80% of siblings must share the import
@@ -17,6 +19,7 @@ export function detectContributionPatterns(
   tiers: Map<string, TierInfo>,
   directories: DirectoryInfo[],
   barrelFile: string | undefined,
+  packageDir?: string,
 ): ContributionPattern[] {
   const patterns: ContributionPattern[] = [];
 
@@ -44,14 +47,16 @@ export function detectContributionPatterns(
     // Skip workspace-level directories that are containers for sub-packages,
     // not containers for source files. These produce useless patterns like
     // "add a function to packages/" which is nonsensical.
-    // Heuristic: if most files in this dir are deeply nested (3+ path segments
-    // deeper than the dir itself), it's a workspace container, not a code dir.
-    const dirDepth = dirPath.split("/").filter(Boolean).length;
-    const deepFiles = files.filter((f) => {
-      const fileDepth = f.relativePath.split("/").filter(Boolean).length;
-      return fileDepth > dirDepth + 2; // file is 3+ levels below this dir
-    });
-    if (deepFiles.length > files.length * 0.5) continue; // >50% are deeply nested → workspace dir
+    // Exception: if the directory has its own package.json, it IS a package — not a container.
+    const isOwnPackage = packageDir && existsSync(join(packageDir, dirPath, "package.json"));
+    if (!isOwnPackage) {
+      const dirDepth = dirPath.split("/").filter(Boolean).length;
+      const deepFiles = files.filter((f) => {
+        const fileDepth = f.relativePath.split("/").filter(Boolean).length;
+        return fileDepth > dirDepth + 2;
+      });
+      if (deepFiles.length > files.length * 0.5) continue;
+    }
 
     // Dominant export kind
     const kindCounts = new Map<string, number>();

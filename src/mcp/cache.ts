@@ -60,6 +60,17 @@ export class AnalysisCache {
         const pkgs = analysis.packages.length;
         const files = analysis.packages.reduce((n, p) => n + p.files.total, 0);
         process.stderr.write(`[autodocs] Analysis complete (${pkgs} package(s), ${files} files)\n`);
+
+        // Warn about shallow clone limiting co-change analysis
+        const hasCoChange = analysis.packages.some((p) => (p.gitHistory?.coChangeEdges?.length ?? 0) > 0);
+        if (!hasCoChange) {
+          const isShallow = this.safeGit(["rev-parse", "--is-shallow-repository"]);
+          if (isShallow === "true") {
+            process.stderr.write(
+              "[autodocs] Note: shallow clone — co-change analysis unavailable. Run `git fetch --unshallow` for richer analysis.\n",
+            );
+          }
+        }
       })
       .catch((err) => {
         const msg = err instanceof Error ? err.message : String(err);
