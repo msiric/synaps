@@ -30,8 +30,9 @@ export function computeImportChain(
   minSymbols: number = DEFAULT_MIN_SYMBOLS,
 ): FileImportEdge[] {
   const edges: FileImportEdge[] = [];
-  const specCache = new Map<string, string | undefined>(); // Memoize path resolution
-  const workspaceMap = buildWorkspaceMap(packageDir);
+  const relativeCache = new Map<string, string | undefined>(); // Keyed on specifier+fromDir
+  const aliasCache = new Map<string, string | undefined>(); // Keyed on specifier only (dir-independent)
+  const workspaceEntries = buildWorkspaceMap(packageDir);
 
   for (const [importerFile, imports] of symbolGraph.importGraph) {
     // Group imported symbols by resolved source file
@@ -41,15 +42,22 @@ export function computeImportChain(
     for (const imp of imports) {
       if (imp.importedNames.length === 0) continue; // Skip bare imports
 
-      const cacheKey = `${imp.moduleSpecifier}\0${fromDir}`;
-      let sourceFile = specCache.get(cacheKey);
-      if (sourceFile === undefined && !specCache.has(cacheKey)) {
-        if (imp.moduleSpecifier.startsWith(".")) {
+      let sourceFile: string | undefined;
+      if (imp.moduleSpecifier.startsWith(".")) {
+        // Relative imports: resolution depends on fromDir
+        const cacheKey = `${imp.moduleSpecifier}\0${fromDir}`;
+        sourceFile = relativeCache.get(cacheKey);
+        if (sourceFile === undefined && !relativeCache.has(cacheKey)) {
           sourceFile = resolveModuleSpecifier(imp.moduleSpecifier, fromDir, packageDir, warnings);
-        } else if (workspaceMap.size > 0) {
-          sourceFile = resolveWorkspaceAlias(imp.moduleSpecifier, workspaceMap, packageDir);
+          relativeCache.set(cacheKey, sourceFile);
         }
-        specCache.set(cacheKey, sourceFile);
+      } else if (workspaceEntries.length > 0) {
+        // Workspace aliases: resolution is dir-independent
+        sourceFile = aliasCache.get(imp.moduleSpecifier);
+        if (sourceFile === undefined && !aliasCache.has(imp.moduleSpecifier)) {
+          sourceFile = resolveWorkspaceAlias(imp.moduleSpecifier, workspaceEntries, packageDir);
+          aliasCache.set(imp.moduleSpecifier, sourceFile);
+        }
       }
       if (!sourceFile) continue;
       if (sourceFile === importerFile) continue; // Skip self-imports
@@ -82,20 +90,24 @@ export function computeImportChain(
 
 interface WorkspacePackageInfo {
   dir: string; // Relative to packageDir
+  main?: string; // main/module entry point from package.json
   exports?: Record<string, string>; // Simple subpath exports (string values only)
 }
 
+/** Pre-sorted workspace entries (longest name first) for efficient alias matching. */
+type SortedWorkspaceEntries = [string, WorkspacePackageInfo][];
+
 /**
- * Build a map from workspace package names to their directories + exports.
- * Reads actual workspace globs from package.json or pnpm-workspace.yaml.
+ * Build a sorted list of workspace packages from actual workspace globs.
+ * Returns entries sorted by name length descending (longest match first).
  */
-function buildWorkspaceMap(packageDir: string): Map<string, WorkspacePackageInfo> {
-  const map = new Map<string, WorkspacePackageInfo>();
-
+function buildWorkspaceMap(packageDir: string): SortedWorkspaceEntries {
   const globs = readWorkspaceGlobs(packageDir);
-  if (globs.length === 0) return map;
+  if (globs.length === 0) return [];
 
+  const entries: [string, WorkspacePackageInfo][] = [];
   const dirs = discoverWorkspacePackages(packageDir, globs);
+
   for (const dir of dirs) {
     try {
       const pkgJson = JSON.parse(readFileSync(join(dir, "package.json"), "utf-8"));
@@ -106,34 +118,40 @@ function buildWorkspaceMap(packageDir: string): Map<string, WorkspacePackageInfo
       if (pkgJson.exports && typeof pkgJson.exports === "object" && !Array.isArray(pkgJson.exports)) {
         const simple: Record<string, string> = {};
         for (const [key, value] of Object.entries(pkgJson.exports)) {
-          if (typeof value === "string") {
-            simple[key] = value;
-          }
+          if (typeof value === "string") simple[key] = value;
         }
         if (Object.keys(simple).length > 0) exports = simple;
       }
 
-      map.set(pkgJson.name, { dir: relative(packageDir, dir), exports });
+      // Extract main/module entry point for package root imports
+      const main =
+        typeof pkgJson.main === "string"
+          ? pkgJson.main
+          : typeof pkgJson.module === "string"
+            ? pkgJson.module
+            : undefined;
+
+      entries.push([pkgJson.name, { dir: relative(packageDir, dir), main, exports }]);
     } catch {
       /* invalid package.json */
     }
   }
 
-  return map;
+  // Sort once: longest name first (so "@calcom/features/ee" matches before "@calcom/features")
+  return entries.sort((a, b) => b[0].length - a[0].length);
 }
 
 /**
  * Resolve a workspace alias to a repo-relative file path.
- * Handles: exports field, .js→.ts mapping, /index.ts fallback, all extensions.
+ * Handles: exports field, main/module, .js→.ts mapping, /index.ts fallback.
  */
 function resolveWorkspaceAlias(
   specifier: string,
-  workspaceMap: Map<string, WorkspacePackageInfo>,
+  sortedEntries: SortedWorkspaceEntries,
   packageDir: string,
 ): string | undefined {
-  // Sort by name length descending so "@calcom/features/ee" matches before "@calcom/features"
-  for (const [pkgName, pkg] of [...workspaceMap.entries()].sort((a, b) => b[0].length - a[0].length)) {
-    // Must match exactly or as a prefix followed by /
+  // Entries are pre-sorted longest first — first match is most specific
+  for (const [pkgName, pkg] of sortedEntries) {
     if (specifier !== pkgName && !specifier.startsWith(`${pkgName}/`)) continue;
 
     const subpath = specifier === pkgName ? "" : specifier.slice(pkgName.length + 1);
@@ -146,7 +164,14 @@ function resolveWorkspaceAlias(
       if (existsSync(join(packageDir, candidate))) return candidate;
     }
 
-    // 2. Resolve via filesystem with full extension logic
+    // 2. For package root imports, try main/module field
+    if (!subpath && pkg.main) {
+      const mainPath = join(pkg.dir, pkg.main.replace(/^\.\//, ""));
+      const resolved = resolveFileWithExtensions(mainPath, packageDir);
+      if (resolved) return resolved;
+    }
+
+    // 3. Resolve via filesystem with full extension logic
     const basePath = subpath ? join(pkg.dir, subpath) : pkg.dir;
     const resolved = resolveFileWithExtensions(basePath, packageDir);
     if (resolved) return resolved;

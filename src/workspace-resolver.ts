@@ -79,7 +79,7 @@ export function parsePnpmWorkspaceYaml(filePath: string): string[] {
 
     for (const line of content.split("\n")) {
       const trimmed = line.trim();
-      if (trimmed === "packages:" || trimmed === "packages: ") {
+      if (/^packages\s*:\s*$/.test(trimmed)) {
         inPackages = true;
         continue;
       }
