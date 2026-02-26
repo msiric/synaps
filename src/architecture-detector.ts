@@ -113,6 +113,9 @@ function classifyByDependencies(packageDir: string): PackageArchitecture["packag
   return undefined;
 }
 
+const SKIP_DIR_NAMES = new Set(["node_modules", "dist", "build", "coverage", ".git", ".next", ".turbo"]);
+const MAX_DIR_DEPTH = 2;
+
 function detectDirectories(
   parsedFiles: ParsedFile[],
   packageDir: string,
@@ -125,43 +128,44 @@ function detectDirectories(
   const baseDir = existsSync(srcDir) ? srcDir : packageDir;
   const baseDirRel = existsSync(srcDir) ? "src" : "";
 
-  try {
-    const entries = readdirSync(baseDir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      if (entry.name.startsWith(".") || entry.name === "node_modules") continue;
+  // BFS scan to depth MAX_DIR_DEPTH — finds workspace package subdirectories in monorepos
+  const queue: { absDir: string; relPath: string; depth: number }[] = [
+    { absDir: baseDir, relPath: baseDirRel, depth: 0 },
+  ];
 
-      const dirRelPath = baseDirRel ? `${baseDirRel}/${entry.name}` : entry.name;
+  while (queue.length > 0) {
+    const { absDir, relPath, depth } = queue.shift()!;
+    try {
+      for (const entry of readdirSync(absDir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        if (entry.name.startsWith(".") || SKIP_DIR_NAMES.has(entry.name)) continue;
 
-      const filesInDir = parsedFiles.filter(
-        (f) => f.relativePath.startsWith(`${dirRelPath}/`) && !f.isTestFile && !f.isGeneratedFile,
-      );
+        const entryRel = relPath ? `${relPath}/${entry.name}` : entry.name;
 
-      if (filesInDir.length === 0) continue;
+        const filesInDir = parsedFiles.filter(
+          (f) => f.relativePath.startsWith(`${entryRel}/`) && !f.isTestFile && !f.isGeneratedFile,
+        );
+        if (filesInDir.length === 0) continue;
 
-      const purpose = DIRECTORY_PURPOSES[entry.name] ?? `Feature: ${entry.name}`;
+        const purpose = DIRECTORY_PURPOSES[entry.name] ?? `Feature: ${entry.name}`;
+        const dirExports = publicAPI.filter((e) => e.sourceFile.startsWith(`${entryRel}/`)).map((e) => e.name);
+        const pattern = detectFilePattern(
+          filesInDir.map((f) => {
+            const parts = f.relativePath.split("/");
+            return parts[parts.length - 1];
+          }),
+        );
 
-      // Enhancement 2: Map public exports to this directory
-      const dirExports = publicAPI.filter((e) => e.sourceFile.startsWith(`${dirRelPath}/`)).map((e) => e.name);
+        dirs.push({ path: entryRel, purpose, fileCount: filesInDir.length, exports: dirExports, pattern });
 
-      // Enhancement 2: Detect file naming pattern
-      const pattern = detectFilePattern(
-        filesInDir.map((f) => {
-          const parts = f.relativePath.split("/");
-          return parts[parts.length - 1];
-        }),
-      );
-
-      dirs.push({
-        path: dirRelPath,
-        purpose,
-        fileCount: filesInDir.length,
-        exports: dirExports,
-        pattern,
-      });
+        // Queue subdirectories for next depth
+        if (depth < MAX_DIR_DEPTH) {
+          queue.push({ absDir: join(absDir, entry.name), relPath: entryRel, depth: depth + 1 });
+        }
+      }
+    } catch {
+      /* can't read directory */
     }
-  } catch {
-    // Can't read directory
   }
 
   return dirs.sort((a, b) => b.fileCount - a.fileCount);
