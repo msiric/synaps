@@ -2,7 +2,8 @@
 // Answers: "When I modify file X, what other files do I need to check?"
 // Captures the SymbolGraph's import graph before it's discarded.
 
-import { dirname, resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 import { resolveModuleSpecifier } from "./symbol-graph.js";
 import type { FileImportEdge, SymbolGraph, Warning, WorkflowRule } from "./types.js";
 
@@ -29,6 +30,7 @@ export function computeImportChain(
 ): FileImportEdge[] {
   const edges: FileImportEdge[] = [];
   const specCache = new Map<string, string | undefined>(); // Memoize path resolution
+  const workspaceMap = buildWorkspaceMap(packageDir);
 
   for (const [importerFile, imports] of symbolGraph.importGraph) {
     // Group imported symbols by resolved source file
@@ -36,13 +38,16 @@ export function computeImportChain(
     const fromDir = dirname(resolve(packageDir, importerFile));
 
     for (const imp of imports) {
-      if (!imp.moduleSpecifier.startsWith(".")) continue; // Skip external
       if (imp.importedNames.length === 0) continue; // Skip bare imports
 
       const cacheKey = `${imp.moduleSpecifier}\0${fromDir}`;
       let sourceFile = specCache.get(cacheKey);
       if (sourceFile === undefined && !specCache.has(cacheKey)) {
-        sourceFile = resolveModuleSpecifier(imp.moduleSpecifier, fromDir, packageDir, warnings);
+        if (imp.moduleSpecifier.startsWith(".")) {
+          sourceFile = resolveModuleSpecifier(imp.moduleSpecifier, fromDir, packageDir, warnings);
+        } else if (workspaceMap.size > 0) {
+          sourceFile = resolveWorkspaceAlias(imp.moduleSpecifier, workspaceMap, packageDir);
+        }
         specCache.set(cacheKey, sourceFile);
       }
       if (!sourceFile) continue;
@@ -70,6 +75,91 @@ export function computeImportChain(
   }
 
   return edges.sort((a, b) => b.symbolCount - a.symbolCount);
+}
+
+// ─── Workspace Alias Resolution ──────────────────────────────────────────────
+
+/**
+ * Build a map from workspace package names to their directories.
+ * Scans common monorepo locations (packages/*, apps/*) for package.json files.
+ * E.g., "@calcom/features" → "packages/features"
+ */
+function buildWorkspaceMap(packageDir: string): Map<string, string> {
+  const map = new Map<string, string>();
+  const searchDirs = ["packages", "apps", "libs", "modules"];
+
+  for (const base of searchDirs) {
+    const baseDir = join(packageDir, base);
+    try {
+      for (const entry of readdirSync(baseDir, { withFileTypes: true })) {
+        if (!entry.isDirectory() || entry.name === "node_modules" || entry.name.startsWith(".")) continue;
+        const pkgJsonPath = join(baseDir, entry.name, "package.json");
+        try {
+          const name = JSON.parse(readFileSync(pkgJsonPath, "utf-8")).name;
+          if (typeof name === "string") {
+            map.set(name, relative(packageDir, join(baseDir, entry.name)));
+          }
+        } catch {
+          /* no package.json or invalid */
+        }
+        // Also check nested workspaces (e.g., packages/features/*)
+        try {
+          for (const nested of readdirSync(join(baseDir, entry.name), { withFileTypes: true })) {
+            if (!nested.isDirectory() || nested.name === "node_modules") continue;
+            const nestedPkgJson = join(baseDir, entry.name, nested.name, "package.json");
+            try {
+              const name = JSON.parse(readFileSync(nestedPkgJson, "utf-8")).name;
+              if (typeof name === "string") {
+                map.set(name, relative(packageDir, join(baseDir, entry.name, nested.name)));
+              }
+            } catch {
+              /* skip */
+            }
+          }
+        } catch {
+          /* not a directory with nested packages */
+        }
+      }
+    } catch {
+      /* search dir doesn't exist */
+    }
+  }
+
+  return map;
+}
+
+/**
+ * Resolve a workspace alias like "@calcom/features/auth/lib/getServerSession"
+ * to a repo-relative file path like "packages/features/auth/lib/getServerSession.ts".
+ */
+function resolveWorkspaceAlias(
+  specifier: string,
+  workspaceMap: Map<string, string>,
+  packageDir: string,
+): string | undefined {
+  // Try longest match first (e.g., "@calcom/features/ee" before "@calcom/features")
+  for (const [pkgName, pkgDir] of [...workspaceMap.entries()].sort((a, b) => b[0].length - a[0].length)) {
+    if (!specifier.startsWith(pkgName)) continue;
+
+    // Exact match: "@calcom/prisma" → look for index file in package dir
+    // Subpath match: "@calcom/features/auth/lib/foo" → resolve subpath
+    const subpath = specifier.slice(pkgName.length).replace(/^\//, "");
+    const basePath = subpath ? join(pkgDir, subpath) : join(pkgDir, "index");
+
+    // Try common extensions
+    for (const ext of [".ts", ".tsx", "/index.ts", "/index.tsx"]) {
+      const candidate = basePath + ext;
+      if (existsSync(join(packageDir, candidate))) {
+        return candidate;
+      }
+    }
+    // Try without extension (file might already have one)
+    if (existsSync(join(packageDir, basePath))) {
+      return basePath;
+    }
+  }
+
+  return undefined;
 }
 
 // ─── Workflow Rule Generation ────────────────────────────────────────────────
