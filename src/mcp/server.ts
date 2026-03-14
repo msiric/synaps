@@ -351,6 +351,12 @@ DO NOT CALL:
       files: z
         .array(z.string())
         .describe("Files being edited (repo-relative paths, e.g. ['src/types.ts', 'src/pipeline.ts'])"),
+      symbols: z
+        .array(z.string())
+        .optional()
+        .describe(
+          "Specific symbols being modified (e.g. ['Convention', 'WorkflowRule']). Narrows dependents to files importing these symbols.",
+        ),
       packagePath: z.string().optional().describe("Package path or name"),
     },
     async (args) => withTelemetry("plan_change", () => cache.get().then((a) => tools.handlePlanChange(a, args)), args),

@@ -392,7 +392,7 @@ const CO_CHANGE_THRESHOLD = 0.25;
 
 export function handlePlanChange(
   analysis: StructuredAnalysis,
-  args: { files: string[]; packagePath?: string },
+  args: { files: string[]; symbols?: string[]; packagePath?: string },
 ): ToolResult {
   const inputSet = new Set(args.files);
   const lines: string[] = [];
@@ -404,14 +404,31 @@ export function handlePlanChange(
   const barrelFiles = new Set<string>();
   const testFiles = new Map<string, string>(); // source → test command
 
+  const symbolFilter = args.symbols && args.symbols.length > 0 ? new Set(args.symbols) : null;
+
   for (const file of args.files) {
     // 1. Importers (who depends on this file)
-    const importers = Q.getImportersForFile(analysis, file, args.packagePath);
-    for (const imp of importers) {
-      if (inputSet.has(imp.importer)) continue;
-      const existing = dependents.get(imp.importer);
-      if (!existing || imp.symbolCount > existing.symbolCount) {
-        dependents.set(imp.importer, { symbols: imp.symbols, symbolCount: imp.symbolCount });
+    // When symbols are specified, narrow to files importing those specific symbols
+    if (symbolFilter) {
+      for (const sym of symbolFilter) {
+        const importers = Q.getImportersOfSymbol(analysis, sym, file, args.packagePath);
+        for (const imp of importers) {
+          if (inputSet.has(imp.importer)) continue;
+          const matchedSymbols = imp.symbols.filter((s) => symbolFilter.has(s));
+          const existing = dependents.get(imp.importer);
+          if (!existing || matchedSymbols.length > existing.symbolCount) {
+            dependents.set(imp.importer, { symbols: matchedSymbols, symbolCount: matchedSymbols.length });
+          }
+        }
+      }
+    } else {
+      const importers = Q.getImportersForFile(analysis, file, args.packagePath);
+      for (const imp of importers) {
+        if (inputSet.has(imp.importer)) continue;
+        const existing = dependents.get(imp.importer);
+        if (!existing || imp.symbolCount > existing.symbolCount) {
+          dependents.set(imp.importer, { symbols: imp.symbols, symbolCount: imp.symbolCount });
+        }
       }
     }
 
@@ -468,7 +485,11 @@ export function handlePlanChange(
     lines.push("### Dependent Files (import graph)");
     const sorted = [...dependents.entries()].sort((a, b) => b[1].symbolCount - a[1].symbolCount);
     for (const [file, info] of sorted.slice(0, MAX_SECTION_ITEMS)) {
-      lines.push(`- \`${file}\` — ${info.symbolCount} symbols: ${info.symbols.join(", ")}`);
+      const displaySymbols =
+        info.symbols.length > 5
+          ? `${info.symbols.slice(0, 5).join(", ")}, ...${info.symbols.length - 5} more`
+          : info.symbols.join(", ");
+      lines.push(`- \`${file}\` — ${info.symbolCount} symbols: ${displaySymbols}`);
     }
     if (sorted.length > MAX_SECTION_ITEMS) {
       lines.push(`- ...and ${sorted.length - MAX_SECTION_ITEMS} more`);
@@ -858,10 +879,24 @@ export function handleDiagnose(
   if (suspects.length > 0) {
     lines.push("### Suspect Files");
     lines.push("");
+    const pkg = Q.resolvePackage(analysis, args.packagePath);
     for (let i = 0; i < suspects.length; i++) {
       const s = suspects[i];
       lines.push(`${i + 1}. **${s.file}** (score: ${s.score})`);
       lines.push(`   ${s.reason}`);
+      // Show which symbols connect this suspect to the error site
+      if (i < 3) {
+        const connectedSymbols: string[] = [];
+        for (const ef of errorFileList) {
+          const edge = (pkg.importChain ?? []).find(
+            (e) => (e.importer === ef && e.source === s.file) || (e.importer === s.file && e.source === ef),
+          );
+          if (edge) connectedSymbols.push(...edge.symbols.slice(0, 5));
+        }
+        if (connectedSymbols.length > 0) {
+          lines.push(`   Symbols: ${[...new Set(connectedSymbols)].join(", ")}`);
+        }
+      }
     }
     lines.push("");
   } else {

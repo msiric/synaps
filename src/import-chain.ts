@@ -13,7 +13,6 @@ import { discoverWorkspacePackages, readWorkspaceGlobs } from "./workspace-resol
 const DEFAULT_MIN_SYMBOLS = 1; // Track all import edges for MCP tools (analyze_impact, plan_change)
 const DEFAULT_MIN_DEPENDENTS = 3;
 const DEFAULT_MAX_RULES = 5;
-const MAX_DISPLAY_SYMBOLS = 5;
 const MAX_DISPLAY_IMPORTERS = 3;
 
 // ─── Import Chain Computation ────────────────────────────────────────────────
@@ -77,7 +76,7 @@ export function computeImportChain(
           importer: importerFile,
           source: sourceFile,
           symbolCount: symbols.size,
-          symbols: [...symbols].slice(0, MAX_DISPLAY_SYMBOLS),
+          symbols: [...symbols],
         });
       }
     }

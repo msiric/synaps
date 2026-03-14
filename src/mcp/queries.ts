@@ -125,6 +125,16 @@ export function getExportedNamesForFile(
   return pkg.publicAPI.filter((e) => e.sourceFile === filePath && !e.isTypeOnly).map((e) => e.name);
 }
 
+export function getImportersOfSymbol(
+  analysis: StructuredAnalysis,
+  symbol: string,
+  sourceFile: string,
+  packagePath?: string,
+): FileImportEdge[] {
+  const pkg = resolvePackage(analysis, packagePath);
+  return (pkg.importChain ?? []).filter((e) => e.source === sourceFile && e.symbols.includes(symbol));
+}
+
 export function getContributionPatterns(
   analysis: StructuredAnalysis,
   packagePath?: string,
@@ -613,10 +623,21 @@ function directoryLocalityScore(testFile: string | null, candidateFile: string):
   return 0;
 }
 
+export type ErrorType = "type" | "reference" | "assertion" | "syntax" | "runtime" | null;
+
 export interface ParsedError {
   files: string[];
   testFile: string | null;
   message: string | null;
+  errorType: ErrorType;
+}
+
+function classifyErrorType(typeName: string, message: string): ErrorType {
+  if (typeName === "TypeError") return "type";
+  if (typeName === "ReferenceError") return "reference";
+  if (typeName === "SyntaxError") return "syntax";
+  if (typeName === "AssertionError" || /assert|expect|toBe|toEqual|toMatch/i.test(message)) return "assertion";
+  return "runtime";
 }
 
 export interface FileChange {
@@ -665,8 +686,12 @@ export function parseErrorText(errorText: string, rootDir?: string): ParsedError
   // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequence stripping requires \x1B
   const text = capped.replace(/\x1B\[[0-9;]*m/g, "");
 
-  const msgMatch = text.match(/(?:TypeError|ReferenceError|Error|SyntaxError):\s*([^\n]+)/);
-  if (msgMatch) message = msgMatch[1].trim();
+  let errorType: ErrorType = null;
+  const msgMatch = text.match(/(TypeError|ReferenceError|AssertionError|SyntaxError|Error):\s*([^\n]+)/);
+  if (msgMatch) {
+    errorType = classifyErrorType(msgMatch[1], msgMatch[2]);
+    message = msgMatch[2].trim();
+  }
 
   for (const line of text.split("\n")) {
     let m: RegExpMatchArray | null;
@@ -718,7 +743,7 @@ export function parseErrorText(errorText: string, rootDir?: string): ParsedError
     }
   }
 
-  return { files: [...fileSet], testFile, message };
+  return { files: [...fileSet], testFile, message, errorType };
 }
 
 /**
