@@ -546,12 +546,29 @@ function computeWeights(recentFilesCount: number, cochangeEdgesCount: number) {
   };
 }
 
-/** Test file → source file mapping by naming convention. 0-cost, high-precision signal. */
-function testToSourceScore(testFile: string | null, candidateFile: string): number {
+/**
+ * Test-to-source mapping using two complementary signals:
+ * 1. Naming convention (high precision): test/foo.test.ts → src/foo.ts identifies test SUBJECT
+ * 2. Import graph (broader recall): test imports this candidate — tiebreaker for imports
+ *
+ * Naming match returns 1.0 (strong), import match returns 0.5 (weaker — test may import many files).
+ */
+function testToSourceScore(
+  testFile: string | null,
+  candidateFile: string,
+  importByImporter: Map<string, { source: string }[]>,
+): number {
   if (!testFile) return 0;
-  // test/foo.test.ts → src/foo.ts, or test/bar.spec.ts → src/bar.ts
+
+  // Signal 1 (primary): naming convention — "this test is ABOUT this file"
   const stripped = testFile.replace(/\.(test|spec)\.(ts|tsx|js|jsx)$/, ".$2").replace(/^(test|__tests__)\//, "src/");
-  return candidateFile === stripped ? 1 : 0;
+  if (candidateFile === stripped) return 1;
+
+  // Signal 2 (tiebreaker): import graph — "the test uses this file"
+  const testImports = importByImporter.get(testFile);
+  if (testImports?.some((e) => e.source === candidateFile)) return 0.5;
+
+  return 0;
 }
 
 export interface ParsedError {
@@ -778,9 +795,11 @@ export function buildSuspectList(
   }
   const changedFiles = new Set(changeMap.keys());
 
-  // 1. Collect candidates: import neighbors + co-change partners of error files
-  //    Build indexes first to avoid O(errorFiles × edges) nested loops
-  const candidateSymbols = new Map<string, number>(); // file → max symbolCount
+  // 1. Collect candidates with directional awareness:
+  //    Upstream (dependencies of error site) are more likely root causes.
+  //    Downstream (consumers of error site) are more likely needing updates.
+  const upstreamSymbols = new Map<string, number>(); // files error site depends on
+  const downstreamSymbols = new Map<string, number>(); // files that depend on error site
   const candidateCoupling = new Map<string, number>(); // file → max Jaccard
 
   // Index import chain by both importer and source for O(1) lookup
@@ -815,12 +834,15 @@ export function buildSuspectList(
   }
 
   for (const errorFile of errorFiles) {
+    // Upstream: files the error site imports FROM (dependencies — likely root cause)
     for (const edge of importByImporter.get(errorFile) ?? []) {
-      setMax(candidateSymbols, edge.source, edge.symbolCount);
+      setMax(upstreamSymbols, edge.source, edge.symbolCount);
     }
+    // Downstream: files that import FROM error site (consumers — less likely root cause)
     for (const edge of importBySource.get(errorFile) ?? []) {
-      setMax(candidateSymbols, edge.importer, edge.symbolCount);
+      setMax(downstreamSymbols, edge.importer, edge.symbolCount);
     }
+    // Co-change partners (undirected)
     for (const edge of coChangeByFile.get(errorFile) ?? []) {
       const partner = edge.file1 === errorFile ? edge.file2 : edge.file1;
       setMax(candidateCoupling, partner, edge.jaccard);
@@ -828,10 +850,12 @@ export function buildSuspectList(
   }
 
   for (const f of errorFiles) {
-    if (!candidateSymbols.has(f) && !candidateCoupling.has(f)) candidateSymbols.set(f, 0);
+    if (!upstreamSymbols.has(f) && !downstreamSymbols.has(f) && !candidateCoupling.has(f)) {
+      upstreamSymbols.set(f, 0);
+    }
   }
 
-  const allCandidates = new Set([...candidateSymbols.keys(), ...candidateCoupling.keys()]);
+  const allCandidates = new Set([...upstreamSymbols.keys(), ...downstreamSymbols.keys(), ...candidateCoupling.keys()]);
 
   // 2. Missing co-change: joint sigmoid on both Jaccard AND count
   const missingCoChange = new Map<string, number>();
@@ -861,13 +885,19 @@ export function buildSuspectList(
     const change = changeMap.get(file);
     const rawCoupling = candidateCoupling.get(file) ?? 0;
 
+    // Directional dependency: upstream gets mild boost only when no recency data
+    // (with recency, recent changes already dominate the ranking)
+    const upScore = Math.min((upstreamSymbols.get(file) ?? 0) / 10, 1);
+    const downScore = Math.min((downstreamSymbols.get(file) ?? 0) / 10, 1);
+    const upstreamBoost = recentChanges.length === 0 ? 1.3 : 1.0;
+
     const signals = {
       missingCoChange: missingCoChange.get(file) ?? 0,
       recency: change ? recencyScore(change.hoursAgo) : 0,
       coupling: sigmoid(rawCoupling, 0.2, 5),
-      dependency: Math.min((candidateSymbols.get(file) ?? 0) / 10, 1),
+      dependency: Math.max(upScore * upstreamBoost, downScore),
       workflow: workflowRules.some((r) => r.trigger.includes(file) || r.action.includes(file)) ? 1.0 : 0,
-      testMapping: testToSourceScore(testFile ?? null, file),
+      testMapping: testToSourceScore(testFile ?? null, file, importByImporter),
     };
 
     let score =
@@ -889,7 +919,7 @@ export function buildSuspectList(
     // Build human-readable reason
     const reasons: string[] = [];
     if (signals.testMapping > 0) {
-      reasons.push("test name maps to this source file");
+      reasons.push("directly imported by failing test");
     }
     if (signals.missingCoChange > 0) {
       reasons.push(`Missing co-change: expected to change but wasn't updated`);
@@ -902,7 +932,9 @@ export function buildSuspectList(
       reasons.push(`${Math.round(rawCoupling * 100)}% co-change coupling`);
     }
     if (signals.dependency > 0) {
-      reasons.push(`${candidateSymbols.get(file) ?? 0} symbols shared with error site`);
+      const isUpstream = (upstreamSymbols.get(file) ?? 0) > 0;
+      const symCount = Math.max(upstreamSymbols.get(file) ?? 0, downstreamSymbols.get(file) ?? 0);
+      reasons.push(`${symCount} symbols ${isUpstream ? "(dependency of" : "(depends on"} error site)`);
     }
     if (callGraphBonus) {
       reasons.push("call graph connection (1.5x)");

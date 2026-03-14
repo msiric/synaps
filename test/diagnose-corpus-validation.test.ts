@@ -182,4 +182,47 @@ describe("diagnose corpus validation", () => {
     // Recall@5 should catch most cases
     expect(r5).toBeGreaterThanOrEqual(30);
   });
+
+  it("measures with simulated recent changes (realistic scenario)", () => {
+    // In real usage, the developer has recent changes that broke a test.
+    // Simulate by marking the fix files as "recently changed" (hoursAgo=1).
+    let tested = 0;
+    let precisionAt1 = 0;
+    let recallAt3 = 0;
+
+    for (const entry of corpus) {
+      const analysis = buildMockAnalysis(entry);
+
+      for (const commit of entry.commits) {
+        const errorFiles = commit.testFiles.length > 0 ? commit.testFiles : [commit.expectedRootCause];
+        const testFile = commit.testFiles[0] ?? null;
+
+        // Simulate: the fix files were recently changed (the developer made the breaking change)
+        const recentChanges: Q.FileChange[] = commit.sourceFiles.map((f) => ({
+          file: f,
+          hoursAgo: 1,
+          commitMessage: "simulated recent change",
+          isUncommitted: false,
+        }));
+
+        const suspects = Q.buildSuspectList(analysis, errorFiles, recentChanges, undefined, testFile);
+        const suspectFiles = suspects.map((s) => s.file);
+        const rank = suspectFiles.findIndex((f) => commit.sourceFiles.includes(f));
+
+        tested++;
+        if (rank === 0) precisionAt1++;
+        if (rank >= 0 && rank < 3) recallAt3++;
+      }
+    }
+
+    const p1 = tested > 0 ? Math.round((precisionAt1 / tested) * 100) : 0;
+    const r3 = tested > 0 ? Math.round((recallAt3 / tested) * 100) : 0;
+
+    console.log(`\n  ═══ With Simulated Recent Changes ═══`);
+    console.log(`  Precision@1: ${precisionAt1}/${tested} (${p1}%)`);
+    console.log(`  Recall@3:    ${recallAt3}/${tested} (${r3}%)`);
+
+    // With recency signal, results should be at least as good as structural-only
+    expect(p1).toBeGreaterThanOrEqual(15);
+  });
 });
