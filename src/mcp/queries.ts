@@ -543,6 +543,7 @@ function computeWeights(recentFilesCount: number, cochangeEdgesCount: number) {
     dependency: 10 + 15 * (1 - rr) * (1 - cr), // baseline + absorbs when both signals sparse
     workflow: 10 + 5 * (1 - cr), // baseline + boost when co-change sparse
     testMapping: 15, // always active — test name convention is high-precision, 0-cost
+    directoryLocality: 10, // always active — test/plugins/X → src/plugins/X
   };
 }
 
@@ -571,6 +572,47 @@ function testToSourceScore(
   return 0;
 }
 
+/** Directory locality: test path shares a SPECIFIC component with candidate source path. */
+const GENERIC_PATH_PARTS = new Set([
+  "test",
+  "tests",
+  "__tests__",
+  "src",
+  "lib",
+  "dist",
+  "build",
+  "fixtures",
+  "plugins",
+  "detectors",
+  "handlers",
+  "controllers",
+  "routes",
+  "utils",
+  "helpers",
+  "core",
+  "common",
+  "shared",
+  "internal",
+  "packages",
+]);
+
+function directoryLocalityScore(testFile: string | null, candidateFile: string): number {
+  if (!testFile) return 0;
+  // Extract the most specific non-generic path component from the test file
+  // For "test/plugins/astro-sharp-image-service.test.ts" → "astro-sharp-image-service" → try "astro"
+  const testBase = testFile.replace(/.*\//, "").replace(/\.(test|spec)\.[^.]+$/, "");
+  const candParts = candidateFile.split("/").filter((p) => !p.includes("."));
+
+  // Primary: test base name contains or is contained by a candidate directory
+  // "astro-sharp-image-service" contains "astro" → matches src/plugins/astro/
+  for (const cp of candParts) {
+    if (GENERIC_PATH_PARTS.has(cp)) continue;
+    if (testBase.includes(cp) || cp.includes(testBase)) return 1;
+  }
+
+  return 0;
+}
+
 export interface ParsedError {
   files: string[];
   testFile: string | null;
@@ -594,6 +636,7 @@ export interface Suspect {
     dependency: number;
     workflow: number;
     testMapping: number;
+    directoryLocality: number;
   };
   callGraphBonus: boolean;
   reason: string;
@@ -796,6 +839,12 @@ export function buildSuspectList(
   const callGraph = pkg.callGraph ?? [];
   const workflowRules = analysis.crossPackage?.workflowRules ?? [];
 
+  // Detect unselective imports: does the test file import the package entry point?
+  // If so, the import graph floods with candidates — downweight dependency signal.
+  const entryPoint = pkg.architecture.entryPoint;
+  const testImportsEntryPoint =
+    testFile && entryPoint ? chain.some((e) => e.importer === testFile && e.source === entryPoint) : false;
+
   // Index recent changes by file
   const changeMap = new Map<string, FileChange>();
   for (const c of recentChanges) {
@@ -889,6 +938,23 @@ export function buildSuspectList(
 
   const allCandidates = new Set([...upstreamSymbols.keys(), ...downstreamSymbols.keys(), ...candidateCoupling.keys()]);
 
+  // Directory locality candidate discovery: when test imports entry point (unselective),
+  // scan all known files for directory-name matches with the test file.
+  // This adds candidates that the import graph can't reach.
+  if (testImportsEntryPoint && testFile) {
+    const allKnownFiles = new Set<string>();
+    for (const edge of chain) {
+      allKnownFiles.add(edge.importer);
+      allKnownFiles.add(edge.source);
+    }
+    for (const file of allKnownFiles) {
+      if (allCandidates.has(file) || errorSet.has(file)) continue;
+      if (directoryLocalityScore(testFile, file) > 0) {
+        allCandidates.add(file);
+      }
+    }
+  }
+
   // 2. Missing co-change: joint sigmoid on both Jaccard AND count
   const missingCoChange = new Map<string, number>();
   const relevant = [...changedFiles].filter((f) => errorSet.has(f) || allCandidates.has(f));
@@ -918,18 +984,20 @@ export function buildSuspectList(
     const rawCoupling = candidateCoupling.get(file) ?? 0;
 
     // Directional dependency: upstream gets mild boost only when no recency data
-    // (with recency, recent changes already dominate the ranking)
     const upScore = Math.min((upstreamSymbols.get(file) ?? 0) / 10, 1);
     const downScore = Math.min((downstreamSymbols.get(file) ?? 0) / 10, 1);
     const upstreamBoost = recentChanges.length === 0 ? 1.3 : 1.0;
+    // When test imports entry point, import graph is unselective — reduce dependency weight
+    const selectivityFactor = testImportsEntryPoint ? 0.5 : 1.0;
 
     const signals = {
       missingCoChange: missingCoChange.get(file) ?? 0,
       recency: change ? recencyScore(change.hoursAgo) : 0,
       coupling: sigmoid(rawCoupling, 0.2, 5),
-      dependency: Math.max(upScore * upstreamBoost, downScore),
+      dependency: Math.max(upScore * upstreamBoost, downScore) * selectivityFactor,
       workflow: workflowRules.some((r) => r.trigger.includes(file) || r.action.includes(file)) ? 1.0 : 0,
       testMapping: testToSourceScore(testFile ?? null, file, importByImporter),
+      directoryLocality: directoryLocalityScore(testFile ?? null, file),
     };
 
     let score =
@@ -938,7 +1006,8 @@ export function buildSuspectList(
       w.coupling * signals.coupling +
       w.dependency * signals.dependency +
       w.workflow * signals.workflow +
-      w.testMapping * signals.testMapping;
+      w.testMapping * signals.testMapping +
+      w.directoryLocality * signals.directoryLocality;
 
     // Call graph bonus: 1.5x if call edge exists, but NOT for the error site itself
     const callGraphBonus =
@@ -968,6 +1037,9 @@ export function buildSuspectList(
       const symCount = Math.max(upstreamSymbols.get(file) ?? 0, downstreamSymbols.get(file) ?? 0);
       reasons.push(`${symCount} symbols ${isUpstream ? "(dependency of" : "(depends on"} error site)`);
     }
+    if (signals.directoryLocality > 0) {
+      reasons.push("directory matches test name");
+    }
     if (callGraphBonus) {
       reasons.push("call graph connection (1.5x)");
     }
@@ -992,6 +1064,7 @@ export function buildSuspectList(
     hasCoChangeData: coChangeEdges.length > 0,
     hasCallGraph: callGraph.length > 0,
     testHasDirectImport: testFile ? (importByImporter.get(testFile)?.length ?? 0) > 0 : false,
+    testImportsEntryPoint,
     candidatePoolSize: allCandidates.size,
   });
 }
@@ -1009,6 +1082,7 @@ function assessConfidence(
     hasCoChangeData: boolean;
     hasCallGraph: boolean;
     testHasDirectImport: boolean;
+    testImportsEntryPoint: boolean;
     candidatePoolSize: number;
   },
 ): DiagnoseResult {
@@ -1043,7 +1117,8 @@ function assessConfidence(
   } else {
     confidence = "low";
     const reasons: string[] = [];
-    if (!signals.testHasDirectImport) reasons.push("test doesn't directly import source modules");
+    if (signals.testImportsEntryPoint) reasons.push("test imports package entry point (integration test pattern)");
+    else if (!signals.testHasDirectImport) reasons.push("test doesn't directly import source modules");
     if (!signals.hasCoChangeData) reasons.push("no co-change history available");
     if (isNoisy) reasons.push(`${signals.candidatePoolSize} candidates with similar scores`);
     confidenceReason = reasons.length > 0 ? reasons.join("; ") : "limited signal available";
