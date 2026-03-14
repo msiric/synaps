@@ -833,20 +833,44 @@ export function buildSuspectList(
     }
   }
 
-  for (const errorFile of errorFiles) {
-    // Upstream: files the error site imports FROM (dependencies — likely root cause)
-    for (const edge of importByImporter.get(errorFile) ?? []) {
-      setMax(upstreamSymbols, edge.source, edge.symbolCount);
+  // Multi-hop upstream traversal: BFS through imports up to depth 2
+  // Depth 1 = direct dependency (full score), depth 2 = transitive (half score)
+  // Depth 3+ floods candidate pool on large repos — diminishing returns
+  const MAX_CANDIDATE_DEPTH = 2;
+  const visited = new Set(errorFiles);
+
+  let frontier = new Set(errorFiles);
+  for (let depth = 1; depth <= MAX_CANDIDATE_DEPTH; depth++) {
+    const depthFactor = 1 / depth; // 1.0, 0.5, 0.33
+    const nextFrontier = new Set<string>();
+
+    for (const file of frontier) {
+      // Upstream: files this node imports FROM
+      for (const edge of importByImporter.get(file) ?? []) {
+        if (!visited.has(edge.source)) {
+          setMax(upstreamSymbols, edge.source, edge.symbolCount * depthFactor);
+          nextFrontier.add(edge.source);
+        }
+      }
+      // Downstream: only at depth 1 (direct consumers of error site)
+      if (depth === 1) {
+        for (const edge of importBySource.get(file) ?? []) {
+          if (!visited.has(edge.importer)) {
+            setMax(downstreamSymbols, edge.importer, edge.symbolCount);
+          }
+        }
+      }
+      // Co-change partners (only at depth 1)
+      if (depth === 1) {
+        for (const edge of coChangeByFile.get(file) ?? []) {
+          const partner = edge.file1 === file ? edge.file2 : edge.file1;
+          setMax(candidateCoupling, partner, edge.jaccard);
+        }
+      }
     }
-    // Downstream: files that import FROM error site (consumers — less likely root cause)
-    for (const edge of importBySource.get(errorFile) ?? []) {
-      setMax(downstreamSymbols, edge.importer, edge.symbolCount);
-    }
-    // Co-change partners (undirected)
-    for (const edge of coChangeByFile.get(errorFile) ?? []) {
-      const partner = edge.file1 === errorFile ? edge.file2 : edge.file1;
-      setMax(candidateCoupling, partner, edge.jaccard);
-    }
+
+    for (const f of nextFrontier) visited.add(f);
+    frontier = nextFrontier;
   }
 
   for (const f of errorFiles) {
