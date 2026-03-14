@@ -1,0 +1,3970 @@
+{
+  "repo": "autodocs-engine",
+  "importChain": [
+    {
+      "importer": "src/analysis-builder.ts",
+      "source": "src/types.ts",
+      "symbolCount": 17,
+      "symbols": [
+        "AnalysisMeta",
+        "CommandSet",
+        "Convention",
+        "CrossPackageAnalysis",
+        "DependencySummary"
+      ]
+    },
+    {
+      "importer": "src/mcp/queries.ts",
+      "source": "src/types.ts",
+      "symbolCount": 13,
+      "symbols": [
+        "AntiPattern",
+        "CallGraphEdge",
+        "CoChangeEdge",
+        "CommandSet",
+        "ContributionPattern"
+      ]
+    },
+    {
+      "importer": "src/bin/autodocs-engine.ts",
+      "source": "src/index.ts",
+      "symbolCount": 11,
+      "symbols": [
+        "analyze",
+        "ENGINE_VERSION",
+        "format",
+        "formatAsHierarchy",
+        "formatBudgetReport"
+      ]
+    },
+    {
+      "importer": "test/helpers/fixtures.ts",
+      "source": "src/types.ts",
+      "symbolCount": 9,
+      "symbols": [
+        "ContentSignals",
+        "Convention",
+        "ConventionConfidence",
+        "ExportEntry",
+        "ImportEntry"
+      ]
+    },
+    {
+      "importer": "src/ast-parser.ts",
+      "source": "src/types.ts",
+      "symbolCount": 8,
+      "symbols": [
+        "CallReference",
+        "ContentSignals",
+        "ExportEntry",
+        "ImportEntry",
+        "ParsedFile"
+      ]
+    },
+    {
+      "importer": "test/helpers/fixtures.test.ts",
+      "source": "test/helpers/fixtures.ts",
+      "symbolCount": 8,
+      "symbols": [
+        "createContentSignals",
+        "createConvention",
+        "createExport",
+        "createImport",
+        "createParsedFile"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/types.ts",
+      "symbolCount": 7,
+      "symbols": [
+        "Convention",
+        "ConventionConfidence",
+        "ConventionDetector",
+        "DetectorContext",
+        "ParsedFile"
+      ]
+    },
+    {
+      "importer": "src/symbol-graph.ts",
+      "source": "src/types.ts",
+      "symbolCount": 7,
+      "symbols": [
+        "CallGraphEdge",
+        "ExportEntry",
+        "ImportEntry",
+        "ParsedFile",
+        "ResolvedExport"
+      ]
+    },
+    {
+      "importer": "src/benchmark/runner.ts",
+      "source": "src/benchmark/types.ts",
+      "symbolCount": 6,
+      "symbols": [
+        "BenchmarkCondition",
+        "BenchmarkOptions",
+        "BenchmarkResults",
+        "ConditionSummary",
+        "RunResult"
+      ]
+    },
+    {
+      "importer": "src/workflow-rules.ts",
+      "source": "src/types.ts",
+      "symbolCount": 6,
+      "symbols": [
+        "CommandSet",
+        "ConfigAnalysis",
+        "Convention",
+        "DependencyInsights",
+        "WorkflowRule"
+      ]
+    },
+    {
+      "importer": "src/architecture-detector.ts",
+      "source": "src/types.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "DirectoryInfo",
+        "PackageArchitecture",
+        "ParsedFile",
+        "PublicAPIEntry",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "src/benchmark/task-generator.ts",
+      "source": "src/types.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "AntiPattern",
+        "ContributionPattern",
+        "Convention",
+        "StructuredAnalysis",
+        "SOURCE_EXTENSIONS"
+      ]
+    },
+    {
+      "importer": "src/contribution-patterns.ts",
+      "source": "src/types.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "ContributionPattern",
+        "DirectoryInfo",
+        "ParsedFile",
+        "PublicAPIEntry",
+        "TierInfo"
+      ]
+    },
+    {
+      "importer": "src/cross-package.ts",
+      "source": "src/types.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "CommandSet",
+        "Convention",
+        "CrossPackageAnalysis",
+        "PackageAnalysis",
+        "PackageDependency"
+      ]
+    },
+    {
+      "importer": "src/git-history.ts",
+      "source": "src/types.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "CoChangeEdge",
+        "GitHistoryAnalysis",
+        "Warning",
+        "WorkflowRule",
+        "SOURCE_EXTENSIONS"
+      ]
+    },
+    {
+      "importer": "test/async-patterns-detector.test.ts",
+      "source": "test/helpers/fixtures.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "createContentSignals",
+        "createExport",
+        "createImport",
+        "createParsedFile",
+        "createTiers"
+      ]
+    },
+    {
+      "importer": "test/benchmark/pr-scorer.test.ts",
+      "source": "src/benchmark/pr-scorer.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "pathSimilarity",
+        "scoreBarrelUpdate",
+        "scoreFilePlacement",
+        "scoreNamingConvention",
+        "scorePROutput"
+      ]
+    },
+    {
+      "importer": "test/benchmark/statistics.test.ts",
+      "source": "src/benchmark/statistics.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "bootstrapCI",
+        "cohensD",
+        "effectSizeLabel",
+        "pairedTTest",
+        "wilcoxonSignedRank"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "DependencyInsights",
+        "PackageAnalysis",
+        "ParsedFile",
+        "TierInfo",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "test/wave3-improvements.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "CommandSet",
+        "ConfigAnalysis",
+        "DependencyInsights",
+        "PackageAnalysis",
+        "WorkspaceCommand"
+      ]
+    },
+    {
+      "importer": "src/benchmark/scorer.ts",
+      "source": "src/benchmark/types.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "BenchmarkTask",
+        "CheckResult",
+        "GeneratedFile",
+        "RunResult"
+      ]
+    },
+    {
+      "importer": "src/bin/init.ts",
+      "source": "src/index.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "analyze",
+        "formatDeterministic",
+        "formatHierarchicalDeterministic",
+        "generateMinimalAgentsMd"
+      ]
+    },
+    {
+      "importer": "src/command-extractor.ts",
+      "source": "src/types.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "Command",
+        "CommandSet",
+        "Warning",
+        "WorkspaceCommand"
+      ]
+    },
+    {
+      "importer": "src/example-extractor.ts",
+      "source": "src/types.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "ParsedFile",
+        "PublicAPIEntry",
+        "UsageExample",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "src/file-discovery.ts",
+      "source": "src/types.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "DEFAULT_EXCLUDE_DIRS",
+        "DTS_EXTENSION",
+        "SOURCE_EXTENSIONS",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "src/impact-classifier.ts",
+      "source": "src/types.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "AntiPattern",
+        "Convention",
+        "ConventionCategory",
+        "RuleImpact"
+      ]
+    },
+    {
+      "importer": "src/import-chain.ts",
+      "source": "src/types.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "FileImportEdge",
+        "SymbolGraph",
+        "Warning",
+        "WorkflowRule"
+      ]
+    },
+    {
+      "importer": "src/index.ts",
+      "source": "src/llm-adapter.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "formatDeterministicImpl",
+        "formatHierarchical",
+        "formatHierarchicalDeterministicImpl",
+        "formatWithLLM"
+      ]
+    },
+    {
+      "importer": "src/llm/adapter.ts",
+      "source": "src/types.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "PackageAnalysis",
+        "ResolvedConfig",
+        "StructuredAnalysis",
+        "LLMError"
+      ]
+    },
+    {
+      "importer": "src/llm/hierarchical.ts",
+      "source": "src/deterministic-formatter.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "assembleFinalOutput",
+        "formatArchitectureFallback",
+        "generateDeterministicAgentsMd",
+        "generatePackageDeterministicAgentsMd"
+      ]
+    },
+    {
+      "importer": "src/llm/hierarchical.ts",
+      "source": "src/llm/adapter.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "synthesizeArchitecture",
+        "synthesizeContributingRules",
+        "synthesizeDomainTerms",
+        "validateAndCorrect"
+      ]
+    },
+    {
+      "importer": "src/output-validator.ts",
+      "source": "src/types.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "PackageAnalysis",
+        "StructuredAnalysis",
+        "ValidationIssue",
+        "ValidationResult"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/types.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "PackageAnalysis",
+        "ResolvedConfig",
+        "StructuredAnalysis",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "test/bug-fixes.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "ParsedFile",
+        "ResolvedExport",
+        "SymbolGraph",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "test/contribution-patterns.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "DirectoryInfo",
+        "ParsedFile",
+        "PublicAPIEntry",
+        "TierInfo"
+      ]
+    },
+    {
+      "importer": "test/deterministic-formatter.test.ts",
+      "source": "src/deterministic-formatter.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "assembleFinalOutput",
+        "formatArchitectureFallback",
+        "generateDeterministicAgentsMd",
+        "generatePackageDeterministicAgentsMd"
+      ]
+    },
+    {
+      "importer": "test/error-handling-detector.test.ts",
+      "source": "test/helpers/fixtures.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "createExport",
+        "createImport",
+        "createParsedFile",
+        "createTiers"
+      ]
+    },
+    {
+      "importer": "test/git-history.test.ts",
+      "source": "src/git-history.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "computeCoChangeEdges",
+        "detectClusters",
+        "generateCoChangeRules",
+        "parseGitLog"
+      ]
+    },
+    {
+      "importer": "test/impact-classifier.test.ts",
+      "source": "src/impact-classifier.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "classifyAntiPatternImpact",
+        "classifyConventionImpact",
+        "classifyImpacts",
+        "isStyleRule"
+      ]
+    },
+    {
+      "importer": "test/prompting-improvements.test.ts",
+      "source": "src/templates/agents-md.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "agentsMdMultiRootTemplate",
+        "agentsMdMultiTemplate",
+        "agentsMdPackageDetailTemplate",
+        "agentsMdSingleTemplate"
+      ]
+    },
+    {
+      "importer": "src/benchmark/code-generator.ts",
+      "source": "src/benchmark/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "BenchmarkCondition",
+        "BenchmarkTask",
+        "GeneratedFile"
+      ]
+    },
+    {
+      "importer": "src/benchmark/pr-runner.ts",
+      "source": "src/benchmark/pr-miner.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "MinedTask",
+        "MinerOptions",
+        "mineCommits"
+      ]
+    },
+    {
+      "importer": "src/benchmark/pr-runner.ts",
+      "source": "src/benchmark/statistics.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "bootstrapCI",
+        "cohensD",
+        "wilcoxonSignedRank"
+      ]
+    },
+    {
+      "importer": "src/benchmark/runner.ts",
+      "source": "src/benchmark/statistics.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "bootstrapCI",
+        "cohensD",
+        "pairedTTest"
+      ]
+    },
+    {
+      "importer": "src/benchmark/task-generator.ts",
+      "source": "src/benchmark/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "BenchmarkTask",
+        "TaskContext",
+        "TaskTier"
+      ]
+    },
+    {
+      "importer": "src/benchmark/types.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "AntiPattern",
+        "ContributionPattern",
+        "Convention"
+      ]
+    },
+    {
+      "importer": "src/config.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "OutputFormat",
+        "ResolvedConfig",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "src/detectors/hook-patterns.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "Convention",
+        "ConventionDetector",
+        "ParsedFile"
+      ]
+    },
+    {
+      "importer": "src/deterministic-formatter.ts",
+      "source": "src/impact-radius.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "complexityLabel",
+        "computeImpactRadius",
+        "impactLabel"
+      ]
+    },
+    {
+      "importer": "src/deterministic-formatter.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "PackageAnalysis",
+        "StructuredAnalysis",
+        "ENGINE_VERSION"
+      ]
+    },
+    {
+      "importer": "src/implicit-coupling.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "CoChangeEdge",
+        "FileImportEdge",
+        "ImplicitCouplingEdge"
+      ]
+    },
+    {
+      "importer": "src/llm/adapter.ts",
+      "source": "src/deterministic-formatter.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "assembleFinalOutput",
+        "formatArchitectureFallback",
+        "generateDeterministicAgentsMd"
+      ]
+    },
+    {
+      "importer": "src/llm/hierarchical.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "ResolvedConfig",
+        "StructuredAnalysis",
+        "LLMError"
+      ]
+    },
+    {
+      "importer": "src/meta-tool-detector.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "ParsedFile",
+        "TierInfo",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "src/pattern-fingerprinter.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "PatternFingerprint",
+        "PublicAPIEntry",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/analysis-builder.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "buildPackageAnalysis",
+        "buildPublicAPI",
+        "buildStructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "src/tier-classifier.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "ParsedFile",
+        "SymbolGraph",
+        "TierInfo"
+      ]
+    },
+    {
+      "importer": "test/api-patterns-detector.test.ts",
+      "source": "test/helpers/fixtures.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "createImport",
+        "createParsedFile",
+        "createTiers"
+      ]
+    },
+    {
+      "importer": "test/benchmark/pr-miner.test.ts",
+      "source": "src/benchmark/pr-miner.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "listDirAtCommit",
+        "mineCommits",
+        "readFileAtCommit"
+      ]
+    },
+    {
+      "importer": "test/benchmark/task-generator.test.ts",
+      "source": "src/benchmark/task-generator.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "classifyTier",
+        "deriveTaskName",
+        "generateTasksFromAnalysis"
+      ]
+    },
+    {
+      "importer": "test/benchmark/task-generator.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "ContributionPattern",
+        "PackageAnalysis",
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/templates/agents-md.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "agentsMdMultiRootTemplate",
+        "agentsMdPackageDetailTemplate",
+        "agentsMdSingleTemplate"
+      ]
+    },
+    {
+      "importer": "test/impact-classifier.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "AntiPattern",
+        "Convention",
+        "ConventionConfidence"
+      ]
+    },
+    {
+      "importer": "test/impact-radius.test.ts",
+      "source": "src/impact-radius.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "complexityLabel",
+        "computeImpactRadius",
+        "impactLabel"
+      ]
+    },
+    {
+      "importer": "test/import-chain.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "FileImportEdge",
+        "ImportEntry",
+        "SymbolGraph"
+      ]
+    },
+    {
+      "importer": "test/state-management-detector.test.ts",
+      "source": "test/helpers/fixtures.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "createImport",
+        "createParsedFile",
+        "createTiers"
+      ]
+    },
+    {
+      "importer": "test/wave1-improvements.test.ts",
+      "source": "src/existing-docs.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "detectExistingDocs",
+        "mergeWithExisting",
+        "wrapWithDelimiters"
+      ]
+    },
+    {
+      "importer": "test/wave2-improvements.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "DetectorContext",
+        "PackageAnalysis",
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "test/wave2-improvements.test.ts",
+      "source": "test/helpers/fixtures.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "createParsedFile",
+        "emptyTiers",
+        "emptyWarnings"
+      ]
+    },
+    {
+      "importer": "src/anti-pattern-detector.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "AntiPattern",
+        "Convention"
+      ]
+    },
+    {
+      "importer": "src/benchmark/pr-runner.ts",
+      "source": "src/benchmark/pr-scorer.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "PRScoreResult",
+        "scorePROutput"
+      ]
+    },
+    {
+      "importer": "src/benchmark/report.ts",
+      "source": "src/benchmark/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "BenchmarkCondition",
+        "BenchmarkResults"
+      ]
+    },
+    {
+      "importer": "src/benchmark/runner.ts",
+      "source": "src/index.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "analyze",
+        "formatDeterministic"
+      ]
+    },
+    {
+      "importer": "src/benchmark/runner.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ResolvedConfig",
+        "ENGINE_VERSION"
+      ]
+    },
+    {
+      "importer": "src/benchmark/runner.ts",
+      "source": "src/benchmark/report.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "generateJsonReport",
+        "generateMarkdownReport"
+      ]
+    },
+    {
+      "importer": "src/bin/autodocs-engine.ts",
+      "source": "src/config.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "parseCliArgs",
+        "resolveConfig"
+      ]
+    },
+    {
+      "importer": "src/bin/benchmark.ts",
+      "source": "src/benchmark/pr-runner.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "generatePRReport",
+        "runPRBenchmark"
+      ]
+    },
+    {
+      "importer": "src/bin/init.ts",
+      "source": "src/workspace-resolver.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "discoverWorkspacePackages",
+        "parsePnpmWorkspaceYaml"
+      ]
+    },
+    {
+      "importer": "src/config-analyzer.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ConfigAnalysis",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "src/dependency-analyzer.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "DependencyInsights",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "src/detectors/api-patterns.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "buildConfidence",
+        "sourceParsedFiles"
+      ]
+    },
+    {
+      "importer": "src/detectors/api-patterns.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/detectors/async-patterns.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "buildConfidence",
+        "sourceParsedFiles"
+      ]
+    },
+    {
+      "importer": "src/detectors/async-patterns.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/detectors/build-tool.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/detectors/data-fetching.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/detectors/database.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/detectors/error-handling.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "buildConfidence",
+        "sourceParsedFiles"
+      ]
+    },
+    {
+      "importer": "src/detectors/error-handling.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/detectors/file-naming.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "buildConfidence",
+        "sourceParsedFiles"
+      ]
+    },
+    {
+      "importer": "src/detectors/file-naming.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/detectors/hook-patterns.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "buildConfidence",
+        "sourceParsedFiles"
+      ]
+    },
+    {
+      "importer": "src/detectors/import-ordering.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "buildConfidence",
+        "sourceParsedFiles"
+      ]
+    },
+    {
+      "importer": "src/detectors/import-ordering.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/detectors/state-management.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "buildConfidence",
+        "sourceParsedFiles"
+      ]
+    },
+    {
+      "importer": "src/detectors/state-management.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/detectors/test-framework-ecosystem.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/detectors/test-patterns.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/detectors/web-framework.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "Convention",
+        "ConventionDetector"
+      ]
+    },
+    {
+      "importer": "src/deterministic-formatter.ts",
+      "source": "src/llm/serializer.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "sanitize",
+        "stripConventionStats"
+      ]
+    },
+    {
+      "importer": "src/diff-analyzer.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "AnalysisDiff",
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "src/existing-docs.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ExistingDocs",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "src/import-chain.ts",
+      "source": "src/workspace-resolver.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "discoverWorkspacePackages",
+        "readWorkspaceGlobs"
+      ]
+    },
+    {
+      "importer": "src/index.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ResolvedConfig",
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "src/index.ts",
+      "source": "src/workspace-resolver.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "discoverWorkspacePackages",
+        "readWorkspaceGlobs"
+      ]
+    },
+    {
+      "importer": "src/llm/adapter.ts",
+      "source": "src/existing-docs.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "extractContributingContext",
+        "extractReadmeContext"
+      ]
+    },
+    {
+      "importer": "src/llm/client.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ResolvedConfig",
+        "LLMError"
+      ]
+    },
+    {
+      "importer": "src/llm/hierarchical.ts",
+      "source": "src/existing-docs.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "extractContributingContext",
+        "extractReadmeContext"
+      ]
+    },
+    {
+      "importer": "src/llm/hierarchical.ts",
+      "source": "src/templates/agents-md.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "agentsMdMultiRootTemplate",
+        "agentsMdPackageDetailTemplate"
+      ]
+    },
+    {
+      "importer": "src/llm/hierarchical.ts",
+      "source": "src/llm/serializer.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "serializePackageToMarkdown",
+        "serializeToMarkdown"
+      ]
+    },
+    {
+      "importer": "src/llm/serializer.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "PackageAnalysis",
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "src/llm/template-selector.ts",
+      "source": "src/templates/agents-md.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "agentsMdMultiTemplate",
+        "agentsMdSingleTemplate"
+      ]
+    },
+    {
+      "importer": "src/mermaid-generator.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "PackageAnalysis",
+        "PackageDependency"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/command-extractor.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "extractCommands",
+        "scanWorkspaceCommands"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/git-history.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "generateCoChangeRules",
+        "mineGitHistory"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/import-chain.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "computeImportChain",
+        "generateImportChainRules"
+      ]
+    },
+    {
+      "importer": "src/plugin-loader.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ConventionDetector",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "src/role-inferrer.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "PackageAnalysis",
+        "PackageRole"
+      ]
+    },
+    {
+      "importer": "src/type-enricher.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "PublicAPIEntry",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "test/anti-pattern-detector.test.ts",
+      "source": "src/anti-pattern-detector.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "deriveAntiPatterns",
+        "deriveSharedAntiPatterns"
+      ]
+    },
+    {
+      "importer": "test/benchmark/pr-task-gen.test.ts",
+      "source": "src/benchmark/pr-task-gen.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "cleanCommitMessage",
+        "generateTaskPrompt"
+      ]
+    },
+    {
+      "importer": "test/benchmark/scorer.test.ts",
+      "source": "src/benchmark/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "BenchmarkTask",
+        "GeneratedFile"
+      ]
+    },
+    {
+      "importer": "test/budget-validator.test.ts",
+      "source": "src/budget-validator.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "formatBudgetReport",
+        "validateBudget"
+      ]
+    },
+    {
+      "importer": "test/bug-fixes.test.ts",
+      "source": "test/helpers/fixtures.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "createImport",
+        "createParsedFile"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/analysis-builder.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "buildPackageAnalysis",
+        "buildPublicAPI"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "test/helpers/fixtures.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "createImport",
+        "createParsedFile"
+      ]
+    },
+    {
+      "importer": "test/contribution-patterns.test.ts",
+      "source": "test/helpers/fixtures.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "createExport",
+        "createParsedFile"
+      ]
+    },
+    {
+      "importer": "test/deterministic-formatter.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "PackageAnalysis",
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "test/diagnose.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "PackageAnalysis",
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "test/implicit-coupling.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "CoChangeEdge",
+        "FileImportEdge"
+      ]
+    },
+    {
+      "importer": "test/import-chain.test.ts",
+      "source": "src/import-chain.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "computeImportChain",
+        "generateImportChainRules"
+      ]
+    },
+    {
+      "importer": "test/import-ordering-detector.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ParsedFile",
+        "TierInfo"
+      ]
+    },
+    {
+      "importer": "test/import-ordering-detector.test.ts",
+      "source": "test/helpers/fixtures.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "createImport",
+        "createParsedFile"
+      ]
+    },
+    {
+      "importer": "test/mcp/tools.test.ts",
+      "source": "src/mcp/queries.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "findBestPattern",
+        "getRegistrationInsertions"
+      ]
+    },
+    {
+      "importer": "test/mcp/tools.test.ts",
+      "source": "src/mcp/server.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "formatSessionSummary",
+        "SessionTelemetry"
+      ]
+    },
+    {
+      "importer": "test/mcp/tools.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "PackageAnalysis",
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "test/meta-tool-detection.test.ts",
+      "source": "src/meta-tool-detector.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "detectMetaTool",
+        "PACKAGE_TO_FAMILY"
+      ]
+    },
+    {
+      "importer": "test/meta-tool-detection.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ParsedFile",
+        "TierInfo"
+      ]
+    },
+    {
+      "importer": "test/meta-tool-detection.test.ts",
+      "source": "test/helpers/fixtures.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "createImport",
+        "createParsedFile"
+      ]
+    },
+    {
+      "importer": "test/minimal-formatter.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "PackageAnalysis",
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "test/prompting-improvements.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "PackageAnalysis",
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "test/type-enricher.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "PublicAPIEntry",
+        "Warning"
+      ]
+    },
+    {
+      "importer": "scripts/calibrate-inferability.ts",
+      "source": "src/deterministic-formatter.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "generateMinimalAgentsMd"
+      ]
+    },
+    {
+      "importer": "scripts/calibrate-inferability.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "scripts/calibrate-inferability.ts",
+      "source": "src/inferability.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "computeInferabilityScore"
+      ]
+    },
+    {
+      "importer": "scripts/check-dirs.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "scripts/check-inferability.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "scripts/check-inferability.ts",
+      "source": "src/inferability.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "computeInferabilityScore"
+      ]
+    },
+    {
+      "importer": "scripts/check-patterns-postfix.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "scripts/diagnose-negative.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "scripts/diagnose-negative.ts",
+      "source": "src/inferability.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "computeInferabilityScore"
+      ]
+    },
+    {
+      "importer": "src/benchmark/code-generator.ts",
+      "source": "src/llm/client.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "callLLMWithRetry"
+      ]
+    },
+    {
+      "importer": "src/benchmark/code-generator.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ResolvedConfig"
+      ]
+    },
+    {
+      "importer": "src/benchmark/pr-runner.ts",
+      "source": "src/llm/client.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "callLLMWithRetry"
+      ]
+    },
+    {
+      "importer": "src/benchmark/pr-runner.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ResolvedConfig"
+      ]
+    },
+    {
+      "importer": "src/benchmark/pr-runner.ts",
+      "source": "src/benchmark/code-generator.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseCodeBlocks"
+      ]
+    },
+    {
+      "importer": "src/benchmark/pr-runner.ts",
+      "source": "src/benchmark/pr-task-gen.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "generateTaskPrompt"
+      ]
+    },
+    {
+      "importer": "src/benchmark/pr-scorer.ts",
+      "source": "src/benchmark/pr-miner.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "MinedTask"
+      ]
+    },
+    {
+      "importer": "src/benchmark/pr-scorer.ts",
+      "source": "src/benchmark/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "GeneratedFile"
+      ]
+    },
+    {
+      "importer": "src/benchmark/pr-task-gen.ts",
+      "source": "src/benchmark/pr-miner.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "MinedTask"
+      ]
+    },
+    {
+      "importer": "src/benchmark/report.ts",
+      "source": "src/benchmark/statistics.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "effectSizeLabel"
+      ]
+    },
+    {
+      "importer": "src/benchmark/runner.ts",
+      "source": "src/benchmark/code-generator.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "generateCode"
+      ]
+    },
+    {
+      "importer": "src/benchmark/runner.ts",
+      "source": "src/benchmark/scorer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "scoreGeneratedOutput"
+      ]
+    },
+    {
+      "importer": "src/benchmark/runner.ts",
+      "source": "src/benchmark/shuffler.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "shuffleAgentsMd"
+      ]
+    },
+    {
+      "importer": "src/benchmark/runner.ts",
+      "source": "src/benchmark/task-generator.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "generateTasksFromAnalysis"
+      ]
+    },
+    {
+      "importer": "src/bin/autodocs-engine.ts",
+      "source": "src/diff-analyzer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "diffAnalyses"
+      ]
+    },
+    {
+      "importer": "src/bin/autodocs-engine.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "src/bin/benchmark.ts",
+      "source": "src/benchmark/runner.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "orchestrateBenchmark"
+      ]
+    },
+    {
+      "importer": "src/bin/benchmark.ts",
+      "source": "src/benchmark/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "BenchmarkOptions"
+      ]
+    },
+    {
+      "importer": "src/bin/benchmark.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ResolvedConfig"
+      ]
+    },
+    {
+      "importer": "src/bin/check.ts",
+      "source": "src/diff-analyzer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "diffAnalyses"
+      ]
+    },
+    {
+      "importer": "src/bin/check.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "src/bin/check.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/api-patterns.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "apiPatternsDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/async-patterns.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "asyncPatternsDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/build-tool.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildToolDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/data-fetching.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "dataFetchingDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/database.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "databaseDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/error-handling.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "errorHandlingDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/file-naming.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "fileNamingDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/hook-patterns.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "hookPatternDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/import-ordering.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "importOrderingDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/state-management.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "stateManagementDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/test-framework-ecosystem.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "testFrameworkEcosystemDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/test-patterns.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "testPatternDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/detectors/web-framework.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "webFrameworkDetector"
+      ]
+    },
+    {
+      "importer": "src/convention-extractor.ts",
+      "source": "src/plugin-loader.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "DetectorPlugin"
+      ]
+    },
+    {
+      "importer": "src/cross-package.ts",
+      "source": "src/anti-pattern-detector.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "deriveSharedAntiPatterns"
+      ]
+    },
+    {
+      "importer": "src/cross-package.ts",
+      "source": "src/impact-classifier.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "classifyImpacts"
+      ]
+    },
+    {
+      "importer": "src/detectors/build-tool.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildConfidence"
+      ]
+    },
+    {
+      "importer": "src/detectors/data-fetching.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildConfidence"
+      ]
+    },
+    {
+      "importer": "src/detectors/database.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildConfidence"
+      ]
+    },
+    {
+      "importer": "src/detectors/test-framework-ecosystem.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildConfidence"
+      ]
+    },
+    {
+      "importer": "src/detectors/test-patterns.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildConfidence"
+      ]
+    },
+    {
+      "importer": "src/detectors/web-framework.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildConfidence"
+      ]
+    },
+    {
+      "importer": "src/deterministic-formatter.ts",
+      "source": "src/inferability.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "computeInferabilityScore"
+      ]
+    },
+    {
+      "importer": "src/deterministic-formatter.ts",
+      "source": "src/meta-tool-detector.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "PACKAGE_TO_FAMILY"
+      ]
+    },
+    {
+      "importer": "src/impact-radius.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "CallGraphEdge"
+      ]
+    },
+    {
+      "importer": "src/import-chain.ts",
+      "source": "src/symbol-graph.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "resolveModuleSpecifier"
+      ]
+    },
+    {
+      "importer": "src/index.ts",
+      "source": "src/pipeline.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "runPipeline"
+      ]
+    },
+    {
+      "importer": "src/inferability.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "PackageAnalysis"
+      ]
+    },
+    {
+      "importer": "src/llm/adapter.ts",
+      "source": "src/output-validator.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "validateOutput"
+      ]
+    },
+    {
+      "importer": "src/llm/adapter.ts",
+      "source": "src/llm/client.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "callLLMWithRetry"
+      ]
+    },
+    {
+      "importer": "src/llm/adapter.ts",
+      "source": "src/llm/serializer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "serializeToMarkdown"
+      ]
+    },
+    {
+      "importer": "src/llm/adapter.ts",
+      "source": "src/llm/template-selector.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "getTemplate"
+      ]
+    },
+    {
+      "importer": "src/llm/hierarchical.ts",
+      "source": "src/llm/client.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "callLLMWithRetry"
+      ]
+    },
+    {
+      "importer": "src/llm/template-selector.ts",
+      "source": "src/templates/claude-md.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "claudeMdTemplate"
+      ]
+    },
+    {
+      "importer": "src/llm/template-selector.ts",
+      "source": "src/templates/cursorrules.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "cursorrulesTemplate"
+      ]
+    },
+    {
+      "importer": "src/mcp/cache.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "src/mcp/cache.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "src/mcp/queries.ts",
+      "source": "src/impact-radius.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "computeImpactRadius"
+      ]
+    },
+    {
+      "importer": "src/mcp/queries.ts",
+      "source": "src/mcp/errors.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ToolError"
+      ]
+    },
+    {
+      "importer": "src/mcp/server.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ENGINE_VERSION"
+      ]
+    },
+    {
+      "importer": "src/mcp/server.ts",
+      "source": "src/mcp/cache.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "AnalysisCache"
+      ]
+    },
+    {
+      "importer": "src/mcp/server.ts",
+      "source": "src/mcp/errors.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "safeToolHandler"
+      ]
+    },
+    {
+      "importer": "src/mcp/tools.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/anti-pattern-detector.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "deriveAntiPatterns"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/architecture-detector.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "detectArchitecture"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/ast-parser.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseFile"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/config-analyzer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyzeConfig"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/contribution-patterns.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "detectContributionPatterns"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/convention-extractor.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "extractConventions"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/cross-package.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyzeCrossPackage"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/dependency-analyzer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyzeDependencies"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/example-extractor.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "extractExamples"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/existing-docs.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "detectExistingDocs"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/file-discovery.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "discoverFiles"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/impact-classifier.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "classifyImpacts"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/implicit-coupling.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "detectImplicitCoupling"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/mermaid-generator.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "generateDependencyDiagram"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/meta-tool-detector.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "detectMetaTool"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/pattern-fingerprinter.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "fingerprintTopExports"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/role-inferrer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "inferRole"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/symbol-graph.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildSymbolGraph"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/tier-classifier.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "classifyTiers"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/type-enricher.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "enrichExports"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/type-resolver.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "createTypeResolver"
+      ]
+    },
+    {
+      "importer": "src/pipeline.ts",
+      "source": "src/workflow-rules.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "generateWorkflowRules"
+      ]
+    },
+    {
+      "importer": "src/type-resolver.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Warning"
+      ]
+    },
+    {
+      "importer": "test/anti-pattern-detector.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Convention"
+      ]
+    },
+    {
+      "importer": "test/api-patterns-detector.test.ts",
+      "source": "src/detectors/api-patterns.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "apiPatternsDetector"
+      ]
+    },
+    {
+      "importer": "test/api-patterns-detector.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "DetectorContext"
+      ]
+    },
+    {
+      "importer": "test/architecture-detector.test.ts",
+      "source": "src/architecture-detector.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "detectFilePattern"
+      ]
+    },
+    {
+      "importer": "test/ast-parser.test.ts",
+      "source": "src/ast-parser.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseFile"
+      ]
+    },
+    {
+      "importer": "test/ast-parser.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "FileNotFoundError"
+      ]
+    },
+    {
+      "importer": "test/async-patterns-detector.test.ts",
+      "source": "src/detectors/async-patterns.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "asyncPatternsDetector"
+      ]
+    },
+    {
+      "importer": "test/benchmark/code-generator.test.ts",
+      "source": "src/benchmark/code-generator.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseCodeBlocks"
+      ]
+    },
+    {
+      "importer": "test/benchmark/pr-scorer.test.ts",
+      "source": "src/benchmark/pr-miner.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "MinedTask"
+      ]
+    },
+    {
+      "importer": "test/benchmark/pr-scorer.test.ts",
+      "source": "src/benchmark/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "GeneratedFile"
+      ]
+    },
+    {
+      "importer": "test/benchmark/pr-task-gen.test.ts",
+      "source": "src/benchmark/pr-miner.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "MinedTask"
+      ]
+    },
+    {
+      "importer": "test/benchmark/scorer.test.ts",
+      "source": "src/benchmark/scorer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "scoreGeneratedOutput"
+      ]
+    },
+    {
+      "importer": "test/bug-fixes.test.ts",
+      "source": "src/analysis-builder.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildPublicAPI"
+      ]
+    },
+    {
+      "importer": "test/bug-fixes.test.ts",
+      "source": "src/ast-parser.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseFile"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/ast-parser.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseFile"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/config-analyzer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyzeConfig"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/dependency-analyzer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyzeDependencies"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/detectors/file-naming.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "fileNamingDetector"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/detectors/test-framework-ecosystem.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "testFrameworkEcosystemDetector"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/file-discovery.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "discoverFiles"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/llm/serializer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "serializePackageToMarkdown"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/output-validator.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "validateOutput"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/symbol-graph.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildSymbolGraph"
+      ]
+    },
+    {
+      "importer": "test/bugfix-audit.test.ts",
+      "source": "src/tier-classifier.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "classifyTiers"
+      ]
+    },
+    {
+      "importer": "test/contribution-patterns.test.ts",
+      "source": "src/contribution-patterns.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "detectContributionPatterns"
+      ]
+    },
+    {
+      "importer": "test/deterministic-formatter.test.ts",
+      "source": "src/existing-docs.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "extractReadmeContext"
+      ]
+    },
+    {
+      "importer": "test/deterministic-formatter.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "test/diagnose-validation.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "test/diagnose-validation.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "test/diagnose.test.ts",
+      "source": "src/mcp/tools.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "handleDiagnose"
+      ]
+    },
+    {
+      "importer": "test/error-handling-detector.test.ts",
+      "source": "src/detectors/error-handling.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "errorHandlingDetector"
+      ]
+    },
+    {
+      "importer": "test/file-discovery.test.ts",
+      "source": "src/file-discovery.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "discoverFiles"
+      ]
+    },
+    {
+      "importer": "test/file-discovery.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Warning"
+      ]
+    },
+    {
+      "importer": "test/git-history.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "CoChangeEdge"
+      ]
+    },
+    {
+      "importer": "test/hierarchical-output.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "test/impact-radius.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "CallGraphEdge"
+      ]
+    },
+    {
+      "importer": "test/implicit-coupling.test.ts",
+      "source": "src/implicit-coupling.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "detectImplicitCoupling"
+      ]
+    },
+    {
+      "importer": "test/import-ordering-detector.test.ts",
+      "source": "src/detectors/import-ordering.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "importOrderingDetector"
+      ]
+    },
+    {
+      "importer": "test/inferability.test.ts",
+      "source": "src/inferability.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "computeInferabilityScore"
+      ]
+    },
+    {
+      "importer": "test/inferability.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "PackageAnalysis"
+      ]
+    },
+    {
+      "importer": "test/init.test.ts",
+      "source": "src/bin/init.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "detectProjectStructure"
+      ]
+    },
+    {
+      "importer": "test/integration.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "test/mcp/accuracy.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "test/mcp/accuracy.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StructuredAnalysis"
+      ]
+    },
+    {
+      "importer": "test/mcp/cache.test.ts",
+      "source": "src/mcp/cache.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "AnalysisCache"
+      ]
+    },
+    {
+      "importer": "test/mcp/cache.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyze"
+      ]
+    },
+    {
+      "importer": "test/minimal-formatter.test.ts",
+      "source": "src/deterministic-formatter.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "generateMinimalAgentsMd"
+      ]
+    },
+    {
+      "importer": "test/prompting-improvements.test.ts",
+      "source": "src/output-validator.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "validateOutput"
+      ]
+    },
+    {
+      "importer": "test/role-inferrer.test.ts",
+      "source": "src/role-inferrer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "inferRole"
+      ]
+    },
+    {
+      "importer": "test/role-inferrer.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "PackageAnalysis"
+      ]
+    },
+    {
+      "importer": "test/state-management-detector.test.ts",
+      "source": "src/detectors/state-management.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "stateManagementDetector"
+      ]
+    },
+    {
+      "importer": "test/symbol-graph.test.ts",
+      "source": "src/ast-parser.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseFile"
+      ]
+    },
+    {
+      "importer": "test/symbol-graph.test.ts",
+      "source": "src/file-discovery.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "discoverFiles"
+      ]
+    },
+    {
+      "importer": "test/symbol-graph.test.ts",
+      "source": "src/symbol-graph.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildSymbolGraph"
+      ]
+    },
+    {
+      "importer": "test/symbol-graph.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Warning"
+      ]
+    },
+    {
+      "importer": "test/tier-classifier.test.ts",
+      "source": "src/ast-parser.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseFile"
+      ]
+    },
+    {
+      "importer": "test/tier-classifier.test.ts",
+      "source": "src/file-discovery.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "discoverFiles"
+      ]
+    },
+    {
+      "importer": "test/tier-classifier.test.ts",
+      "source": "src/symbol-graph.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildSymbolGraph"
+      ]
+    },
+    {
+      "importer": "test/tier-classifier.test.ts",
+      "source": "src/tier-classifier.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "classifyTiers"
+      ]
+    },
+    {
+      "importer": "test/tier-classifier.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Warning"
+      ]
+    },
+    {
+      "importer": "test/type-enricher.test.ts",
+      "source": "src/type-enricher.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "enrichExports"
+      ]
+    },
+    {
+      "importer": "test/type-enricher.test.ts",
+      "source": "src/type-resolver.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "createTypeResolver"
+      ]
+    },
+    {
+      "importer": "test/type-resolver.test.ts",
+      "source": "src/type-resolver.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "createTypeResolver"
+      ]
+    },
+    {
+      "importer": "test/type-resolver.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Warning"
+      ]
+    },
+    {
+      "importer": "test/wave1-improvements.test.ts",
+      "source": "src/ast-parser.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseFile"
+      ]
+    },
+    {
+      "importer": "test/wave1-improvements.test.ts",
+      "source": "src/config-analyzer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyzeConfig"
+      ]
+    },
+    {
+      "importer": "test/wave1-improvements.test.ts",
+      "source": "src/dependency-analyzer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "analyzeDependencies"
+      ]
+    },
+    {
+      "importer": "test/wave1-improvements.test.ts",
+      "source": "src/file-discovery.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "discoverFiles"
+      ]
+    },
+    {
+      "importer": "test/wave1-improvements.test.ts",
+      "source": "src/symbol-graph.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildSymbolGraph"
+      ]
+    },
+    {
+      "importer": "test/wave1-improvements.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Warning"
+      ]
+    },
+    {
+      "importer": "test/wave2-improvements.test.ts",
+      "source": "src/detectors/build-tool.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "buildToolDetector"
+      ]
+    },
+    {
+      "importer": "test/wave2-improvements.test.ts",
+      "source": "src/detectors/data-fetching.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "dataFetchingDetector"
+      ]
+    },
+    {
+      "importer": "test/wave2-improvements.test.ts",
+      "source": "src/detectors/database.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "databaseDetector"
+      ]
+    },
+    {
+      "importer": "test/wave2-improvements.test.ts",
+      "source": "src/detectors/test-framework-ecosystem.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "testFrameworkEcosystemDetector"
+      ]
+    },
+    {
+      "importer": "test/wave2-improvements.test.ts",
+      "source": "src/detectors/web-framework.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "webFrameworkDetector"
+      ]
+    },
+    {
+      "importer": "test/wave2-improvements.test.ts",
+      "source": "src/diff-analyzer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "diffAnalyses"
+      ]
+    },
+    {
+      "importer": "test/wave2-improvements.test.ts",
+      "source": "src/output-validator.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "validateOutput"
+      ]
+    },
+    {
+      "importer": "test/wave2-improvements.test.ts",
+      "source": "src/pattern-fingerprinter.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "fingerprintTopExports"
+      ]
+    },
+    {
+      "importer": "test/wave3-improvements.test.ts",
+      "source": "src/command-extractor.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "scanWorkspaceCommands"
+      ]
+    },
+    {
+      "importer": "test/wave3-improvements.test.ts",
+      "source": "src/role-inferrer.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "inferRole"
+      ]
+    },
+    {
+      "importer": "test/wave3-improvements.test.ts",
+      "source": "src/workflow-rules.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "generateWorkflowRules"
+      ]
+    }
+  ],
+  "coChangeEdges": [
+    {
+      "file1": "src/detectors/build-tool.ts",
+      "file2": "src/detectors/data-fetching.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 5,
+      "jaccard": 0.6666666666666666,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/detectors/build-tool.ts",
+      "file2": "src/detectors/database.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 5,
+      "jaccard": 0.6666666666666666,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/detectors/build-tool.ts",
+      "file2": "src/detectors/web-framework.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 5,
+      "jaccard": 0.6666666666666666,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/detectors/data-fetching.ts",
+      "file2": "src/detectors/database.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 5,
+      "jaccard": 0.6666666666666666,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/detectors/data-fetching.ts",
+      "file2": "src/detectors/web-framework.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 5,
+      "jaccard": 0.6666666666666666,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/detectors/database.ts",
+      "file2": "src/detectors/web-framework.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 5,
+      "jaccard": 0.6666666666666666,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/llm/adapter.ts",
+      "file2": "src/llm/hierarchical.ts",
+      "coChangeCount": 4,
+      "file1Commits": 7,
+      "file2Commits": 5,
+      "jaccard": 0.5,
+      "lastCoChangeTimestamp": 1771693766
+    },
+    {
+      "file1": "src/dependency-analyzer.ts",
+      "file2": "src/templates/agents-md.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 8,
+      "jaccard": 0.4444444444444444,
+      "lastCoChangeTimestamp": 1771415720
+    },
+    {
+      "file1": "src/mcp/queries.ts",
+      "file2": "src/mcp/tools.ts",
+      "coChangeCount": 8,
+      "file1Commits": 17,
+      "file2Commits": 11,
+      "jaccard": 0.4,
+      "lastCoChangeTimestamp": 1772016731
+    },
+    {
+      "file1": "src/output-validator.ts",
+      "file2": "src/templates/agents-md.ts",
+      "coChangeCount": 4,
+      "file1Commits": 6,
+      "file2Commits": 8,
+      "jaccard": 0.4,
+      "lastCoChangeTimestamp": 1771421477
+    },
+    {
+      "file1": "src/pipeline.ts",
+      "file2": "src/types.ts",
+      "coChangeCount": 9,
+      "file1Commits": 14,
+      "file2Commits": 18,
+      "jaccard": 0.391304347826087,
+      "lastCoChangeTimestamp": 1771766624
+    },
+    {
+      "file1": "src/mcp/queries.ts",
+      "file2": "src/mcp/server.ts",
+      "coChangeCount": 8,
+      "file1Commits": 17,
+      "file2Commits": 12,
+      "jaccard": 0.38095238095238093,
+      "lastCoChangeTimestamp": 1772033950
+    },
+    {
+      "file1": "src/llm/adapter.ts",
+      "file2": "src/llm/client.ts",
+      "coChangeCount": 3,
+      "file1Commits": 7,
+      "file2Commits": 4,
+      "jaccard": 0.375,
+      "lastCoChangeTimestamp": 1771461139
+    },
+    {
+      "file1": "src/output-validator.ts",
+      "file2": "test/wave2-improvements.test.ts",
+      "coChangeCount": 3,
+      "file1Commits": 6,
+      "file2Commits": 5,
+      "jaccard": 0.375,
+      "lastCoChangeTimestamp": 1771421477
+    },
+    {
+      "file1": "src/dependency-analyzer.ts",
+      "file2": "src/output-validator.ts",
+      "coChangeCount": 3,
+      "file1Commits": 5,
+      "file2Commits": 6,
+      "jaccard": 0.375,
+      "lastCoChangeTimestamp": 1771415720
+    },
+    {
+      "file1": "src/bin/autodocs-engine.ts",
+      "file2": "src/config.ts",
+      "coChangeCount": 7,
+      "file1Commits": 14,
+      "file2Commits": 12,
+      "jaccard": 0.3684210526315789,
+      "lastCoChangeTimestamp": 1772019797
+    },
+    {
+      "file1": "src/llm-adapter.ts",
+      "file2": "src/templates/agents-md.ts",
+      "coChangeCount": 4,
+      "file1Commits": 7,
+      "file2Commits": 8,
+      "jaccard": 0.36363636363636365,
+      "lastCoChangeTimestamp": 1771347859
+    },
+    {
+      "file1": "src/mcp/server.ts",
+      "file2": "src/mcp/tools.ts",
+      "coChangeCount": 6,
+      "file1Commits": 12,
+      "file2Commits": 11,
+      "jaccard": 0.35294117647058826,
+      "lastCoChangeTimestamp": 1771969739
+    },
+    {
+      "file1": "src/config.ts",
+      "file2": "src/index.ts",
+      "coChangeCount": 5,
+      "file1Commits": 12,
+      "file2Commits": 8,
+      "jaccard": 0.3333333333333333,
+      "lastCoChangeTimestamp": 1771888671
+    },
+    {
+      "file1": "src/existing-docs.ts",
+      "file2": "src/llm/adapter.ts",
+      "coChangeCount": 3,
+      "file1Commits": 5,
+      "file2Commits": 7,
+      "jaccard": 0.3333333333333333,
+      "lastCoChangeTimestamp": 1771693766
+    },
+    {
+      "file1": "src/convention-extractor.ts",
+      "file2": "src/detectors/build-tool.ts",
+      "coChangeCount": 3,
+      "file1Commits": 7,
+      "file2Commits": 5,
+      "jaccard": 0.3333333333333333,
+      "lastCoChangeTimestamp": 1771461139
+    },
+    {
+      "file1": "src/convention-extractor.ts",
+      "file2": "src/detectors/data-fetching.ts",
+      "coChangeCount": 3,
+      "file1Commits": 7,
+      "file2Commits": 5,
+      "jaccard": 0.3333333333333333,
+      "lastCoChangeTimestamp": 1771461139
+    },
+    {
+      "file1": "src/convention-extractor.ts",
+      "file2": "src/detectors/database.ts",
+      "coChangeCount": 3,
+      "file1Commits": 7,
+      "file2Commits": 5,
+      "jaccard": 0.3333333333333333,
+      "lastCoChangeTimestamp": 1771461139
+    },
+    {
+      "file1": "src/convention-extractor.ts",
+      "file2": "src/detectors/web-framework.ts",
+      "coChangeCount": 3,
+      "file1Commits": 7,
+      "file2Commits": 5,
+      "jaccard": 0.3333333333333333,
+      "lastCoChangeTimestamp": 1771461139
+    },
+    {
+      "file1": "src/dependency-analyzer.ts",
+      "file2": "src/llm-adapter.ts",
+      "coChangeCount": 3,
+      "file1Commits": 5,
+      "file2Commits": 7,
+      "jaccard": 0.3333333333333333,
+      "lastCoChangeTimestamp": 1771341375
+    },
+    {
+      "file1": "src/templates/agents-md.ts",
+      "file2": "src/types.ts",
+      "coChangeCount": 6,
+      "file1Commits": 8,
+      "file2Commits": 18,
+      "jaccard": 0.3,
+      "lastCoChangeTimestamp": 1771421477
+    },
+    {
+      "file1": "src/templates/agents-md.ts",
+      "file2": "test/wave2-improvements.test.ts",
+      "coChangeCount": 3,
+      "file1Commits": 8,
+      "file2Commits": 5,
+      "jaccard": 0.3,
+      "lastCoChangeTimestamp": 1771421477
+    },
+    {
+      "file1": "src/templates/agents-md.ts",
+      "file2": "test/wave5-improvements.test.ts",
+      "coChangeCount": 3,
+      "file1Commits": 8,
+      "file2Commits": 5,
+      "jaccard": 0.3,
+      "lastCoChangeTimestamp": 1771421477
+    },
+    {
+      "file1": "src/pipeline.ts",
+      "file2": "src/templates/agents-md.ts",
+      "coChangeCount": 5,
+      "file1Commits": 14,
+      "file2Commits": 8,
+      "jaccard": 0.29411764705882354,
+      "lastCoChangeTimestamp": 1771415720
+    },
+    {
+      "file1": "src/llm/serializer.ts",
+      "file2": "src/templates/agents-md.ts",
+      "coChangeCount": 3,
+      "file1Commits": 6,
+      "file2Commits": 8,
+      "jaccard": 0.2727272727272727,
+      "lastCoChangeTimestamp": 1772033950
+    },
+    {
+      "file1": "src/detectors/build-tool.ts",
+      "file2": "src/pipeline.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 14,
+      "jaccard": 0.26666666666666666,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/detectors/data-fetching.ts",
+      "file2": "src/pipeline.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 14,
+      "jaccard": 0.26666666666666666,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/detectors/database.ts",
+      "file2": "src/pipeline.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 14,
+      "jaccard": 0.26666666666666666,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/detectors/web-framework.ts",
+      "file2": "src/pipeline.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 14,
+      "jaccard": 0.26666666666666666,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/config.ts",
+      "file2": "src/llm-adapter.ts",
+      "coChangeCount": 4,
+      "file1Commits": 12,
+      "file2Commits": 7,
+      "jaccard": 0.26666666666666666,
+      "lastCoChangeTimestamp": 1771427683
+    },
+    {
+      "file1": "src/dependency-analyzer.ts",
+      "file2": "src/pipeline.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 14,
+      "jaccard": 0.26666666666666666,
+      "lastCoChangeTimestamp": 1771415720
+    },
+    {
+      "file1": "src/index.ts",
+      "file2": "src/llm-adapter.ts",
+      "coChangeCount": 3,
+      "file1Commits": 8,
+      "file2Commits": 7,
+      "jaccard": 0.25,
+      "lastCoChangeTimestamp": 1771427683
+    },
+    {
+      "file1": "src/llm-adapter.ts",
+      "file2": "src/pipeline.ts",
+      "coChangeCount": 4,
+      "file1Commits": 7,
+      "file2Commits": 14,
+      "jaccard": 0.23529411764705882,
+      "lastCoChangeTimestamp": 1771347859
+    },
+    {
+      "file1": "src/bin/autodocs-engine.ts",
+      "file2": "src/index.ts",
+      "coChangeCount": 4,
+      "file1Commits": 14,
+      "file2Commits": 8,
+      "jaccard": 0.2222222222222222,
+      "lastCoChangeTimestamp": 1771888671
+    },
+    {
+      "file1": "src/config.ts",
+      "file2": "src/existing-docs.ts",
+      "coChangeCount": 3,
+      "file1Commits": 12,
+      "file2Commits": 5,
+      "jaccard": 0.21428571428571427,
+      "lastCoChangeTimestamp": 1771693766
+    },
+    {
+      "file1": "src/config.ts",
+      "file2": "src/dependency-analyzer.ts",
+      "coChangeCount": 3,
+      "file1Commits": 12,
+      "file2Commits": 5,
+      "jaccard": 0.21428571428571427,
+      "lastCoChangeTimestamp": 1771341375
+    },
+    {
+      "file1": "src/detectors/build-tool.ts",
+      "file2": "src/types.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 18,
+      "jaccard": 0.21052631578947367,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/detectors/data-fetching.ts",
+      "file2": "src/types.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 18,
+      "jaccard": 0.21052631578947367,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/detectors/database.ts",
+      "file2": "src/types.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 18,
+      "jaccard": 0.21052631578947367,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/detectors/web-framework.ts",
+      "file2": "src/types.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 18,
+      "jaccard": 0.21052631578947367,
+      "lastCoChangeTimestamp": 1771509178
+    },
+    {
+      "file1": "src/dependency-analyzer.ts",
+      "file2": "src/types.ts",
+      "coChangeCount": 4,
+      "file1Commits": 5,
+      "file2Commits": 18,
+      "jaccard": 0.21052631578947367,
+      "lastCoChangeTimestamp": 1771415720
+    },
+    {
+      "file1": "src/bin/serve.ts",
+      "file2": "src/mcp/server.ts",
+      "coChangeCount": 3,
+      "file1Commits": 6,
+      "file2Commits": 12,
+      "jaccard": 0.2,
+      "lastCoChangeTimestamp": 1772019797
+    },
+    {
+      "file1": "src/mcp/cache.ts",
+      "file2": "src/mcp/server.ts",
+      "coChangeCount": 3,
+      "file1Commits": 6,
+      "file2Commits": 12,
+      "jaccard": 0.2,
+      "lastCoChangeTimestamp": 1771943089
+    },
+    {
+      "file1": "src/deterministic-formatter.ts",
+      "file2": "test/deterministic-formatter.test.ts",
+      "coChangeCount": 3,
+      "file1Commits": 14,
+      "file2Commits": 4,
+      "jaccard": 0.2,
+      "lastCoChangeTimestamp": 1771842583
+    },
+    {
+      "file1": "src/config-analyzer.ts",
+      "file2": "src/pipeline.ts",
+      "coChangeCount": 3,
+      "file1Commits": 4,
+      "file2Commits": 14,
+      "jaccard": 0.2,
+      "lastCoChangeTimestamp": 1771461139
+    }
+  ],
+  "callGraph": [
+    {
+      "from": "generateCode",
+      "to": "callLLMWithRetry",
+      "fromFile": "src/benchmark/code-generator.ts",
+      "toFile": "src/llm/client.ts"
+    },
+    {
+      "from": "runPRBenchmark",
+      "to": "mineCommits",
+      "fromFile": "src/benchmark/pr-runner.ts",
+      "toFile": "src/benchmark/pr-miner.ts"
+    },
+    {
+      "from": "runPRBenchmark",
+      "to": "generateTaskPrompt",
+      "fromFile": "src/benchmark/pr-runner.ts",
+      "toFile": "src/benchmark/pr-task-gen.ts"
+    },
+    {
+      "from": "runPRBenchmark",
+      "to": "callLLMWithRetry",
+      "fromFile": "src/benchmark/pr-runner.ts",
+      "toFile": "src/llm/client.ts"
+    },
+    {
+      "from": "runPRBenchmark",
+      "to": "parseCodeBlocks",
+      "fromFile": "src/benchmark/pr-runner.ts",
+      "toFile": "src/benchmark/code-generator.ts"
+    },
+    {
+      "from": "runPRBenchmark",
+      "to": "scorePROutput",
+      "fromFile": "src/benchmark/pr-runner.ts",
+      "toFile": "src/benchmark/pr-scorer.ts"
+    },
+    {
+      "from": "generateMarkdownReport",
+      "to": "effectSizeLabel",
+      "fromFile": "src/benchmark/report.ts",
+      "toFile": "src/benchmark/statistics.ts"
+    },
+    {
+      "from": "orchestrateBenchmark",
+      "to": "analyze",
+      "fromFile": "src/benchmark/runner.ts",
+      "toFile": "src/index.ts"
+    },
+    {
+      "from": "orchestrateBenchmark",
+      "to": "generateTasksFromAnalysis",
+      "fromFile": "src/benchmark/runner.ts",
+      "toFile": "src/benchmark/task-generator.ts"
+    },
+    {
+      "from": "orchestrateBenchmark",
+      "to": "formatDeterministic",
+      "fromFile": "src/benchmark/runner.ts",
+      "toFile": "src/index.ts"
+    },
+    {
+      "from": "orchestrateBenchmark",
+      "to": "shuffleAgentsMd",
+      "fromFile": "src/benchmark/runner.ts",
+      "toFile": "src/benchmark/shuffler.ts"
+    },
+    {
+      "from": "orchestrateBenchmark",
+      "to": "generateCode",
+      "fromFile": "src/benchmark/runner.ts",
+      "toFile": "src/benchmark/code-generator.ts"
+    },
+    {
+      "from": "orchestrateBenchmark",
+      "to": "scoreGeneratedOutput",
+      "fromFile": "src/benchmark/runner.ts",
+      "toFile": "src/benchmark/scorer.ts"
+    },
+    {
+      "from": "orchestrateBenchmark",
+      "to": "generateJsonReport",
+      "fromFile": "src/benchmark/runner.ts",
+      "toFile": "src/benchmark/report.ts"
+    },
+    {
+      "from": "orchestrateBenchmark",
+      "to": "generateMarkdownReport",
+      "fromFile": "src/benchmark/runner.ts",
+      "toFile": "src/benchmark/report.ts"
+    },
+    {
+      "from": "runBenchmark",
+      "to": "orchestrateBenchmark",
+      "fromFile": "src/bin/benchmark.ts",
+      "toFile": "src/benchmark/runner.ts"
+    },
+    {
+      "from": "runCheck",
+      "to": "analyze",
+      "fromFile": "src/bin/check.ts",
+      "toFile": "src/index.ts"
+    },
+    {
+      "from": "runCheck",
+      "to": "diffAnalyses",
+      "fromFile": "src/bin/check.ts",
+      "toFile": "src/diff-analyzer.ts"
+    },
+    {
+      "from": "runInit",
+      "to": "analyze",
+      "fromFile": "src/bin/init.ts",
+      "toFile": "src/index.ts"
+    },
+    {
+      "from": "runInit",
+      "to": "generateMinimalAgentsMd",
+      "fromFile": "src/bin/init.ts",
+      "toFile": "src/deterministic-formatter.ts"
+    },
+    {
+      "from": "runInit",
+      "to": "formatHierarchicalDeterministic",
+      "fromFile": "src/bin/init.ts",
+      "toFile": "src/index.ts"
+    },
+    {
+      "from": "runInit",
+      "to": "formatDeterministic",
+      "fromFile": "src/bin/init.ts",
+      "toFile": "src/index.ts"
+    },
+    {
+      "from": "detectProjectStructure",
+      "to": "discoverWorkspacePackages",
+      "fromFile": "src/bin/init.ts",
+      "toFile": "src/workspace-resolver.ts"
+    },
+    {
+      "from": "detectProjectStructure",
+      "to": "parsePnpmWorkspaceYaml",
+      "fromFile": "src/bin/init.ts",
+      "toFile": "src/workspace-resolver.ts"
+    },
+    {
+      "from": "analyzeCrossPackage",
+      "to": "deriveSharedAntiPatterns",
+      "fromFile": "src/cross-package.ts",
+      "toFile": "src/anti-pattern-detector.ts"
+    },
+    {
+      "from": "analyzeCrossPackage",
+      "to": "classifyImpacts",
+      "fromFile": "src/cross-package.ts",
+      "toFile": "src/impact-classifier.ts"
+    },
+    {
+      "from": "apiPatternsDetector",
+      "to": "sourceParsedFiles",
+      "fromFile": "src/detectors/api-patterns.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "apiPatternsDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/api-patterns.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "asyncPatternsDetector",
+      "to": "sourceParsedFiles",
+      "fromFile": "src/detectors/async-patterns.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "asyncPatternsDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/async-patterns.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "buildToolDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/build-tool.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "dataFetchingDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/data-fetching.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "databaseDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/database.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "errorHandlingDetector",
+      "to": "sourceParsedFiles",
+      "fromFile": "src/detectors/error-handling.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "errorHandlingDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/error-handling.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "fileNamingDetector",
+      "to": "sourceParsedFiles",
+      "fromFile": "src/detectors/file-naming.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "fileNamingDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/file-naming.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "hookPatternDetector",
+      "to": "sourceParsedFiles",
+      "fromFile": "src/detectors/hook-patterns.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "hookPatternDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/hook-patterns.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "importOrderingDetector",
+      "to": "sourceParsedFiles",
+      "fromFile": "src/detectors/import-ordering.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "importOrderingDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/import-ordering.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "stateManagementDetector",
+      "to": "sourceParsedFiles",
+      "fromFile": "src/detectors/state-management.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "stateManagementDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/state-management.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "testFrameworkEcosystemDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/test-framework-ecosystem.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "testPatternDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/test-patterns.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "webFrameworkDetector",
+      "to": "buildConfidence",
+      "fromFile": "src/detectors/web-framework.ts",
+      "toFile": "src/convention-extractor.ts"
+    },
+    {
+      "from": "generateDeterministicAgentsMd",
+      "to": "computeInferabilityScore",
+      "fromFile": "src/deterministic-formatter.ts",
+      "toFile": "src/inferability.ts"
+    },
+    {
+      "from": "computeImportChain",
+      "to": "resolveModuleSpecifier",
+      "fromFile": "src/import-chain.ts",
+      "toFile": "src/symbol-graph.ts"
+    },
+    {
+      "from": "analyze",
+      "to": "readWorkspaceGlobs",
+      "fromFile": "src/index.ts",
+      "toFile": "src/workspace-resolver.ts"
+    },
+    {
+      "from": "analyze",
+      "to": "discoverWorkspacePackages",
+      "fromFile": "src/index.ts",
+      "toFile": "src/workspace-resolver.ts"
+    },
+    {
+      "from": "analyze",
+      "to": "runPipeline",
+      "fromFile": "src/index.ts",
+      "toFile": "src/pipeline.ts"
+    },
+    {
+      "from": "format",
+      "to": "formatWithLLM",
+      "fromFile": "src/index.ts",
+      "toFile": "src/llm-adapter.ts"
+    },
+    {
+      "from": "formatAsHierarchy",
+      "to": "formatHierarchical",
+      "fromFile": "src/index.ts",
+      "toFile": "src/llm-adapter.ts"
+    },
+    {
+      "from": "formatWithLLM",
+      "to": "serializeToMarkdown",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/llm/serializer.ts"
+    },
+    {
+      "from": "formatWithLLM",
+      "to": "getTemplate",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/llm/template-selector.ts"
+    },
+    {
+      "from": "formatWithLLM",
+      "to": "callLLMWithRetry",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/llm/client.ts"
+    },
+    {
+      "from": "validateAndCorrect",
+      "to": "validateOutput",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/index.ts"
+    },
+    {
+      "from": "validateAndCorrect",
+      "to": "callLLMWithRetry",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/llm/client.ts"
+    },
+    {
+      "from": "formatDeterministic",
+      "to": "generateDeterministicAgentsMd",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/deterministic-formatter.ts"
+    },
+    {
+      "from": "formatDeterministic",
+      "to": "extractReadmeContext",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/existing-docs.ts"
+    },
+    {
+      "from": "formatDeterministic",
+      "to": "extractContributingContext",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/existing-docs.ts"
+    },
+    {
+      "from": "formatDeterministic",
+      "to": "formatArchitectureFallback",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/deterministic-formatter.ts"
+    },
+    {
+      "from": "formatDeterministic",
+      "to": "assembleFinalOutput",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/deterministic-formatter.ts"
+    },
+    {
+      "from": "synthesizeArchitecture",
+      "to": "formatArchitectureFallback",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/deterministic-formatter.ts"
+    },
+    {
+      "from": "synthesizeArchitecture",
+      "to": "callLLMWithRetry",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/llm/client.ts"
+    },
+    {
+      "from": "synthesizeDomainTerms",
+      "to": "callLLMWithRetry",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/llm/client.ts"
+    },
+    {
+      "from": "synthesizeContributingRules",
+      "to": "callLLMWithRetry",
+      "fromFile": "src/llm/adapter.ts",
+      "toFile": "src/llm/client.ts"
+    },
+    {
+      "from": "formatHierarchical",
+      "to": "serializeToMarkdown",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/llm/serializer.ts"
+    },
+    {
+      "from": "formatHierarchical",
+      "to": "callLLMWithRetry",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/llm/client.ts"
+    },
+    {
+      "from": "formatHierarchical",
+      "to": "validateAndCorrect",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/llm/adapter.ts"
+    },
+    {
+      "from": "formatHierarchical",
+      "to": "serializePackageToMarkdown",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/llm/serializer.ts"
+    },
+    {
+      "from": "formatHierarchicalDeterministic",
+      "to": "generateDeterministicAgentsMd",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/deterministic-formatter.ts"
+    },
+    {
+      "from": "formatHierarchicalDeterministic",
+      "to": "extractReadmeContext",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/existing-docs.ts"
+    },
+    {
+      "from": "formatHierarchicalDeterministic",
+      "to": "extractContributingContext",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/existing-docs.ts"
+    },
+    {
+      "from": "formatHierarchicalDeterministic",
+      "to": "synthesizeArchitecture",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/llm/adapter.ts"
+    },
+    {
+      "from": "formatHierarchicalDeterministic",
+      "to": "synthesizeDomainTerms",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/llm/adapter.ts"
+    },
+    {
+      "from": "formatHierarchicalDeterministic",
+      "to": "synthesizeContributingRules",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/llm/adapter.ts"
+    },
+    {
+      "from": "formatHierarchicalDeterministic",
+      "to": "formatArchitectureFallback",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/deterministic-formatter.ts"
+    },
+    {
+      "from": "formatHierarchicalDeterministic",
+      "to": "assembleFinalOutput",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/deterministic-formatter.ts"
+    },
+    {
+      "from": "formatHierarchicalDeterministic",
+      "to": "generatePackageDeterministicAgentsMd",
+      "fromFile": "src/llm/hierarchical.ts",
+      "toFile": "src/deterministic-formatter.ts"
+    },
+    {
+      "from": "getCallersForFunction",
+      "to": "computeImpactRadius",
+      "fromFile": "src/mcp/queries.ts",
+      "toFile": "src/impact-radius.ts"
+    },
+    {
+      "from": "createAutodocsServer",
+      "to": "safeToolHandler",
+      "fromFile": "src/mcp/server.ts",
+      "toFile": "src/mcp/errors.ts"
+    },
+    {
+      "from": "runPipeline",
+      "to": "mineGitHistory",
+      "fromFile": "src/pipeline.ts",
+      "toFile": "src/git-history.ts"
+    },
+    {
+      "from": "runPipeline",
+      "to": "detectImplicitCoupling",
+      "fromFile": "src/pipeline.ts",
+      "toFile": "src/implicit-coupling.ts"
+    },
+    {
+      "from": "runPipeline",
+      "to": "extractCommands",
+      "fromFile": "src/pipeline.ts",
+      "toFile": "src/command-extractor.ts"
+    },
+    {
+      "from": "runPipeline",
+      "to": "analyzeCrossPackage",
+      "fromFile": "src/pipeline.ts",
+      "toFile": "src/cross-package.ts"
+    },
+    {
+      "from": "runPipeline",
+      "to": "generateDependencyDiagram",
+      "fromFile": "src/pipeline.ts",
+      "toFile": "src/mermaid-generator.ts"
+    },
+    {
+      "from": "runPipeline",
+      "to": "scanWorkspaceCommands",
+      "fromFile": "src/pipeline.ts",
+      "toFile": "src/command-extractor.ts"
+    },
+    {
+      "from": "runPipeline",
+      "to": "generateWorkflowRules",
+      "fromFile": "src/pipeline.ts",
+      "toFile": "src/workflow-rules.ts"
+    },
+    {
+      "from": "runPipeline",
+      "to": "generateImportChainRules",
+      "fromFile": "src/pipeline.ts",
+      "toFile": "src/import-chain.ts"
+    },
+    {
+      "from": "runPipeline",
+      "to": "generateCoChangeRules",
+      "fromFile": "src/pipeline.ts",
+      "toFile": "src/git-history.ts"
+    },
+    {
+      "from": "runPipeline",
+      "to": "buildStructuredAnalysis",
+      "fromFile": "src/pipeline.ts",
+      "toFile": "src/analysis-builder.ts"
+    }
+  ],
+  "workflowRules": [
+    {
+      "trigger": "For linting and formatting",
+      "action": "Use Biome (`npm run lint`), NOT ESLint or Prettier — they are not configured",
+      "source": "Biome detected in config analysis",
+      "impact": "high"
+    },
+    {
+      "trigger": "After modifying source files",
+      "action": "Run `npm run test` to verify changes",
+      "source": "Test framework detected",
+      "impact": "high"
+    },
+    {
+      "trigger": "When modifying `src/types.ts`",
+      "action": "Also check: `src/analysis-builder.ts` (17 symbols), `src/mcp/queries.ts` (13 symbols), `test/helpers/fixtures.ts` (9 symbols), and 11 more",
+      "source": "Import chain analysis — 14 files have high coupling to this module",
+      "impact": "high"
+    },
+    {
+      "trigger": "When modifying `test/wave2-improvements.test.ts`",
+      "action": "Also check: `src/output-validator.ts` (co-changed in 50% of its commits), `src/templates/agents-md.ts` (co-changed in 38% of its commits)",
+      "source": "Git co-change analysis — 2 files frequently change together with this module",
+      "impact": "high"
+    },
+    {
+      "trigger": "When modifying `src/bin/autodocs-engine.ts`",
+      "action": "Also check: `src/config.ts` (co-changed in 58% of its commits), `src/index.ts` (co-changed in 50% of its commits)",
+      "source": "Git co-change analysis — 2 files frequently change together with this module",
+      "impact": "high"
+    }
+  ],
+  "commits": [
+    {
+      "repo": "autodocs-engine",
+      "commitSha": "09e66420dc4b",
+      "commitMessage": "feat: make --minimal the default for init, fix MCP integration test speed",
+      "testFiles": [
+        "test/mcp/integration.test.ts"
+      ],
+      "sourceFiles": [
+        "src/bin/autodocs-engine.ts",
+        "src/bin/init.ts"
+      ],
+      "expectedRootCause": "src/bin/autodocs-engine.ts"
+    },
+    {
+      "repo": "autodocs-engine",
+      "commitSha": "a7bb5771ef59",
+      "commitMessage": "fix: pattern matching in nested directories + require→import ESM fix",
+      "testFiles": [
+        "test/mcp/tools.test.ts"
+      ],
+      "sourceFiles": [
+        "src/mcp/queries.ts",
+        "src/mcp/tools.ts"
+      ],
+      "expectedRootCause": "src/mcp/queries.ts"
+    },
+    {
+      "repo": "autodocs-engine",
+      "commitSha": "f78d81e13444",
+      "commitMessage": "feat: import-ordering detector + fix test resolution for all project patterns",
+      "testFiles": [
+        "test/import-ordering-detector.test.ts"
+      ],
+      "sourceFiles": [
+        "src/convention-extractor.ts",
+        "src/detectors/import-ordering.ts",
+        "src/mcp/queries.ts"
+      ],
+      "expectedRootCause": "src/convention-extractor.ts"
+    },
+    {
+      "repo": "autodocs-engine",
+      "commitSha": "c117d921d1a8",
+      "commitMessage": "feat: inferability score + directory anchoring fix",
+      "testFiles": [
+        "test/deterministic-formatter.test.ts",
+        "test/inferability.test.ts",
+        "test/mcp/accuracy.test.ts"
+      ],
+      "sourceFiles": [
+        "src/deterministic-formatter.ts",
+        "src/inferability.ts",
+        "src/mcp/queries.ts",
+        "src/mcp/tools.ts"
+      ],
+      "expectedRootCause": "src/deterministic-formatter.ts"
+    },
+    {
+      "repo": "autodocs-engine",
+      "commitSha": "c6064ce3ec10",
+      "commitMessage": "fix: contribution pattern headers and duplicate Create step",
+      "testFiles": [
+        "test/deterministic-formatter.test.ts"
+      ],
+      "sourceFiles": [
+        "src/deterministic-formatter.ts"
+      ],
+      "expectedRootCause": "src/deterministic-formatter.ts"
+    },
+    {
+      "repo": "autodocs-engine",
+      "commitSha": "4dd61130f2fa",
+      "commitMessage": "fix: 6 pre-launch quality fixes from external review",
+      "testFiles": [
+        "test/impact-radius.test.ts"
+      ],
+      "sourceFiles": [
+        "src/deterministic-formatter.ts",
+        "src/impact-radius.ts"
+      ],
+      "expectedRootCause": "src/deterministic-formatter.ts"
+    },
+    {
+      "repo": "autodocs-engine",
+      "commitSha": "89ed5dd1d09f",
+      "commitMessage": "fix: role inference — prefer package.json description, fix false domain signals",
+      "testFiles": [
+        "test/role-inferrer.test.ts"
+      ],
+      "sourceFiles": [
+        "src/role-inferrer.ts"
+      ],
+      "expectedRootCause": "src/role-inferrer.ts"
+    }
+  ]
+}

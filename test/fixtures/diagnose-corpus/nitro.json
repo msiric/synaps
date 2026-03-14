@@ -1,0 +1,70 @@
+{
+  "repo": "nitro",
+  "packageName": "nitro-test-fixture",
+  "importChain": [
+    {
+      "importer": "server/routes/errors/captured.ts",
+      "source": "server/plugins/errors.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "allErrors"
+      ]
+    },
+    {
+      "importer": "server/routes/imports.ts",
+      "source": "server/utils/foo/bar/test.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "testBarUtil"
+      ]
+    },
+    {
+      "importer": "server/routes/imports.ts",
+      "source": "server/utils/foo/test.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "testFooUtil"
+      ]
+    },
+    {
+      "importer": "server/routes/imports.ts",
+      "source": "server/utils/test.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "testUtil"
+      ]
+    },
+    {
+      "importer": "server/routes/raw.ts",
+      "source": "server/files/sqlts.sql.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "sqlts"
+      ]
+    }
+  ],
+  "coChangeEdges": [],
+  "callGraph": [],
+  "workflowRules": [
+    {
+      "trigger": "After modifying source files",
+      "action": "Run `pnpm test` to verify changes",
+      "source": "Test framework detected",
+      "impact": "high"
+    }
+  ],
+  "commits": [
+    {
+      "repo": "nitro",
+      "commitSha": "fb6b85d03930",
+      "commitMessage": "fix(openapi): only filter `undefined` from array nodes (#3894)",
+      "testFiles": [
+        "test/presets/nitro-dev.test.ts"
+      ],
+      "sourceFiles": [
+        "server/routes/api/meta/test.ts"
+      ],
+      "expectedRootCause": "server/routes/api/meta/test.ts"
+    }
+  ]
+}

@@ -1,0 +1,1864 @@
+{
+  "repo": "zod",
+  "packageName": "zod",
+  "importChain": [
+    {
+      "importer": "src/v3/types.ts",
+      "source": "src/v3/helpers/parseUtil.ts",
+      "symbolCount": 17,
+      "symbols": [
+        "AsyncParseReturnType",
+        "DIRTY",
+        "INVALID",
+        "OK",
+        "ParseContext"
+      ]
+    },
+    {
+      "importer": "src/v3/helpers/partialUtil.ts",
+      "source": "src/v3/types.ts",
+      "symbolCount": 8,
+      "symbols": [
+        "ZodArray",
+        "ZodNullable",
+        "ZodObject",
+        "ZodOptional",
+        "ZodRawShape"
+      ]
+    },
+    {
+      "importer": "src/v4/core/json-schema-generator.ts",
+      "source": "src/v4/core/to-json-schema.ts",
+      "symbolCount": 8,
+      "symbols": [
+        "JSONSchemaGeneratorParams",
+        "ProcessParams",
+        "Seen",
+        "ToJSONSchemaContext",
+        "extractDefs"
+      ]
+    },
+    {
+      "importer": "src/v4/core/json-schema-processors.ts",
+      "source": "src/v4/core/to-json-schema.ts",
+      "symbolCount": 8,
+      "symbols": [
+        "Processor",
+        "RegistryToJSONSchemaParams",
+        "ToJSONSchemaParams",
+        "ZodStandardJSONSchemaPayload",
+        "extractDefs"
+      ]
+    },
+    {
+      "importer": "src/v3/types.ts",
+      "source": "src/v3/ZodError.ts",
+      "symbolCount": 7,
+      "symbols": [
+        "IssueData",
+        "StringValidation",
+        "ZodCustomIssue",
+        "ZodError",
+        "ZodErrorMap"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/tests/fix-json-issue.test.ts",
+      "source": "src/v4/mini/index.ts",
+      "symbolCount": 6,
+      "symbols": [
+        "_infer",
+        "json",
+        "nullable",
+        "object",
+        "pipe"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/parseUtil.test.ts",
+      "source": "src/v3/helpers/parseUtil.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "SyncParseReturnType",
+        "isAborted",
+        "isDirty",
+        "isValid"
+      ]
+    },
+    {
+      "importer": "src/v3/types.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "util",
+        "ZodParsedType",
+        "getParsedType",
+        "objectUtil"
+      ]
+    },
+    {
+      "importer": "src/v4/core/schemas.ts",
+      "source": "src/v4/core/parse.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "parse",
+        "parseAsync",
+        "safeParse",
+        "safeParseAsync"
+      ]
+    },
+    {
+      "importer": "src/v3/helpers/parseUtil.ts",
+      "source": "src/v3/ZodError.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "IssueData",
+        "ZodErrorMap",
+        "ZodIssue"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/from-json-schema.ts",
+      "source": "src/v4/classic/schemas.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "ZodNumber",
+        "ZodString",
+        "ZodType"
+      ]
+    },
+    {
+      "importer": "src/v3/ZodError.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "util",
+        "ZodParsedType"
+      ]
+    },
+    {
+      "importer": "src/v3/ZodError.ts",
+      "source": "src/v3/index.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "TypeOf",
+        "ZodType"
+      ]
+    },
+    {
+      "importer": "src/v3/locales/en.ts",
+      "source": "src/v3/ZodError.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ZodErrorMap",
+        "ZodIssueCode"
+      ]
+    },
+    {
+      "importer": "src/v3/locales/en.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "util",
+        "ZodParsedType"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/error.test.ts",
+      "source": "src/v3/ZodError.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ZodError",
+        "ZodIssueCode"
+      ]
+    },
+    {
+      "importer": "src/v3/types.ts",
+      "source": "src/v3/errors.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "defaultErrorMap",
+        "getErrorMap"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/from-json-schema.ts",
+      "source": "src/v4/core/registries.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "$ZodRegistry",
+        "globalRegistry"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/parse.ts",
+      "source": "src/v4/classic/errors.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ZodError",
+        "ZodRealError"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/schemas.ts",
+      "source": "src/v4/core/to-json-schema.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "createStandardJSONSchemaMethod",
+        "createToJSONSchemaMethod"
+      ]
+    },
+    {
+      "importer": "src/v4/core/errors.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "$ZodCheck",
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/core/schemas.ts",
+      "source": "src/v4/core/to-json-schema.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ProcessParams",
+        "ToJSONSchemaContext"
+      ]
+    },
+    {
+      "importer": "src/v4/core/to-json-schema.ts",
+      "source": "src/v4/core/registries.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "$ZodRegistry",
+        "globalRegistry"
+      ]
+    },
+    {
+      "importer": "src/v4/core/to-json-schema.ts",
+      "source": "src/v4/core/standard-schema.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "StandardJSONSchemaV1",
+        "StandardSchemaWithJSONProps"
+      ]
+    },
+    {
+      "importer": "src/v3/ZodError.ts",
+      "source": "src/v3/helpers/typeAliases.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Primitive"
+      ]
+    },
+    {
+      "importer": "src/v3/benchmarks/index.ts",
+      "source": "src/v3/benchmarks/datetime.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "datetimeBenchmarks"
+      ]
+    },
+    {
+      "importer": "src/v3/benchmarks/index.ts",
+      "source": "src/v3/benchmarks/discriminatedUnion.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "discriminatedUnionBenchmarks"
+      ]
+    },
+    {
+      "importer": "src/v3/benchmarks/index.ts",
+      "source": "src/v3/benchmarks/ipv4.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ipv4Benchmarks"
+      ]
+    },
+    {
+      "importer": "src/v3/benchmarks/index.ts",
+      "source": "src/v3/benchmarks/object.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "objectBenchmarks"
+      ]
+    },
+    {
+      "importer": "src/v3/benchmarks/index.ts",
+      "source": "src/v3/benchmarks/primitives.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "primitiveBenchmarks"
+      ]
+    },
+    {
+      "importer": "src/v3/benchmarks/index.ts",
+      "source": "src/v3/benchmarks/realworld.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "realworld"
+      ]
+    },
+    {
+      "importer": "src/v3/benchmarks/index.ts",
+      "source": "src/v3/benchmarks/string.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "stringBenchmarks"
+      ]
+    },
+    {
+      "importer": "src/v3/benchmarks/index.ts",
+      "source": "src/v3/benchmarks/union.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "unionBenchmarks"
+      ]
+    },
+    {
+      "importer": "src/v3/benchmarks/primitives.ts",
+      "source": "src/v3/tests/Mocker.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Mocker"
+      ]
+    },
+    {
+      "importer": "src/v3/errors.ts",
+      "source": "src/v3/ZodError.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ZodErrorMap"
+      ]
+    },
+    {
+      "importer": "src/v3/errors.ts",
+      "source": "src/v3/locales/en.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "defaultErrorMap"
+      ]
+    },
+    {
+      "importer": "src/v3/helpers/parseUtil.ts",
+      "source": "src/v3/errors.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "getErrorMap"
+      ]
+    },
+    {
+      "importer": "src/v3/helpers/parseUtil.ts",
+      "source": "src/v3/locales/en.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "defaultErrorMap"
+      ]
+    },
+    {
+      "importer": "src/v3/helpers/parseUtil.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ZodParsedType"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/all-errors.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/anyunknown.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/array.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/base.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/branded.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/catch.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/default.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/enum.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/error.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ZodParsedType"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/firstparty.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/firstpartyschematypes.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/function.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/generics.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/instanceof.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/map.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/mocker.test.ts",
+      "source": "src/v3/tests/Mocker.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Mocker"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/nativeEnum.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/object.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/partials.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/pickomit.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/preprocess.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/primitive.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/primitive.test.ts",
+      "source": "src/v3/tests/Mocker.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Mocker"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/promise.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/readonly.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/record.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/refine.test.ts",
+      "source": "src/v3/ZodError.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ZodIssueCode"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/refine.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/set.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/standard-schema.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/standard-schema.test.ts",
+      "source": "src/v3/standard-schema.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StandardSchemaV1"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/transformer.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/tuple.test.ts",
+      "source": "src/v3/ZodError.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ZodError"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/tuple.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/tests/void.test.ts",
+      "source": "src/v3/helpers/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v3/types.ts",
+      "source": "src/v3/helpers/enumUtil.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "enumUtil"
+      ]
+    },
+    {
+      "importer": "src/v3/types.ts",
+      "source": "src/v3/helpers/errorUtil.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "errorUtil"
+      ]
+    },
+    {
+      "importer": "src/v3/types.ts",
+      "source": "src/v3/helpers/partialUtil.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "partialUtil"
+      ]
+    },
+    {
+      "importer": "src/v3/types.ts",
+      "source": "src/v3/helpers/typeAliases.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Primitive"
+      ]
+    },
+    {
+      "importer": "src/v3/types.ts",
+      "source": "src/v3/standard-schema.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StandardSchemaV1"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/compat.ts",
+      "source": "src/v4/classic/schemas.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ZodType"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/errors.ts",
+      "source": "src/v4/core/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodError"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/external.ts",
+      "source": "src/v4/core/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "config"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/external.ts",
+      "source": "src/v4/locales/en.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "en"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/schemas.ts",
+      "source": "src/v4/core/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "util"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/schemas.ts",
+      "source": "src/v4/core/standard-schema.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StandardSchemaWithJSONProps"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/tests/fix-json-issue.test.ts",
+      "source": "src/v4/mini/schemas.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "_ZodMiniJSONSchema"
+      ]
+    },
+    {
+      "importer": "src/v4/classic/tests/from-json-schema.test.ts",
+      "source": "src/v4/classic/from-json-schema.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "fromJSONSchema"
+      ]
+    },
+    {
+      "importer": "src/v4/core/core.ts",
+      "source": "src/v4/core/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Class"
+      ]
+    },
+    {
+      "importer": "src/v4/core/errors.ts",
+      "source": "src/v4/core/core.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$constructor"
+      ]
+    },
+    {
+      "importer": "src/v4/core/errors.ts",
+      "source": "src/v4/core/schemas.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodType"
+      ]
+    },
+    {
+      "importer": "src/v4/core/errors.ts",
+      "source": "src/v4/core/standard-schema.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StandardSchemaV1"
+      ]
+    },
+    {
+      "importer": "src/v4/core/json-schema-generator.ts",
+      "source": "src/v4/core/json-schema-processors.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "allProcessors"
+      ]
+    },
+    {
+      "importer": "src/v4/core/json-schema-generator.ts",
+      "source": "src/v4/core/registries.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodRegistry"
+      ]
+    },
+    {
+      "importer": "src/v4/core/json-schema-processors.ts",
+      "source": "src/v4/core/registries.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodRegistry"
+      ]
+    },
+    {
+      "importer": "src/v4/core/json-schema-processors.ts",
+      "source": "src/v4/core/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "getEnumValues"
+      ]
+    },
+    {
+      "importer": "src/v4/core/registries.ts",
+      "source": "src/v4/core/schemas.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodType"
+      ]
+    },
+    {
+      "importer": "src/v4/core/schemas.ts",
+      "source": "src/v4/core/api.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodTypeDiscriminable"
+      ]
+    },
+    {
+      "importer": "src/v4/core/schemas.ts",
+      "source": "src/v4/core/doc.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Doc"
+      ]
+    },
+    {
+      "importer": "src/v4/core/schemas.ts",
+      "source": "src/v4/core/standard-schema.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StandardSchemaV1"
+      ]
+    },
+    {
+      "importer": "src/v4/core/schemas.ts",
+      "source": "src/v4/core/versions.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "version"
+      ]
+    },
+    {
+      "importer": "src/v4/core/tests/locales/be.test.ts",
+      "source": "src/v4/locales/be.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "be"
+      ]
+    },
+    {
+      "importer": "src/v4/core/tests/locales/en.test.ts",
+      "source": "src/v4/core/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parsedType"
+      ]
+    },
+    {
+      "importer": "src/v4/core/tests/locales/es.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "z"
+      ]
+    },
+    {
+      "importer": "src/v4/core/tests/locales/es.test.ts",
+      "source": "src/v4/locales/es.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "es"
+      ]
+    },
+    {
+      "importer": "src/v4/core/tests/locales/he.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "z"
+      ]
+    },
+    {
+      "importer": "src/v4/core/tests/locales/he.test.ts",
+      "source": "src/v4/locales/he.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "he"
+      ]
+    },
+    {
+      "importer": "src/v4/core/tests/locales/hr.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "z"
+      ]
+    },
+    {
+      "importer": "src/v4/core/tests/locales/hr.test.ts",
+      "source": "src/v4/locales/hr.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "hr"
+      ]
+    },
+    {
+      "importer": "src/v4/core/tests/locales/nl.test.ts",
+      "source": "src/v4/locales/nl.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "nl"
+      ]
+    },
+    {
+      "importer": "src/v4/core/tests/locales/ru.test.ts",
+      "source": "src/v4/locales/ru.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ru"
+      ]
+    },
+    {
+      "importer": "src/v4/core/tests/locales/tr.test.ts",
+      "source": "src/v4/core/util.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parsedType"
+      ]
+    },
+    {
+      "importer": "src/v4/core/util.ts",
+      "source": "src/v4/core/core.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodConfig"
+      ]
+    },
+    {
+      "importer": "src/v4/index.ts",
+      "source": "src/v4/classic/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "z4"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ar.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/az.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/be.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/bg.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ca.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/cs.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/da.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/de.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/en.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/eo.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/es.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/fa.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/fi.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/fr-CA.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/fr.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/he.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/hr.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/hu.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/hy.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/id.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/is.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/it.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ja.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ka.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/kh.ts",
+      "source": "src/v4/locales/km.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "km"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/km.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ko.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/lt.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/mk.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ms.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/nl.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/no.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ota.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/pl.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ps.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/pt.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ru.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/sl.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/sv.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ta.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/th.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/tr.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ua.ts",
+      "source": "src/v4/locales/uk.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "uk"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/uk.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/ur.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/uz.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/vi.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/yo.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/zh-CN.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/locales/zh-TW.ts",
+      "source": "src/v4/core/checks.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$ZodStringFormats"
+      ]
+    },
+    {
+      "importer": "src/v4/mini/tests/standard-schema.test.ts",
+      "source": "src/v4/core/standard-schema.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "StandardSchemaWithJSON"
+      ]
+    }
+  ],
+  "coChangeEdges": [
+    {
+      "file1": "src/v4/classic/from-json-schema.ts",
+      "file2": "src/v4/classic/tests/from-json-schema.test.ts",
+      "coChangeCount": 3,
+      "file1Commits": 4,
+      "file2Commits": 3,
+      "jaccard": 0.75,
+      "lastCoChangeTimestamp": 1767221124
+    },
+    {
+      "file1": "src/v4/classic/tests/to-json-schema.test.ts",
+      "file2": "src/v4/core/to-json-schema.ts",
+      "coChangeCount": 22,
+      "file1Commits": 35,
+      "file2Commits": 31,
+      "jaccard": 0.5,
+      "lastCoChangeTimestamp": 1769104009
+    },
+    {
+      "file1": "src/v4/classic/schemas.ts",
+      "file2": "src/v4/mini/schemas.ts",
+      "coChangeCount": 32,
+      "file1Commits": 59,
+      "file2Commits": 41,
+      "jaccard": 0.47058823529411764,
+      "lastCoChangeTimestamp": 1770578006
+    },
+    {
+      "file1": "src/v4/classic/tests/index.test.ts",
+      "file2": "src/v4/mini/tests/index.test.ts",
+      "coChangeCount": 5,
+      "file1Commits": 7,
+      "file2Commits": 10,
+      "jaccard": 0.4166666666666667,
+      "lastCoChangeTimestamp": 1767133488
+    },
+    {
+      "file1": "src/v4/classic/tests/registries.test.ts",
+      "file2": "src/v4/core/registries.ts",
+      "coChangeCount": 4,
+      "file1Commits": 6,
+      "file2Commits": 9,
+      "jaccard": 0.36363636363636365,
+      "lastCoChangeTimestamp": 1767047871
+    },
+    {
+      "file1": "src/v4/classic/tests/string.test.ts",
+      "file2": "src/v4/core/regexes.ts",
+      "coChangeCount": 7,
+      "file1Commits": 16,
+      "file2Commits": 13,
+      "jaccard": 0.3181818181818182,
+      "lastCoChangeTimestamp": 1770578006
+    },
+    {
+      "file1": "src/v4/core/api.ts",
+      "file2": "src/v4/mini/schemas.ts",
+      "coChangeCount": 11,
+      "file1Commits": 18,
+      "file2Commits": 41,
+      "jaccard": 0.22916666666666666,
+      "lastCoChangeTimestamp": 1767115892
+    },
+    {
+      "file1": "src/v4/classic/schemas.ts",
+      "file2": "src/v4/core/schemas.ts",
+      "coChangeCount": 25,
+      "file1Commits": 59,
+      "file2Commits": 78,
+      "jaccard": 0.22321428571428573,
+      "lastCoChangeTimestamp": 1770578006
+    },
+    {
+      "file1": "src/v4/core/schemas.ts",
+      "file2": "src/v4/mini/schemas.ts",
+      "coChangeCount": 17,
+      "file1Commits": 78,
+      "file2Commits": 41,
+      "jaccard": 0.16666666666666666,
+      "lastCoChangeTimestamp": 1770578006
+    },
+    {
+      "file1": "src/v4/mini/schemas.ts",
+      "file2": "src/v4/mini/tests/index.test.ts",
+      "coChangeCount": 7,
+      "file1Commits": 41,
+      "file2Commits": 10,
+      "jaccard": 0.1590909090909091,
+      "lastCoChangeTimestamp": 1767133488
+    }
+  ],
+  "callGraph": [
+    {
+      "from": "addIssueToContext",
+      "to": "getErrorMap",
+      "fromFile": "src/v3/helpers/parseUtil.ts",
+      "toFile": "src/v3/errors.ts"
+    },
+    {
+      "from": "enumProcessor",
+      "to": "getEnumValues",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/util.ts"
+    },
+    {
+      "from": "arrayProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "objectProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "unionProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "intersectionProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "tupleProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "recordProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "nullableProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "nonoptionalProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "defaultProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "prefaultProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "catchProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "pipeProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "readonlyProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "promiseProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "optionalProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "lazyProcessor",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "toJSONSchema",
+      "to": "initializeContext",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "toJSONSchema",
+      "to": "process",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "toJSONSchema",
+      "to": "extractDefs",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "from": "toJSONSchema",
+      "to": "finalize",
+      "fromFile": "src/v4/core/json-schema-processors.ts",
+      "toFile": "src/v4/core/to-json-schema.ts"
+    }
+  ],
+  "workflowRules": [
+    {
+      "trigger": "For linting and formatting",
+      "action": "Use Biome (`pnpm lint`), NOT ESLint or Prettier — they are not configured",
+      "source": "Biome detected in config analysis",
+      "impact": "high"
+    },
+    {
+      "trigger": "After modifying source files",
+      "action": "Run `pnpm test` to verify changes",
+      "source": "Test framework detected",
+      "impact": "high"
+    },
+    {
+      "trigger": "When modifying `src/v4/mini/tests/index.test.ts`",
+      "action": "Also check: `src/v4/classic/tests/index.test.ts` (co-changed in 71% of its commits), `src/v4/mini/schemas.ts` (co-changed in 17% of its commits)",
+      "source": "Git co-change analysis — 2 files frequently change together with this module",
+      "impact": "high"
+    }
+  ],
+  "commits": [
+    {
+      "repo": "zod",
+      "commitSha": "3cd45ebcbcf0",
+      "commitMessage": "fix (v4) : adds strict validation to httpUrl()  (#5672)",
+      "testFiles": [
+        "src/v4/classic/tests/string.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/classic/schemas.ts",
+        "src/v4/core/regexes.ts",
+        "src/v4/core/schemas.ts",
+        "src/v4/mini/schemas.ts"
+      ],
+      "expectedRootCause": "src/v4/classic/schemas.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "3a818de145dc",
+      "commitMessage": "fix(v4): handle multi-digit exponents in floatSafeRemainder (#5687)",
+      "testFiles": [
+        "src/v4/classic/tests/number.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/core/util.ts"
+      ],
+      "expectedRootCause": "src/v4/core/util.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "44f6a03e1d7c",
+      "commitMessage": "fix(locales): correct Georgian translation for 'string' to 'ველი' (#5655)",
+      "testFiles": [
+        "src/v4/classic/tests/locales_ka.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/locales/ka.ts"
+      ],
+      "expectedRootCause": "src/v4/locales/ka.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "363c966b4a30",
+      "commitMessage": "Fix #5560",
+      "testFiles": [
+        "src/v4/mini/tests/standard-schema.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/core/to-json-schema.ts"
+      ],
+      "expectedRootCause": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "7e9ad3f0333d",
+      "commitMessage": "Fix JSON Schema generation for `z.iso.time` with minute precision (#5557)",
+      "testFiles": [
+        "src/v4/classic/tests/to-json-schema.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/core/json-schema-processors.ts"
+      ],
+      "expectedRootCause": "src/v4/core/json-schema-processors.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "0b3093dead73",
+      "commitMessage": "Fix lint",
+      "testFiles": [
+        "packages/resolution/attw.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/locales/nl.ts"
+      ],
+      "expectedRootCause": "src/v4/locales/nl.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "68e89b493ac3",
+      "commitMessage": "Fix Dutch (nl) error strings (#5529)",
+      "testFiles": [
+        "src/v4/core/tests/locales/nl.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/locales/nl.ts"
+      ],
+      "expectedRootCause": "src/v4/locales/nl.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "ae68f62fddc4",
+      "commitMessage": "fix: Fix error details for tuples with extraneous elements (#5555)",
+      "testFiles": [
+        "src/v4/classic/tests/tuple.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/core/schemas.ts"
+      ],
+      "expectedRootCause": "src/v4/core/schemas.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "ae3b39c09fa3",
+      "commitMessage": "Fix `includes` method params typing to accept `string | $ZodCheckIncludesParams` (#5556)",
+      "testFiles": [
+        "src/v4/classic/tests/string.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/classic/schemas.ts"
+      ],
+      "expectedRootCause": "src/v4/classic/schemas.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "9d6e7d009469",
+      "commitMessage": "fix(implementasync): Inferred type should always be a promise (#5476)",
+      "testFiles": [
+        "src/v4/classic/tests/function.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/core/schemas.ts"
+      ],
+      "expectedRootCause": "src/v4/core/schemas.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "fb66ee123fb3",
+      "commitMessage": "fix(mini): export ZodMiniJSONSchema types to prevent TS4023 (#5511)",
+      "testFiles": [
+        "src/v4/classic/tests/fix-json-issue.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/mini/schemas.ts"
+      ],
+      "expectedRootCause": "src/v4/mini/schemas.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "002e01ad0fcc",
+      "commitMessage": "fix(record): handle non-function constructor field in isPlainObject (#5098)",
+      "testFiles": [
+        "src/v4/classic/tests/index.test.ts",
+        "src/v4/core/tests/extend.test.ts",
+        "src/v4/core/tests/record-constructor.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/core/util.ts"
+      ],
+      "expectedRootCause": "src/v4/core/util.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "f97e80da9197",
+      "commitMessage": "fix(core): prevent infinite recursion for recursive tuples (#5089) (#5094)",
+      "testFiles": [
+        "src/v4/core/tests/recursive-tuples.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/core/schemas.ts"
+      ],
+      "expectedRootCause": "src/v4/core/schemas.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "9fc493f86f17",
+      "commitMessage": "fix: use oneOf for discriminated unions in JSON Schema (#5453)",
+      "testFiles": [
+        "src/v4/classic/tests/to-json-schema.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/core/to-json-schema.ts"
+      ],
+      "expectedRootCause": "src/v4/core/to-json-schema.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "f2f0d178e1c5",
+      "commitMessage": "Fix dual package hazard for `globalRegistry` (#5452)",
+      "testFiles": [
+        "src/v4/classic/tests/registries.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/core/registries.ts"
+      ],
+      "expectedRootCause": "src/v4/core/registries.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "e120a4877f4d",
+      "commitMessage": "Fix opt tuple",
+      "testFiles": [
+        "src/v4/classic/tests/tuple.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/core/schemas.ts"
+      ],
+      "expectedRootCause": "src/v4/core/schemas.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "86d4dad5bc27",
+      "commitMessage": "Fix partial record",
+      "testFiles": [
+        "src/v4/classic/tests/record.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/classic/schemas.ts",
+        "src/v4/core/schemas.ts"
+      ],
+      "expectedRootCause": "src/v4/classic/schemas.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "2849df8907b0",
+      "commitMessage": "fix(locales): improve Dutch (nl) localization (#5367)",
+      "testFiles": [
+        "src/v4/core/tests/locales/nl.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/locales/nl.ts"
+      ],
+      "expectedRootCause": "src/v4/locales/nl.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "7ffedd00169d",
+      "commitMessage": "Fix shape caching (#5263)",
+      "testFiles": [
+        "src/v4/classic/tests/recursive-types.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/classic/schemas.ts",
+        "src/v4/core/schemas.ts",
+        "src/v4/mini/schemas.ts"
+      ],
+      "expectedRootCause": "src/v4/classic/schemas.ts"
+    },
+    {
+      "repo": "zod",
+      "commitSha": "aa6f0f02c2a9",
+      "commitMessage": "More fixes (#5223)",
+      "testFiles": [
+        "src/v4/classic/tests/string.test.ts"
+      ],
+      "sourceFiles": [
+        "src/v4/core/schemas.ts"
+      ],
+      "expectedRootCause": "src/v4/core/schemas.ts"
+    }
+  ]
+}

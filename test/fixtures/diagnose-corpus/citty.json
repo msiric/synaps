@@ -1,0 +1,331 @@
+{
+  "repo": "citty",
+  "packageName": "citty",
+  "importChain": [
+    {
+      "importer": "test/main.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "createMain",
+        "defineCommand",
+        "renderUsage",
+        "runMain",
+        "showUsage"
+      ]
+    },
+    {
+      "importer": "test/utils.test.ts",
+      "source": "src/_utils.ts",
+      "symbolCount": 4,
+      "symbols": [
+        "toArray",
+        "formatLineColumns",
+        "resolveValue",
+        "CLIError"
+      ]
+    },
+    {
+      "importer": "src/args.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "Arg",
+        "ArgsDef",
+        "ParsedArgs"
+      ]
+    },
+    {
+      "importer": "src/command.ts",
+      "source": "src/types.ts",
+      "symbolCount": 3,
+      "symbols": [
+        "CommandContext",
+        "CommandDef",
+        "ArgsDef"
+      ]
+    },
+    {
+      "importer": "src/args.ts",
+      "source": "src/_parser.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "parseRawArgs",
+        "ParseOptions"
+      ]
+    },
+    {
+      "importer": "src/args.ts",
+      "source": "src/_utils.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "CLIError",
+        "toArray"
+      ]
+    },
+    {
+      "importer": "src/command.ts",
+      "source": "src/_utils.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "CLIError",
+        "resolveValue"
+      ]
+    },
+    {
+      "importer": "src/main.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ArgsDef",
+        "CommandDef"
+      ]
+    },
+    {
+      "importer": "src/main.ts",
+      "source": "src/command.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "resolveSubCommand",
+        "runCommand"
+      ]
+    },
+    {
+      "importer": "src/usage.ts",
+      "source": "src/_utils.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "formatLineColumns",
+        "resolveValue"
+      ]
+    },
+    {
+      "importer": "src/usage.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "ArgsDef",
+        "CommandDef"
+      ]
+    },
+    {
+      "importer": "src/_utils.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Resolvable"
+      ]
+    },
+    {
+      "importer": "src/args.ts",
+      "source": "src/_color.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "cyan"
+      ]
+    },
+    {
+      "importer": "src/command.ts",
+      "source": "src/args.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseArgs"
+      ]
+    },
+    {
+      "importer": "src/command.ts",
+      "source": "src/_color.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "cyan"
+      ]
+    },
+    {
+      "importer": "src/main.ts",
+      "source": "src/_utils.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "CLIError"
+      ]
+    },
+    {
+      "importer": "src/main.ts",
+      "source": "src/usage.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "_showUsage"
+      ]
+    },
+    {
+      "importer": "src/usage.ts",
+      "source": "src/args.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "resolveArgs"
+      ]
+    },
+    {
+      "importer": "test/args.test.ts",
+      "source": "src/args.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseArgs"
+      ]
+    },
+    {
+      "importer": "test/args.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "ArgsDef"
+      ]
+    },
+    {
+      "importer": "test/parser.test.ts",
+      "source": "src/_parser.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "parseRawArgs"
+      ]
+    },
+    {
+      "importer": "test/usage.test.ts",
+      "source": "src/usage.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "renderUsage"
+      ]
+    },
+    {
+      "importer": "test/usage.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "defineCommand"
+      ]
+    },
+    {
+      "importer": "test/utils.test.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "Resolvable"
+      ]
+    }
+  ],
+  "coChangeEdges": [],
+  "callGraph": [
+    {
+      "from": "parseArgs",
+      "to": "toArray",
+      "fromFile": "src/args.ts",
+      "toFile": "src/_utils.ts"
+    },
+    {
+      "from": "parseArgs",
+      "to": "parseRawArgs",
+      "fromFile": "src/args.ts",
+      "toFile": "src/_parser.ts"
+    },
+    {
+      "from": "parseArgs",
+      "to": "cyan",
+      "fromFile": "src/args.ts",
+      "toFile": "src/_color.ts"
+    },
+    {
+      "from": "resolveArgs",
+      "to": "toArray",
+      "fromFile": "src/args.ts",
+      "toFile": "src/_utils.ts"
+    },
+    {
+      "from": "runCommand",
+      "to": "resolveValue",
+      "fromFile": "src/command.ts",
+      "toFile": "src/_utils.ts"
+    },
+    {
+      "from": "runCommand",
+      "to": "parseArgs",
+      "fromFile": "src/command.ts",
+      "toFile": "src/args.ts"
+    },
+    {
+      "from": "runCommand",
+      "to": "cyan",
+      "fromFile": "src/command.ts",
+      "toFile": "src/_color.ts"
+    },
+    {
+      "from": "resolveSubCommand",
+      "to": "resolveValue",
+      "fromFile": "src/command.ts",
+      "toFile": "src/_utils.ts"
+    },
+    {
+      "from": "runMain",
+      "to": "resolveSubCommand",
+      "fromFile": "src/main.ts",
+      "toFile": "src/command.ts"
+    },
+    {
+      "from": "runMain",
+      "to": "runCommand",
+      "fromFile": "src/main.ts",
+      "toFile": "src/command.ts"
+    },
+    {
+      "from": "renderUsage",
+      "to": "resolveValue",
+      "fromFile": "src/usage.ts",
+      "toFile": "src/_utils.ts"
+    },
+    {
+      "from": "renderUsage",
+      "to": "resolveArgs",
+      "fromFile": "src/usage.ts",
+      "toFile": "src/args.ts"
+    },
+    {
+      "from": "renderUsage",
+      "to": "formatLineColumns",
+      "fromFile": "src/usage.ts",
+      "toFile": "src/_utils.ts"
+    }
+  ],
+  "workflowRules": [
+    {
+      "trigger": "After modifying source files",
+      "action": "Run `pnpm test` to verify changes",
+      "source": "Test framework detected",
+      "impact": "high"
+    }
+  ],
+  "commits": [
+    {
+      "repo": "citty",
+      "commitSha": "7393b4bb423e",
+      "commitMessage": "fix: propagate --no- negation to aliases and main option (#225)",
+      "testFiles": [
+        "test/parser.test.ts"
+      ],
+      "sourceFiles": [
+        "src/_parser.ts"
+      ],
+      "expectedRootCause": "src/_parser.ts"
+    },
+    {
+      "repo": "citty",
+      "commitSha": "7de2a6c39ec0",
+      "commitMessage": "fix: show cli error message (#186)",
+      "testFiles": [
+        "test/usage.test.ts"
+      ],
+      "sourceFiles": [
+        "src/main.ts"
+      ],
+      "expectedRootCause": "src/main.ts"
+    }
+  ]
+}

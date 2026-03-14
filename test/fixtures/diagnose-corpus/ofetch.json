@@ -1,0 +1,304 @@
+{
+  "repo": "ofetch",
+  "packageName": "ofetch",
+  "importChain": [
+    {
+      "importer": "src/fetch.ts",
+      "source": "src/types.ts",
+      "symbolCount": 7,
+      "symbols": [
+        "CreateFetchOptions",
+        "FetchResponse",
+        "ResponseType",
+        "FetchContext",
+        "$Fetch"
+      ]
+    },
+    {
+      "importer": "src/utils.ts",
+      "source": "src/types.ts",
+      "symbolCount": 6,
+      "symbols": [
+        "FetchContext",
+        "FetchHook",
+        "FetchOptions",
+        "FetchRequest",
+        "ResolvedFetchOptions"
+      ]
+    },
+    {
+      "importer": "src/fetch.ts",
+      "source": "src/utils.ts",
+      "symbolCount": 5,
+      "symbols": [
+        "isPayloadMethod",
+        "isJSONSerializable",
+        "detectResponseType",
+        "resolveFetchOptions",
+        "callHooks"
+      ]
+    },
+    {
+      "importer": "src/error.ts",
+      "source": "src/types.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "FetchContext",
+        "IFetchError"
+      ]
+    },
+    {
+      "importer": "src/fetch.ts",
+      "source": "src/utils.url.ts",
+      "symbolCount": 2,
+      "symbols": [
+        "withBase",
+        "withQuery"
+      ]
+    },
+    {
+      "importer": "src/fetch.ts",
+      "source": "src/error.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "createFetchError"
+      ]
+    },
+    {
+      "importer": "src/index.ts",
+      "source": "src/base.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "createFetch"
+      ]
+    },
+    {
+      "importer": "src/index.ts",
+      "source": "src/types.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$Fetch"
+      ]
+    },
+    {
+      "importer": "test/index.test.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$fetch"
+      ]
+    },
+    {
+      "importer": "test/playground.ts",
+      "source": "src/index.ts",
+      "symbolCount": 1,
+      "symbols": [
+        "$fetch"
+      ]
+    }
+  ],
+  "coChangeEdges": [
+    {
+      "file1": "src/fetch.ts",
+      "file2": "test/index.test.ts",
+      "coChangeCount": 5,
+      "file1Commits": 6,
+      "file2Commits": 7,
+      "jaccard": 0.625,
+      "lastCoChangeTimestamp": 1761650677
+    },
+    {
+      "file1": "src/fetch.ts",
+      "file2": "src/index.ts",
+      "coChangeCount": 2,
+      "file1Commits": 6,
+      "file2Commits": 2,
+      "jaccard": 0.3333333333333333,
+      "lastCoChangeTimestamp": 1761649383
+    },
+    {
+      "file1": "src/index.ts",
+      "file2": "test/index.test.ts",
+      "coChangeCount": 2,
+      "file1Commits": 2,
+      "file2Commits": 7,
+      "jaccard": 0.2857142857142857,
+      "lastCoChangeTimestamp": 1761649383
+    }
+  ],
+  "callGraph": [
+    {
+      "from": "createFetch",
+      "to": "isPayloadMethod",
+      "fromFile": "src/fetch.ts",
+      "toFile": "src/utils.ts"
+    },
+    {
+      "from": "createFetch",
+      "to": "createFetchError",
+      "fromFile": "src/fetch.ts",
+      "toFile": "src/error.ts"
+    },
+    {
+      "from": "createFetch",
+      "to": "resolveFetchOptions",
+      "fromFile": "src/fetch.ts",
+      "toFile": "src/utils.ts"
+    },
+    {
+      "from": "createFetch",
+      "to": "callHooks",
+      "fromFile": "src/fetch.ts",
+      "toFile": "src/utils.ts"
+    },
+    {
+      "from": "createFetch",
+      "to": "withBase",
+      "fromFile": "src/fetch.ts",
+      "toFile": "src/utils.url.ts"
+    },
+    {
+      "from": "createFetch",
+      "to": "withQuery",
+      "fromFile": "src/fetch.ts",
+      "toFile": "src/utils.url.ts"
+    },
+    {
+      "from": "createFetch",
+      "to": "isJSONSerializable",
+      "fromFile": "src/fetch.ts",
+      "toFile": "src/utils.ts"
+    },
+    {
+      "from": "createFetch",
+      "to": "detectResponseType",
+      "fromFile": "src/fetch.ts",
+      "toFile": "src/utils.ts"
+    }
+  ],
+  "workflowRules": [
+    {
+      "trigger": "After modifying source files",
+      "action": "Run `pnpm test` to verify changes",
+      "source": "Test framework detected",
+      "impact": "high"
+    },
+    {
+      "trigger": "When modifying any of: `src/fetch.ts`, `src/index.ts`, `test/index.test.ts`",
+      "action": "Check all files in this co-change cluster — they frequently change together",
+      "source": "Git co-change analysis — 3 files form a co-change cluster",
+      "impact": "high"
+    }
+  ],
+  "commits": [
+    {
+      "repo": "ofetch",
+      "commitSha": "80aa99121013",
+      "commitMessage": "fix: remove undefined `method` and `query`/`params` from fetch options (#451)",
+      "testFiles": [
+        "test/index.test.ts"
+      ],
+      "sourceFiles": [
+        "src/fetch.ts"
+      ],
+      "expectedRootCause": "src/fetch.ts"
+    },
+    {
+      "repo": "ofetch",
+      "commitSha": "905244a57d7b",
+      "commitMessage": "fix: hide getters from console and pass `cause`",
+      "testFiles": [
+        "test/index.test.ts"
+      ],
+      "sourceFiles": [
+        "src/error.ts"
+      ],
+      "expectedRootCause": "src/error.ts"
+    },
+    {
+      "repo": "ofetch",
+      "commitSha": "cb05d8fae4c5",
+      "commitMessage": "fix: avoid serializing buffer body (#273)",
+      "testFiles": [
+        "test/index.test.ts"
+      ],
+      "sourceFiles": [
+        "src/utils.ts"
+      ],
+      "expectedRootCause": "src/utils.ts"
+    },
+    {
+      "repo": "ofetch",
+      "commitSha": "9e204400c649",
+      "commitMessage": "fix: skip reading body with `204` responses and `HEAD` requests (resolves #171) (resolves #84)",
+      "testFiles": [
+        "test/index.test.ts"
+      ],
+      "sourceFiles": [
+        "src/fetch.ts"
+      ],
+      "expectedRootCause": "src/fetch.ts"
+    },
+    {
+      "repo": "ofetch",
+      "commitSha": "933e7541be37",
+      "commitMessage": "fix: deep merge fetch options (#243)",
+      "testFiles": [
+        "test/index.test.ts"
+      ],
+      "sourceFiles": [
+        "src/fetch.ts",
+        "src/utils.ts"
+      ],
+      "expectedRootCause": "src/fetch.ts"
+    },
+    {
+      "repo": "ofetch",
+      "commitSha": "9f570b777371",
+      "commitMessage": "fix: fix issues with native node fetch (#245)",
+      "testFiles": [
+        "test/index.test.ts"
+      ],
+      "sourceFiles": [
+        "src/fetch.ts"
+      ],
+      "expectedRootCause": "src/fetch.ts"
+    },
+    {
+      "repo": "ofetch",
+      "commitSha": "b73fe67aaa7d",
+      "commitMessage": "fix: do not retry when fetch is aborted (#112)",
+      "testFiles": [
+        "test/index.test.ts"
+      ],
+      "sourceFiles": [
+        "src/fetch.ts"
+      ],
+      "expectedRootCause": "src/fetch.ts"
+    },
+    {
+      "repo": "ofetch",
+      "commitSha": "dc237d489a68",
+      "commitMessage": "fix: only serialize JSON bodies (#80)",
+      "testFiles": [
+        "test/index.test.ts"
+      ],
+      "sourceFiles": [
+        "src/fetch.ts"
+      ],
+      "expectedRootCause": "src/fetch.ts"
+    },
+    {
+      "repo": "ofetch",
+      "commitSha": "52d84e75034c",
+      "commitMessage": "fix: update ufo to 0.3",
+      "testFiles": [
+        "test/index.test.ts"
+      ],
+      "sourceFiles": [
+        "src/fetch.ts"
+      ],
+      "expectedRootCause": "src/fetch.ts"
+    }
+  ]
+}
