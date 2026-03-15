@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.10.1 (2026-03-15)
+
+### Bug Fixes
+
+- **CJS call graph support** — Enhanced `mergeCJSPatterns` and `extractCallReferences` in ast-parser.ts to handle CommonJS codebases. Three CJS export patterns now produce call graph edges: `module.exports = { fn1, fn2 }`, `module.exports = identifier`, and `exports.prop = value`. CJS `require()` destructuring extracts named imports. Result on Fastify (252 JS files): 0→25 call graph edges, 0→5 execution flows.
+
+### Maintenance
+
+- Fix all pre-existing Biome lint warnings (unused variables, unused imports, unused parameters)
+- Zero lint warnings, zero type errors
+
 ## 0.10.0 (2026-03-15)
 
 ### New Features
