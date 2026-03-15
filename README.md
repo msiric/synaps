@@ -1,6 +1,6 @@
 # autodocs-engine
 
-Deterministic codebase intelligence for AI coding tools.
+Codebase intelligence for AI coding agents. Analyzes TypeScript/JavaScript codebases and serves actionable intelligence via MCP.
 
 [![npm version](https://img.shields.io/npm/v/autodocs-engine)](https://www.npmjs.com/package/autodocs-engine)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -8,172 +8,176 @@ Deterministic codebase intelligence for AI coding tools.
 
 ## What It Does
 
-Analyzes TypeScript/JavaScript codebases and extracts actionable intelligence — commands, conventions, file coupling patterns, contribution recipes, architecture — that AI coding tools need to write code that fits your project.
+Gives AI coding agents deep understanding of your codebase — not just what files exist, but how they connect, what conventions to follow, and what breaks when you change something. Combines AST analysis, git history mining, and import graph intelligence to answer questions no other tool can:
 
-Two ways to use it:
-
-1. **MCP Server** — Live codebase queries via Model Context Protocol. AI tools ask for exactly the context they need, on demand.
-2. **AGENTS.md Generator** — Static context file for universal compatibility. Works with every tool that reads AGENTS.md, CLAUDE.md, or .cursorrules.
+- **"What files should I also check when modifying `src/types.ts`?"** → Import dependents, co-change partners from git history, implicit coupling (files that change together without import relationships), and affected execution flows.
+- **"Which specific files import `Convention` from `src/types.ts`?"** → 25 files (not all 98 importers of the file — only the ones using that symbol).
+- **"What caused this test failure?"** → Ranked suspect files with confidence assessment, validated on 95 real bug-fix commits across 10 repos.
+- **"What patterns should I follow?"** → 13 convention detectors covering error handling, async patterns, state management, API patterns, hooks, testing, and more.
 
 ## Quick Start
 
 ```bash
-# Generate a focused AGENTS.md (no API key needed)
-npx autodocs-engine init
-
-# Or start the MCP server for live queries
-npx autodocs-engine serve
-```
-
-### MCP Server Setup (Claude Code)
-
-```bash
+# MCP server for Claude Code
 claude mcp add autodocs -- npx autodocs-engine serve
+
+# Install Claude Code hooks (automatic search augmentation)
+npx autodocs-engine setup-hooks
+
+# Or generate a focused AGENTS.md (no API key needed)
+npx autodocs-engine init
 ```
 
-This gives Claude Code 13 codebase intelligence tools:
+## MCP Tools (13)
 
 | Tool | What It Returns |
 |------|----------------|
 | `get_commands` | Build, test, lint commands with exact flags |
-| `get_architecture` | Directory structure, entry points, package type |
-| `get_conventions` | DO/DON'T rules with confidence levels (filterable by category) |
-| `get_workflow_rules` | File coupling and co-change patterns (filterable by file) |
-| `get_contribution_guide` | How to add new code, with inline example snippets |
-| `get_exports` | Public API with usage examples and parameter shapes |
-| `analyze_impact` | Blast radius + importers + co-change partners for a file |
+| `get_architecture` | Directory structure, entry points, execution flows |
+| `get_conventions` | DO/DON'T rules from 13 detectors (error handling, async, state management, API patterns, hooks, testing, file naming, import ordering, frameworks, databases, data fetching, build tools) |
+| `get_workflow_rules` | File coupling and co-change patterns |
+| `get_contribution_guide` | How to add code, with inline examples and registration steps |
+| `get_exports` | Public API with resolved TypeScript types (parameter types, return types) |
+| `analyze_impact` | Blast radius: importers, callers, co-change partners |
+| `plan_change` | Full change plan: dependents, co-changes, implicit coupling, execution flows, registration/barrel updates, tests. **With optional `symbols` parameter: narrows dependents to files importing specific symbols.** |
+| `get_test_info` | Test file path + exact per-file run command |
+| `auto_register` | Exact code insertions for registration + barrel updates |
+| `review_changes` | Pattern compliance: suffix, imports, registration, barrel, tests |
+| `diagnose` | Root cause analysis with confidence level (high/medium/low), import path traces, and 7 scoring signals |
 | `list_packages` | Monorepo package inventory |
-| `plan_change` | Full change plan: dependents, co-changes, registrations, tests, checklist |
-| `get_test_info` | Test file path + exact per-file run command for any source file |
-| `auto_register` | Exact code insertions for registration files + barrel updates |
-| `review_changes` | Pattern compliance check: suffix, imports, registration, barrel, tests |
-| **`diagnose`** | **Root cause analysis: traces test failures to suspect files via import graph, git co-change, and call graph** |
 
-## Why Minimal Mode?
+Every tool response includes **next-step hints** guiding the agent to the logical next action.
 
-Research shows comprehensive context files can actually **hurt** AI performance:
+## What Makes It Different
 
-- LLM-generated AGENTS.md: **-0.5% to -2%** accuracy ([arxiv 2602.11988](https://arxiv.org/abs/2602.11988))
-- Developer-written focused AGENTS.md: **+4%** accuracy, **-29% runtime** ([arxiv 2601.20404](https://arxiv.org/abs/2601.20404))
+### Git Co-Change Intelligence
+Mines commit history using Jaccard similarity to find files that frequently change together. Produces workflow rules ("when modifying X, also check Y") and **implicit coupling** — file pairs that co-change but have no import relationship. This catches the "forgotten file" that static analysis misses.
 
-The difference: developer-written files are short, focused, and only include what the AI can't figure out on its own. That's exactly what `--minimal` generates.
+### Convention Detection (13 Detectors)
+Extracts real coding patterns from AST analysis, not configured rules:
+- Error handling: custom error classes, Result/Either patterns, typed error hierarchies
+- Async patterns: Promise.all usage, sequential-await-in-loops detection, AbortController
+- State management: Redux, Zustand, Jotai, MobX, Signals, Context API (reports all, not just dominant)
+- API patterns: Express, Fastify, Hono, NestJS, tRPC, GraphQL (framework-aware, not directory heuristics)
+- Plus: hooks, testing, file naming, import ordering, web frameworks, databases, data fetching, build tools
 
-**Minimal mode** (~200-450 tokens) includes only:
-- Exact commands with flags (proven to help, never hurts)
-- Workflow rules from git co-change analysis (patterns the AI can't discover from code)
-- High-confidence conventions (only if ≥95% consistent and non-obvious)
-- Non-obvious directories (with "non-exhaustive" qualifier to prevent anchoring)
+### Symbol-Level Filtering
+```
+plan_change({ files: ["src/types.ts"], symbols: ["Convention"] })
+```
+Narrows 98 dependents to 25 — only files that actually import `Convention`. Every other tool shows all dependents regardless of which symbol you're changing.
 
-**Full mode** (~1,500-2,500 tokens) adds public API, dependency graphs, all conventions, and architecture details. Use `--full` when you need comprehensive documentation.
+### Type-Aware Analysis
+Opt-in `--type-checking` creates a TypeScript Program for resolved parameter types and return types:
+```
+analyze(options: Partial<ResolvedConfig> & { packages: string[] }): Promise<StructuredAnalysis>
+```
+Not text extraction — actual TypeChecker resolution through re-export chains.
+
+### Execution Flow Tracing
+Detects execution paths from entry points through the call graph:
+```
+runPipeline → analyzePackage → buildSymbolGraph → computeImpactRadius (4 steps, 4 files)
+```
+Scored by co-change confidence — flows through files that frequently change together are higher confidence.
+
+### Validated Diagnose Tool
+Tested against **95 real bug-fix commits across 10 repos**:
+- Unit-test repos: **83% recall@3** (root cause in top 3 suspects)
+- All repos: **47% recall@3**, **33% precision@1**
+- Confidence assessment based on signal quality and score discrimination
+
+### Claude Code Hooks
+```bash
+npx autodocs-engine setup-hooks
+```
+Installs PreToolUse + PostToolUse hooks:
+- **PreToolUse**: When you grep for "validateUser", automatically shows callers, co-change partners, and execution flows alongside results
+- **PostToolUse**: After `git commit`, detects when analysis cache is stale
+
+## Claude Code Setup
+
+```bash
+# Add MCP server
+claude mcp add autodocs -- npx autodocs-engine serve
+
+# Install hooks for automatic search augmentation
+npx autodocs-engine setup-hooks
+```
+
+With `--type-checking` for resolved TypeScript types:
+```bash
+claude mcp add autodocs -- npx autodocs-engine serve --type-checking
+```
+
+## AGENTS.md Generation
+
+For tools without MCP support:
+
+```bash
+npx autodocs-engine init                         # Focused (~300 tokens, no API key)
+npx autodocs-engine init --full                  # Comprehensive (needs API key)
+```
+
+Research-backed: focused context files improve AI accuracy by +4% and reduce runtime by 29%. LLM-generated comprehensive files hurt by -2%.
+
+## CLI Reference
+
+```
+autodocs-engine init [--full]                 Generate AGENTS.md
+autodocs-engine serve [path] [options]        Start MCP server
+autodocs-engine setup-hooks                   Install Claude Code hooks
+autodocs-engine check                         Staleness detection for CI
+autodocs-engine analyze [paths...] [options]  Analyze specific packages
+
+Options:
+  --type-checking    Enable resolved TypeScript types (requires tsconfig.json)
+  --minimal          Focused output (<500 tokens, default for init)
+  --full             Comprehensive output (requires ANTHROPIC_API_KEY)
+  --format, -f       json | agents.md | claude.md | cursorrules
+  --verbose, -v      Timing and analysis details
+  --dry-run          Print to stdout (no file writes)
+```
 
 ## How It Works
 
-Unlike tools that dump code into an LLM or pack everything into one file, autodocs-engine uses deterministic static analysis:
+18-stage analysis pipeline:
 
-1. **Parse** — AST analysis via TypeScript Compiler API
-2. **Detect** — 9 convention detectors (naming, hooks, testing, import ordering, frameworks, etc.)
-3. **Extract** — Commands from package.json, turbo.json, biome.json, and 10+ config formats
-4. **Graph** — Call graph, import chains, and git co-change analysis (Jaccard similarity)
-5. **Score** — Inferability scoring decides what's worth including vs. what the AI already knows
-6. **Generate** — 14/16 sections are deterministic (no LLM). Only architecture summary and domain terms use optional micro-LLM calls.
+1. **File Discovery** → git ls-files with .gitignore respect
+2. **AST Parsing** → TypeScript Compiler API for exports, imports, call references
+3. **Symbol Graph** → barrel resolution, re-export chains, call graph construction
+4. **Import Chain** → file-to-file coupling with confidence scores
+5. **Tier Classification** → public API (T1), internal (T2), test/generated (T3)
+6. **Type Enrichment** → optional ts.Program for resolved parameter/return types
+7. **Convention Extraction** → 13 detectors with structured confidence metrics
+8. **Git History Mining** → co-change mining with Jaccard similarity, adaptive thresholds
+9. **Implicit Coupling** → co-change pairs with no import relationship
+10. **Execution Flow Tracing** → entry point scoring, spine-first BFS, co-change validation
+11. **Impact Classification** → high/medium/low impact scoring on conventions
+12. **Workspace Auto-Detection** → monorepo roots expand to workspace packages
 
-**No API key needed** for minimal mode or JSON output. The analysis is pure computation.
+5 production dependencies. No native bindings, no graph database, no WASM. Installs instantly.
 
-## Output Formats
+## Stats
 
-```bash
-npx autodocs-engine init                         # Focused AGENTS.md (~300 tokens, no API key)
-npx autodocs-engine init --full                  # Comprehensive AGENTS.md (needs API key)
-npx autodocs-engine analyze . --format json      # Raw analysis JSON
-npx autodocs-engine analyze . --format claude.md # CLAUDE.md format
-npx autodocs-engine analyze . --format cursorrules # .cursorrules format
-```
-
-## Monorepo Support
-
-Auto-detects workspace packages from `pnpm-workspace.yaml`, `workspaces` field in package.json, `turbo.json`, or `nx.json`:
-
-```bash
-npx autodocs-engine init    # Works for monorepos too
-```
-
-For explicit control:
-
-```bash
-npx autodocs-engine analyze packages/app packages/hooks packages/ui \
-  --format agents.md --hierarchical --root .
-```
-
-## Staleness Detection
-
-Check if your AGENTS.md needs updating (for CI):
-
-```bash
-npx autodocs-engine check
-```
-
-Returns exit code 1 if conventions have drifted. Useful in CI pipelines to keep context files honest.
-
-## Tested On
-
-| Repo | Files | Time | Token Count (minimal) |
-|------|------:|-----:|:-----:|
-| autodocs-engine | 115 | 450ms | ~443 |
-| vitest | 1,200+ | 1.2s | ~307 |
-| nitro | 469 | 220ms | ~121 |
-| sanity | 3,746 | 1.6s | — |
-| medusa | 720 | 316ms | — |
-
-569 tests. Zero type errors. 13 MCP tools. Zero technology hallucinations across all tested repos.
+- 713 tests across 53 files
+- 13 MCP tools with next-step hints
+- 13 convention detectors
+- 95-commit diagnose validation corpus (10 repos)
+- 10 execution flows detected on medium codebases
+- Zero type errors, zero technology hallucinations
 
 ## Library API
 
 ```typescript
 import { analyze, generateMinimalAgentsMd } from 'autodocs-engine';
 
-// Analyze (pure computation, no API key)
-const analysis = await analyze({ packages: ['./packages/my-pkg'] });
+const analysis = await analyze({
+  packages: ['./'],
+  typeChecking: true,  // optional: resolved TypeScript types
+});
 
-// Generate minimal AGENTS.md (no API key)
-const minimal = generateMinimalAgentsMd(analysis);
-
-// Or use the full deterministic format (optional API key for 2 LLM sections)
-import { formatDeterministic } from 'autodocs-engine';
-const full = await formatDeterministic(analysis, config);
-```
-
-## Configuration
-
-Optional `autodocs.config.json`:
-
-```json
-{
-  "exclude": ["**/vendor/**", "**/generated/**"],
-  "conventions": { "disable": ["telemetry-patterns"] }
-}
-```
-
-Most options are auto-detected. Zero config is the default.
-
-## CLI Reference
-
-```
-autodocs-engine init [--full]              Generate AGENTS.md (minimal by default, no API key)
-autodocs-engine serve [path]               Start MCP server
-autodocs-engine check                      Check if AGENTS.md needs regeneration
-autodocs-engine analyze [paths...] [options]
-
-Options:
-  --full             Comprehensive output (requires ANTHROPIC_API_KEY)
-  --minimal          Focused output (<500 tokens, no API key needed — default for init)
-  --telemetry        Enable session telemetry (writes to ~/.autodocs/telemetry/)
-  --format, -f       json | agents.md | claude.md | cursorrules
-  --output, -o       Output directory (default: .)
-  --root             Monorepo root directory
-  --hierarchical     Root + per-package output
-  --merge            Preserve human-written sections when regenerating
-  --verbose, -v      Timing details
-  --dry-run          Print to stdout (no file writes)
+const agentsMd = generateMinimalAgentsMd(analysis);
 ```
 
 ## Contributing
@@ -182,10 +186,12 @@ Options:
 git clone https://github.com/msiric/autodocs-engine.git
 cd autodocs-engine
 npm install
-npm test          # 569 tests
+npm test          # 713 tests
 npm run typecheck # Zero errors
 npm run build
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow.
 
 ## License
 

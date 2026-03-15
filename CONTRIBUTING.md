@@ -6,7 +6,7 @@
 git clone https://github.com/msiric/autodocs-engine.git
 cd autodocs-engine
 npm install
-npm test          # 569 tests
+npm test          # 713 tests
 npm run typecheck # 0 errors
 npm run lint      # Biome linter + formatter
 npm run build     # Compile to dist/
