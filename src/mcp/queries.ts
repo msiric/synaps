@@ -125,6 +125,32 @@ export function getExportedNamesForFile(
   return pkg.publicAPI.filter((e) => e.sourceFile === filePath && !e.isTypeOnly).map((e) => e.name);
 }
 
+export function getExecutionFlows(
+  analysis: StructuredAnalysis,
+  packagePath?: string,
+): import("../types.js").ExecutionFlow[] {
+  return resolvePackage(analysis, packagePath).executionFlows ?? [];
+}
+
+export function getFlowsForFiles(
+  analysis: StructuredAnalysis,
+  files: string[],
+  packagePath?: string,
+): import("../types.js").ExecutionFlow[] {
+  const flows = getExecutionFlows(analysis, packagePath);
+  const fileSet = new Set(files);
+  return flows.filter((f) => f.files.some((file) => fileSet.has(file)));
+}
+
+export function getFlowsForFunction(
+  analysis: StructuredAnalysis,
+  fnName: string,
+  packagePath?: string,
+): import("../types.js").ExecutionFlow[] {
+  const flows = getExecutionFlows(analysis, packagePath);
+  return flows.filter((f) => f.steps.includes(fnName));
+}
+
 export function getImportersOfSymbol(
   analysis: StructuredAnalysis,
   symbol: string,

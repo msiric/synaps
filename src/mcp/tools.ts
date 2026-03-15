@@ -115,6 +115,17 @@ export function handleGetArchitecture(analysis: StructuredAnalysis, args: { pack
     lines.push("Standard project structure — explore the source tree for details.");
   }
 
+  // Execution flows (top 5 by confidence)
+  const flows = Q.getExecutionFlows(analysis, args.packagePath);
+  if (flows.length > 0) {
+    lines.push("");
+    lines.push("### Execution Flows");
+    for (const f of flows.slice(0, 5)) {
+      const conf = f.confidence > 0 ? ` | confidence: ${Math.round(f.confidence * 100)}%` : "";
+      lines.push(`- ${f.label}${conf}`);
+    }
+  }
+
   return { content: [{ type: "text", text: lines.join("\n") }] };
 }
 
@@ -547,6 +558,37 @@ export function handlePlanChange(
     lines.push("### Workflow Rules");
     for (const rule of matchedRules.slice(0, 5)) {
       lines.push(`- ${rule}`);
+    }
+  }
+
+  // Affected execution flows (relevance-ranked, capped at 3)
+  const affectedFlows = Q.getFlowsForFiles(analysis, args.files, args.packagePath);
+  if (affectedFlows.length > 0) {
+    // Rank by relevance: how central are the modified files to this flow?
+    const ranked = affectedFlows
+      .map((f) => {
+        const matchCount = args.files.filter((file) => f.files.includes(file)).length;
+        const minIdx = Math.min(...args.files.map((file) => f.files.indexOf(file)).filter((i) => i >= 0));
+        const positionWeight = 1 - minIdx / f.length;
+        return { flow: f, relevance: (matchCount / f.length) * positionWeight };
+      })
+      .filter((r) => r.relevance > 0.05)
+      .sort((a, b) => b.relevance - a.relevance)
+      .slice(0, 3);
+
+    if (ranked.length > 0) {
+      lines.push("");
+      lines.push("### Affected Execution Flows");
+      lines.push("Flows show execution context — updating other steps is not required unless signatures change.");
+      for (const { flow } of ranked) {
+        const positions = args.files
+          .map((file) => {
+            const idx = flow.files.indexOf(file);
+            return idx >= 0 ? `step ${idx + 1}/${flow.length}` : null;
+          })
+          .filter(Boolean);
+        lines.push(`- ${flow.label}${positions.length > 0 ? ` — your change at ${positions.join(", ")}` : ""}`);
+      }
     }
   }
 

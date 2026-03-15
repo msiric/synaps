@@ -14,6 +14,7 @@ import { extractConventions } from "./convention-extractor.js";
 import { analyzeCrossPackage } from "./cross-package.js";
 import { analyzeDependencies } from "./dependency-analyzer.js";
 import { extractExamples } from "./example-extractor.js";
+import { computeExecutionFlows, enrichFlowConfidence } from "./execution-flow.js";
 import { detectExistingDocs } from "./existing-docs.js";
 import { discoverFiles } from "./file-discovery.js";
 import { generateCoChangeRules, mineGitHistory } from "./git-history.js";
@@ -62,6 +63,11 @@ export async function runPipeline(config: ResolvedConfig): Promise<StructuredAna
           verbose,
           `  Git co-change: ${pkgGitHistory.coChangeEdges.length} edges (${pkgGitHistory.totalCommitsAnalyzed} commits analyzed)`,
         );
+
+        // Enrich execution flow confidence with co-change data
+        if (analysis.executionFlows && pkgGitHistory.coChangeEdges.length > 0) {
+          enrichFlowConfidence(analysis.executionFlows, pkgGitHistory.coChangeEdges);
+        }
 
         // Compute implicit coupling (co-change pairs with no import relationship)
         if (analysis.importChain && pkgGitHistory.coChangeEdges.length > 0) {
@@ -396,6 +402,13 @@ function analyzePackage(pkgPath: string, config: ResolvedConfig, warnings: Warni
     vlog(verbose, `  Call graph: ${symbolGraph.callGraph.length} edges`);
   }
 
+  // Execution flow tracing (forward BFS from entry points)
+  // Co-change confidence is computed later when git history is attached
+  const executionFlows = computeExecutionFlows(symbolGraph.callGraph, publicAPI, dependencyInsights);
+  if (executionFlows.length > 0) {
+    vlog(verbose, `  Execution flows: ${executionFlows.length} traced`);
+  }
+
   // W2-2: Pattern fingerprinting for top exports
   const patternFingerprints = fingerprintTopExports(publicAPI, pkgPath, 5, warnings);
   if (patternFingerprints.length > 0) {
@@ -422,6 +435,7 @@ function analyzePackage(pkgPath: string, config: ResolvedConfig, warnings: Warni
     existingDocs,
     callGraph: symbolGraph.callGraph.length > 0 ? symbolGraph.callGraph : undefined,
     importChain: importChain.length > 0 ? importChain : undefined,
+    executionFlows: executionFlows.length > 0 ? executionFlows : undefined,
     patternFingerprints: patternFingerprints.length > 0 ? patternFingerprints : undefined,
     examples: examples.length > 0 ? examples : undefined,
     isMetaTool: metaToolResult.isMetaTool || undefined,

@@ -84,6 +84,7 @@ export interface PackageAnalysis {
   importChain?: FileImportEdge[];
   gitHistory?: GitHistoryAnalysis;
   implicitCoupling?: ImplicitCouplingEdge[];
+  executionFlows?: ExecutionFlow[];
   patternFingerprints?: PatternFingerprint[];
   examples?: UsageExample[]; // W5-C1: Usage examples extracted from test files
   isMetaTool?: boolean;
@@ -161,6 +162,20 @@ export interface CallGraphEdge {
   to: string;
   fromFile: string;
   toFile: string;
+}
+
+// ─── Execution Flows ─────────────────────────────────────────────────────────
+
+export interface ExecutionFlow {
+  label: string; // "runPipeline → analyzePackage → ... (8 steps, 6 files)"
+  entryPoint: string; // Display name of first function
+  entryFile: string; // File of first function
+  terminal: string; // Display name of last function
+  terminalFile: string; // File of last function
+  steps: string[]; // Ordered function display names
+  files: string[]; // Ordered file paths (parallel to steps)
+  length: number; // steps.length
+  confidence: number; // 0-1, mean pairwise adjacent co-change Jaccard
 }
 
 export interface FileImportEdge {
