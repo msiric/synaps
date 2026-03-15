@@ -163,7 +163,7 @@ describe("unselective import detection", () => {
   it("detects when test imports entry point", () => {
     const analysis = makeAnalysis();
     // test/plugins/astro.test.ts imports src/index.ts (entry point)
-    const { confidence, confidenceReason } = Q.buildSuspectList(
+    const { confidence } = Q.buildSuspectList(
       analysis,
       ["test/plugins/astro.test.ts"],
       [],

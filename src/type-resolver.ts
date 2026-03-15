@@ -2,8 +2,7 @@
 // Uses custom CompilerHost to avoid double disk reads where possible.
 // Returns null on failure (broken tsconfig, timeout, too many errors) — graceful fallback.
 
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname } from "node:path";
 import ts from "typescript";
 import type { Warning } from "./types.js";
 

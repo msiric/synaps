@@ -24,7 +24,7 @@ export function enrichExports(
   program: ts.Program,
   publicAPI: PublicAPIEntry[],
   packageDir: string,
-  warnings: Warning[],
+  _warnings: Warning[],
 ): Map<string, EnrichedFields> {
   const results = new Map<string, EnrichedFields>();
 

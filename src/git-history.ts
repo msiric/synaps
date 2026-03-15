@@ -16,7 +16,6 @@ const INITIAL_MAX_COMMITS = 500;
 const EXPANDED_MAX_COMMITS = 1000;
 const FULL_MAX_COMMITS = 2000;
 const MAX_DAYS = 365; // expanded from 90 — recency decay handles old data
-const MIN_USEFUL_EDGES = 5; // minimum co-change edges before expanding
 const MAX_FILES_PER_COMMIT = 30;
 const HUB_FILE_THRESHOLD = 0.7;
 const HUB_FILE_THRESHOLD_YOUNG = 0.9;
