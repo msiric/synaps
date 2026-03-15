@@ -122,16 +122,18 @@ describe("parseFile", () => {
     it("detects CommonJS patterns", () => {
       const pf = parseFile(resolve(FIXTURES, "cjs-pkg/index.js"), resolve(FIXTURES, "cjs-pkg"));
       expect(pf.hasCJS).toBe(true);
-      // Should have mapped module.exports and exports.helper
+      // Should have mapped module.exports = { foo } and exports.helper
       const exportNames = pf.exports.map((e) => e.name);
-      expect(exportNames).toContain("default"); // module.exports
+      expect(exportNames).toContain("foo"); // module.exports = { foo }
       expect(exportNames).toContain("helper"); // exports.helper
     });
 
-    it("detects require() as import", () => {
+    it("detects require() as import with binding name", () => {
       const pf = parseFile(resolve(FIXTURES, "cjs-pkg/index.js"), resolve(FIXTURES, "cjs-pkg"));
       const barImport = pf.imports.find((i) => i.moduleSpecifier === "./bar");
       expect(barImport).toBeDefined();
+      // const bar = require("./bar") → importedNames should include "bar"
+      expect(barImport!.importedNames).toContain("bar");
     });
 
     it("does not flag ESM files as CJS", () => {

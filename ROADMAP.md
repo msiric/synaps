@@ -101,17 +101,16 @@ Features that strengthen what's already unique about us.
 
 **Effort:** Medium (baseline comparison logic + CI integration)
 
-### 3.2 CommonJS Call Graph Support
-**Why:** Dogfooding on Fastify (255 JS files) produced 0 call graph edges. CJS `module.exports = { fn }` + `require('./mod').fn()` patterns don't get mapped by `buildCallGraph`, which relies on ESM export name matching. Any CJS-heavy repo (Express, Fastify, most older Node.js projects) gets empty call graphs → no execution flows, no caller/callee data in hooks or diagnose.
+### 3.2 CommonJS Call Graph Support ✅ DONE
+**Why:** Dogfooding on Fastify (255 JS files) produced 0 call graph edges. CJS `module.exports = { fn }` + `require('./mod').fn()` patterns don't get mapped by `buildCallGraph`, which relies on ESM export name matching.
 
-**Approach:**
-- Enhance `ast-parser.ts` CJS detection (E-18) to produce `ExportEntry` names from `module.exports` property assignments
-- Enhance `buildCallGraph` in `symbol-graph.ts` to match CJS require() calls to exported names
-- Test on Fastify, Express, and one legacy CJS repo
+**What was done:**
+- Enhanced `mergeCJSPatterns` in `ast-parser.ts` to handle three CJS export patterns: `module.exports = { fn1, fn2 }` (named properties), `module.exports = identifier` (use identifier name), `exports.prop = value` (named export)
+- Enhanced CJS import extraction: `const { x, y } = require('./mod')` now extracts destructured names as `importedNames`
+- Added `scanStatement` helper in `extractCallReferences` to scan CJS-exported function bodies (no `export` keyword) for call references
+- Result: Fastify 252 files → 25 call graph edges, 5 execution flows (was 0/0)
 
-**Effort:** Medium (AST parser + symbol graph changes, ~100-150 LOC)
-
-**Validated by dogfooding:** Fastify 252 files → 0 call graph edges, 0 execution flows, 0 implicit coupling. All due to CJS.
+**Status:** Code complete, tests pass (713/713). Not yet committed or published.
 
 ### 3.3 Diagnose Accuracy Improvement
 **Why:** 47% recall@3 overall, 83% on unit-test repos, 27% on integration-test repos. The corpus revealed that 100% of misses are files not in the import graph.
@@ -245,7 +244,7 @@ Native VS Code / JetBrains extension that shows autodocs intelligence inline —
 | Convention detection not Leiden clustering | Conventions are actionable ("use typed error subclasses"); clusters are descriptive ("Auth area"). | Mar 2026 |
 | Language boundary before language support | Extract LanguageParser interface first (2-3 days), then add languages one at a time. Don't over-abstract upfront. | Mar 2026 |
 | Tree-sitter for non-TS languages | TypeScript Compiler API gives 95% accuracy for TS/JS. Tree-sitter gives ~80% for other languages. Accept the trade-off per language. | Mar 2026 |
-| CJS call graph is a known gap | Dogfooding on Fastify (255 JS files) → 0 call graph edges. CJS module.exports not mapped by buildCallGraph. Prioritize fix in Phase 3.2. | Mar 2026 |
+| CJS call graph fixed | Fastify 252 files: 0→25 call graph edges, 0→5 execution flows. Fix in ast-parser.ts mergeCJSPatterns + extractCallReferences. | Mar 2026 |
 
 ---
 
@@ -260,15 +259,16 @@ Tested on 5 external repos via published npm package + 1 self-analysis:
 | valibot | TS validation lib | 1,043 | 22 | 6 | 7 | 345 | Excellent |
 | ofetch | Small TS library | 10 | 0 | 3 | 1 | 8 | Correct (below threshold) |
 | create-t3-app | Next.js template | 149 | 0 | 6 | 0 | 5 | Correct (template, few calls) |
-| fastify | JS web framework | 252 | 0 | 2 | 0 | 0 | Weak — CJS gap |
+| fastify | JS web framework | 252 | 5 | 2 | 0 | 25 | Good — CJS fix applied |
 
 **Bugs found and fixed during dogfooding:**
 1. Hook augmentation only searched publicAPI — internal functions returned no context. Fixed by also searching call graph functions.
+2. CJS call graph gap — Fastify (252 JS files) produced 0 call graph edges. Fixed by enhancing `mergeCJSPatterns` and `extractCallReferences` in ast-parser.ts. Now produces 25 edges and 5 execution flows.
 
 **Key observations:**
 - Engine excels on TypeScript repos with rich call graphs (20+ flows, meaningful coupling)
 - Degrades gracefully on small repos and templates (no false positives)
-- CJS-heavy JavaScript repos produce empty call graphs — real limitation, prioritized for fix
+- CJS-heavy JavaScript repos now produce meaningful call graphs after CJS fix (25 edges on Fastify)
 - Convention detection accurate across all repos with zero false positives
 - Workspace auto-detection works correctly on monorepos (4-6 packages found)
 

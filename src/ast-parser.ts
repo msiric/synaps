@@ -544,6 +544,15 @@ function detectCJS(sourceFile: ts.SourceFile, content: string): boolean {
 /**
  * E-18: Merge CJS patterns into ESM-style export/import entries.
  * If file has BOTH ESM and CJS, prefer ESM (it's canonical).
+ *
+ * Handles three CJS export patterns:
+ *   module.exports = { fn1, fn2 }  → named exports "fn1", "fn2"
+ *   module.exports = identifier    → named export using identifier name
+ *   exports.propName = value       → named export "propName"
+ *
+ * Handles CJS import destructuring:
+ *   const { x, y } = require('./mod') → importedNames: ["x", "y"]
+ *   const mod = require('./mod')       → importedNames: ["mod"] (whole-module)
  */
 function mergeCJSPatterns(
   sourceFile: ts.SourceFile,
@@ -555,25 +564,34 @@ function mergeCJSPatterns(
   const hasESMExports = exports.length > 0;
 
   if (!hasESMExports) {
-    // Walk for module.exports and exports.X patterns
     function walkExports(node: ts.Node): void {
       if (ts.isExpressionStatement(node) && ts.isBinaryExpression(node.expression)) {
         const left = node.expression.left;
+        const right = node.expression.right;
+
         if (ts.isPropertyAccessExpression(left)) {
+          // module.exports = ...
           if (ts.isIdentifier(left.expression) && left.expression.text === "module" && left.name.text === "exports") {
-            exports.push({
-              name: "default",
-              kind: "unknown",
-              isReExport: false,
-              isTypeOnly: false,
-            });
-          } else if (ts.isIdentifier(left.expression) && left.expression.text === "exports") {
-            exports.push({
-              name: left.name.text,
-              kind: "unknown",
-              isReExport: false,
-              isTypeOnly: false,
-            });
+            if (ts.isObjectLiteralExpression(right)) {
+              // module.exports = { fn1, fn2, fn3 } → extract each property as named export
+              for (const prop of right.properties) {
+                if (ts.isShorthandPropertyAssignment(prop)) {
+                  exports.push({ name: prop.name.text, kind: "function", isReExport: false, isTypeOnly: false });
+                } else if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
+                  exports.push({ name: prop.name.text, kind: "function", isReExport: false, isTypeOnly: false });
+                }
+              }
+            } else if (ts.isIdentifier(right)) {
+              // module.exports = fastify → export the identifier name, not "default"
+              exports.push({ name: right.text, kind: "function", isReExport: false, isTypeOnly: false });
+            } else {
+              // module.exports = someExpression → fallback to "default"
+              exports.push({ name: "default", kind: "unknown", isReExport: false, isTypeOnly: false });
+            }
+          }
+          // exports.propName = value
+          else if (ts.isIdentifier(left.expression) && left.expression.text === "exports") {
+            exports.push({ name: left.name.text, kind: "function", isReExport: false, isTypeOnly: false });
           }
         }
       }
@@ -582,8 +600,37 @@ function mergeCJSPatterns(
     walkExports(sourceFile);
   }
 
-  // Map require() to import entries (always, even with ESM)
+  // Map require() to import entries with destructured names
   function walkRequires(node: ts.Node): void {
+    // Look for: const { x, y } = require('./mod') OR const mod = require('./mod')
+    if (ts.isVariableStatement(node)) {
+      for (const decl of node.declarationList.declarations) {
+        if (!decl.initializer || !ts.isCallExpression(decl.initializer)) continue;
+        const call = decl.initializer;
+        if (!ts.isIdentifier(call.expression) || call.expression.text !== "require") continue;
+        if (call.arguments.length === 0 || !ts.isStringLiteral(call.arguments[0])) continue;
+
+        const spec = call.arguments[0].text;
+        const already = imports.some((i) => i.moduleSpecifier === spec && !i.isDynamic);
+        if (already) continue;
+
+        const importedNames: string[] = [];
+        if (ts.isObjectBindingPattern(decl.name)) {
+          // const { x, y } = require('./mod')
+          for (const element of decl.name.elements) {
+            if (ts.isIdentifier(element.name)) importedNames.push(element.name.text);
+          }
+        } else if (ts.isIdentifier(decl.name)) {
+          // const mod = require('./mod') — whole module import
+          importedNames.push(decl.name.text);
+        }
+
+        imports.push({ moduleSpecifier: spec, importedNames, isTypeOnly: false, isDynamic: false });
+        return; // Don't recurse into this node
+      }
+    }
+
+    // Fallback: bare require() calls not in variable declarations
     if (
       ts.isCallExpression(node) &&
       ts.isIdentifier(node.expression) &&
@@ -591,18 +638,13 @@ function mergeCJSPatterns(
       node.arguments.length > 0 &&
       ts.isStringLiteral(node.arguments[0])
     ) {
-      // Avoid duplicating if already captured as ESM import
       const spec = node.arguments[0].text;
       const already = imports.some((i) => i.moduleSpecifier === spec && !i.isDynamic);
       if (!already) {
-        imports.push({
-          moduleSpecifier: spec,
-          importedNames: [],
-          isTypeOnly: false,
-          isDynamic: false,
-        });
+        imports.push({ moduleSpecifier: spec, importedNames: [], isTypeOnly: false, isDynamic: false });
       }
     }
+
     ts.forEachChild(node, walkRequires);
   }
   walkRequires(sourceFile);
@@ -640,46 +682,58 @@ function extractCallReferences(
 
   const callRefs: CallReference[] = [];
 
-  // Walk top-level statements looking for exported function/variable declarations
+  // Walk top-level statements looking for exported function/variable declarations.
+  // Handles BOTH ESM exports (export keyword) and CJS exports (name in exportedNames from module.exports).
+  const scanned = new Set<string>();
+
   for (const stmt of sourceFile.statements) {
-    if (!ts.canHaveModifiers(stmt)) continue;
-    const modifiers = ts.getModifiers(stmt);
-    const hasExport = modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
-    if (!hasExport) continue;
-
-    if (ts.isFunctionDeclaration(stmt) && stmt.name && exportedNames.has(stmt.name.text)) {
-      const callerName = stmt.name.text;
-      if (stmt.body) {
-        findCallsInBody(stmt.body, callerName, importedNameToModule, callRefs);
-      }
-    } else if (ts.isVariableStatement(stmt)) {
-      for (const decl of stmt.declarationList.declarations) {
-        if (!ts.isIdentifier(decl.name) || !exportedNames.has(decl.name.text)) continue;
-        const callerName = decl.name.text;
-
-        if (decl.initializer) {
-          // Arrow function or function expression
-          let funcBody: ts.Node | undefined;
-          if (ts.isArrowFunction(decl.initializer)) {
-            funcBody = decl.initializer.body;
-          } else if (ts.isFunctionExpression(decl.initializer)) {
-            funcBody = decl.initializer.body;
-          } else if (ts.isCallExpression(decl.initializer)) {
-            // e.g., React.memo(() => { ... })
-            const arg = decl.initializer.arguments[0];
-            if (arg && (ts.isArrowFunction(arg) || ts.isFunctionExpression(arg))) {
-              funcBody = arg.body;
-            }
-          }
-          if (funcBody) {
-            findCallsInBody(funcBody, callerName, importedNameToModule, callRefs);
-          }
-        }
+    // ESM: function/variable with export keyword
+    if (ts.canHaveModifiers(stmt)) {
+      const modifiers = ts.getModifiers(stmt);
+      const hasExport = modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+      if (hasExport) {
+        scanStatement(stmt, exportedNames, importedNameToModule, callRefs, scanned);
+        continue;
       }
     }
+
+    // CJS: function/variable whose name appears in exportedNames (from module.exports)
+    // These don't have export keyword but are exported via module.exports = { fn }
+    scanStatement(stmt, exportedNames, importedNameToModule, callRefs, scanned);
   }
 
   return callRefs;
+}
+
+/** Scan a top-level statement for exported function bodies and extract call references. */
+function scanStatement(
+  stmt: ts.Statement,
+  exportedNames: Set<string>,
+  importedNameToModule: Map<string, string>,
+  callRefs: CallReference[],
+  scanned: Set<string>,
+): void {
+  if (ts.isFunctionDeclaration(stmt) && stmt.name && exportedNames.has(stmt.name.text)) {
+    if (scanned.has(stmt.name.text)) return;
+    scanned.add(stmt.name.text);
+    if (stmt.body) findCallsInBody(stmt.body, stmt.name.text, importedNameToModule, callRefs);
+  } else if (ts.isVariableStatement(stmt)) {
+    for (const decl of stmt.declarationList.declarations) {
+      if (!ts.isIdentifier(decl.name) || !exportedNames.has(decl.name.text)) continue;
+      if (scanned.has(decl.name.text)) continue;
+      scanned.add(decl.name.text);
+      if (!decl.initializer) continue;
+
+      let funcBody: ts.Node | undefined;
+      if (ts.isArrowFunction(decl.initializer)) funcBody = decl.initializer.body;
+      else if (ts.isFunctionExpression(decl.initializer)) funcBody = decl.initializer.body;
+      else if (ts.isCallExpression(decl.initializer)) {
+        const arg = decl.initializer.arguments[0];
+        if (arg && (ts.isArrowFunction(arg) || ts.isFunctionExpression(arg))) funcBody = arg.body;
+      }
+      if (funcBody) findCallsInBody(funcBody, decl.name.text, importedNameToModule, callRefs);
+    }
+  }
 }
 
 /**
