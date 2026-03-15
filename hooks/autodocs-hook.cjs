@@ -158,8 +158,25 @@ function augment(snapshot, pattern) {
 
   const patternLower = pattern.toLowerCase();
 
-  // Match against public API symbols
-  const matches = (pkg.publicAPI || []).filter((e) => e.name.toLowerCase().includes(patternLower));
+  // Match against public API symbols AND call graph functions
+  const apiMatches = (pkg.publicAPI || []).filter((e) => e.name.toLowerCase().includes(patternLower));
+
+  // Also search call graph for internal functions not in publicAPI
+  const apiNames = new Set(apiMatches.map((e) => e.name));
+  const callGraphFns = new Set();
+  for (const e of pkg.callGraph || []) {
+    if (!apiNames.has(e.from) && e.from.toLowerCase().includes(patternLower)) callGraphFns.add(e.from);
+    if (!apiNames.has(e.to) && e.to.toLowerCase().includes(patternLower)) callGraphFns.add(e.to);
+  }
+
+  // Build unified match list: API symbols first, then call graph functions
+  const matches = [
+    ...apiMatches.map((e) => ({ name: e.name, kind: e.kind, sourceFile: e.sourceFile, importCount: e.importCount })),
+    ...[...callGraphFns].slice(0, 3).map((name) => {
+      const edge = (pkg.callGraph || []).find((e) => e.from === name || e.to === name);
+      return { name, kind: "function", sourceFile: edge ? (edge.from === name ? edge.fromFile : edge.toFile) : "unknown", importCount: 0 };
+    }),
+  ];
   if (matches.length === 0) return null;
 
   const results = [];
