@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.10.0 (2026-03-15)
+
+### New Features
+
+- **Execution flow tracing** — Detects execution paths from entry points through the call graph. Spine-first BFS with framework-aware entry point scoring (Express, Next.js, NestJS multipliers). Flows scored by co-change confidence — our unique advantage.
+- **Symbol-level filtering in plan_change** — `plan_change({ files, symbols: ["Convention"] })` narrows dependents to files importing specific symbols. 98→25 dependents for shared type files.
+- **PreToolUse/PostToolUse hooks for Claude Code** — Automatic search augmentation: when you grep for a function, hooks show callers, co-change partners, and execution flows alongside results. Post-commit staleness detection. Install via `npx autodocs-engine setup-hooks`.
+- **4 new convention detectors** (13 total) — Error handling (typed error hierarchies, Result/Either patterns), async patterns (Promise.all, sequential-await-in-loops, AbortController), state management (Redux, Zustand, Jotai, MobX, Signals, Context API), API patterns (Express, Fastify, Hono, NestJS, tRPC, GraphQL — framework-aware).
+- **Implicit coupling detection** — Finds co-change pairs with no import relationship. Computed in the pipeline, stored in PackageAnalysis, surfaced in plan_change and MCP tools.
+- **Type-aware analysis** — Opt-in `--type-checking` creates ts.Program for resolved parameter/return types. Handles re-exports via TypeChecker symbol resolution. 93% enrichment on own codebase.
+- **Next-step hints** — Every MCP tool response includes contextual guidance for the logical next action.
+- **Confidence scores on all edges** — CallGraphEdge and FileImportEdge now carry confidence (0-1) and resolution type.
+- **Workspace auto-detection** — Monorepo roots automatically expand to individual workspace packages.
+- **Error type classification** — parseErrorText extracts TypeError/ReferenceError/SyntaxError/assertion type for downstream scoring.
+
+### Diagnose Improvements
+
+- **Bi-modal recency decay** — Changes from 3 days ago score 0.15 (was 0.03). Weekend bugs now visible.
+- **Continuous weight interpolation** — Replaces 3 discrete weight configurations. Weights computed from data richness.
+- **Joint sigmoid for missing co-change** — Both Jaccard AND count must be strong to trigger signal.
+- **Test-to-source mapping** — New scoring signal: naming convention + import graph (15% weight).
+- **Directory locality** — New scoring signal for integration-test repos (test path matches source directory).
+- **Multi-hop upstream traversal** — Candidates discovered at import depth 2 (transitive dependencies).
+- **Confidence assessment** — Returns high/medium/low with reason based on signal quality and discrimination.
+- **Import path traces** — Top 3 suspects show dependency chain from error site.
+- **Validation corpus** — 95 bug-fix commits across 10 repos. P@1=33%, R@3=47%. Unit-test repos: R@3=83%.
+
+### Infrastructure
+
+- **Test factory functions** — Shared createParsedFile/createExport/createImport factories prevent cascading test breakage.
+- **Output completeness checks** — Importance-weighted omission detection for conventions, exports, commands.
+- **Adaptive git history** — Expands from 500→2000 commits based on signal quality.
+- **ENGINE_VERSION** — Now reads from package.json dynamically (was hardcoded "0.8.0").
+
+### Security
+
+- Cache hash upgraded from DJB2 to SHA-256 (collision-resistant)
+- Path traversal: startsWith → relative() check (symlink/case-safe)
+- ReDoS: `.+` → `[^\n]+` in error message regex
+- buildSuspectList: O(n²) → O(n) via pre-built indexes
+
+### Stats
+
+- 713 tests across 53 files (was 569 across 41)
+- 13 MCP tools with next-step hints
+- 13 convention detectors (was 9)
+- 95-commit diagnose validation corpus across 10 repos
+- 5 production dependencies (unchanged)
+
 ## 0.9.2 (2026-02-25)
 
 ### Improvements
