@@ -112,6 +112,13 @@ async function main() {
     process.exit(0);
   }
 
+  // Handle "setup-hooks" subcommand — install Claude Code hooks
+  if (args.packages[0] === "setup-hooks") {
+    const { runSetupHooks } = await import("./setup-hooks.js");
+    await runSetupHooks();
+    process.exit(0);
+  }
+
   // Handle "serve" subcommand — MCP server for live codebase intelligence
   if (args.packages[0] === "serve") {
     const { runServe } = await import("./serve.js");

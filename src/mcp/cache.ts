@@ -8,7 +8,9 @@
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { resolve } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join, resolve } from "node:path";
 import { analyze } from "../index.js";
 import type { StructuredAnalysis } from "../types.js";
 
@@ -107,6 +109,7 @@ export class AnalysisCache {
         typeChecking: this.options.typeChecking,
       });
       this.cached = { analysis, key: this.getCacheKey(), analyzedAt: new Date().toISOString() };
+      this.persistToDisk(analysis);
       return analysis;
     })();
 
@@ -114,6 +117,45 @@ export class AnalysisCache {
       return await this.inflight;
     } finally {
       this.inflight = null;
+    }
+  }
+
+  /**
+   * Write a snapshot of the analysis to disk for use by Claude Code hooks.
+   * Hooks run as separate processes and can't access in-memory cache.
+   * Contains only the data hooks need (import chain, call graph, co-change, flows).
+   */
+  private persistToDisk(analysis: StructuredAnalysis): void {
+    try {
+      const cacheDir = join(homedir(), ".autodocs", "cache");
+      mkdirSync(cacheDir, { recursive: true });
+
+      const projectHash = createHash("sha256").update(this.projectPath).digest("hex").slice(0, 12);
+      const cacheFile = join(cacheDir, `${projectHash}.json`);
+
+      const snapshot = {
+        projectPath: this.projectPath,
+        cacheKey: this.cached?.key,
+        analyzedAt: this.cached?.analyzedAt,
+        packages: analysis.packages.map((pkg) => ({
+          name: pkg.name,
+          relativePath: pkg.relativePath,
+          importChain: pkg.importChain,
+          callGraph: pkg.callGraph,
+          gitHistory: pkg.gitHistory ? { coChangeEdges: pkg.gitHistory.coChangeEdges } : undefined,
+          executionFlows: pkg.executionFlows,
+          publicAPI: pkg.publicAPI.map((e) => ({
+            name: e.name,
+            kind: e.kind,
+            sourceFile: e.sourceFile,
+            importCount: e.importCount,
+          })),
+        })),
+      };
+
+      writeFileSync(cacheFile, JSON.stringify(snapshot));
+    } catch {
+      // Best-effort — never crash the server for cache persistence
     }
   }
 
