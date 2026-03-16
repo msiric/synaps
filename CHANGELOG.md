@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.10.2 (2026-03-16)
+
+### New Feature
+
+- **`search` MCP tool** — Find symbols, files, and conventions by name or concept. Searches across public API, internal call graph functions, file paths, conventions, and workflow rules — returning results enriched with call graph context (callers/callees) and co-change partners. Closes the discovery gap: 59% of symbols (internal functions) and 100% of file paths were previously invisible to MCP tool queries.
+
+### Stats
+
+- 14 MCP tools (was 13)
+- 722 tests (was 713)
+
 ## 0.10.1 (2026-03-15)
 
 ### Bug Fixes
