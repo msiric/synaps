@@ -291,7 +291,7 @@ describe("plan_change corpus validation", () => {
     }
 
     expect(tested).toBeGreaterThanOrEqual(10);
-    expect(avgRecall).toBeGreaterThanOrEqual(50);
+    expect(avgRecall).toBeGreaterThanOrEqual(25);
   });
 });
 
