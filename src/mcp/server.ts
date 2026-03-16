@@ -5,12 +5,12 @@
 import { createHash } from "node:crypto";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { ENGINE_VERSION } from "../types.js";
 import { AnalysisCache } from "./cache.js";
-import { safeToolHandler } from "./errors.js";
+import { safeToolHandler, ToolError } from "./errors.js";
 import * as tools from "./tools.js";
 
 export interface ServerOptions {
@@ -119,13 +119,16 @@ function getNextStepHint(toolName: string): string {
 
 /**
  * Create an autodocs-engine MCP server with all tools registered.
- * Call server.connect(transport) then cache.warm() after.
+ * Supports single or multiple project paths (multi-repo).
+ * Call server.connect(transport) then warm caches after.
  */
 export function createAutodocsServer(
-  projectPath: string,
+  projectPaths: string | string[],
   options: ServerOptions = {},
 ): {
   server: McpServer;
+  caches: Map<string, AnalysisCache>;
+  /** @deprecated Use caches.values().next().value for single-repo compat */
   cache: AnalysisCache;
   session: SessionTelemetry;
 } {
@@ -137,7 +140,44 @@ export function createAutodocsServer(
     { instructions: SERVER_INSTRUCTIONS },
   );
 
-  const cache = new AnalysisCache(projectPath, { typeChecking: options.typeChecking });
+  // Build cache registry — one AnalysisCache per project path
+  const paths = Array.isArray(projectPaths) ? projectPaths : [projectPaths];
+  const caches = new Map<string, AnalysisCache>();
+  for (const p of paths) {
+    const resolved = resolve(p);
+    caches.set(resolved, new AnalysisCache(resolved, { typeChecking: options.typeChecking }));
+  }
+  const primaryPath = resolve(paths[0]);
+
+  /**
+   * Resolve which cache to use for a tool call.
+   * - No repo param + single repo → return the only cache
+   * - No repo param + multiple repos → throw with available repos
+   * - repo param → match by path suffix, basename, or exact path
+   */
+  function resolveCache(repo?: string): AnalysisCache {
+    if (!repo) {
+      if (caches.size === 1) return caches.values().next().value!;
+      throw new ToolError("AMBIGUOUS_REPO", "Multiple repos indexed. Specify the repo parameter.", [
+        `Available: ${[...caches.keys()].map((p) => basename(p)).join(", ")}`,
+        "Use the directory name or full path",
+      ]);
+    }
+    // Exact path match
+    const resolved = resolve(repo);
+    if (caches.has(resolved)) return caches.get(resolved)!;
+    // Basename match
+    for (const [path, cache] of caches) {
+      if (basename(path) === repo || basename(path).toLowerCase() === repo.toLowerCase()) return cache;
+    }
+    // Suffix match
+    for (const [path, cache] of caches) {
+      if (path.endsWith(repo)) return cache;
+    }
+    throw new ToolError("REPO_NOT_FOUND", `Repo '${repo}' not found.`, [
+      `Available: ${[...caches.keys()].map((p) => basename(p)).join(", ")}`,
+    ]);
+  }
 
   const session: SessionTelemetry = {
     startTime: Date.now(),
@@ -147,7 +187,7 @@ export function createAutodocsServer(
     errors: 0,
     seq: 0,
     runId: `${Date.now()}-${process.pid}`,
-    telemetryPath: telemetryEnabled ? getTelemetryPath(projectPath) : null,
+    telemetryPath: telemetryEnabled ? getTelemetryPath(primaryPath) : null,
   };
 
   /**
@@ -164,7 +204,8 @@ export function createAutodocsServer(
 
     return safeToolHandler(fn).then((result) => {
       const latencyMs = Math.round(performance.now() - start);
-      const cacheStatus = cache.lastWasCacheHit ? "hit" : "miss";
+      const usedCache = caches.size === 1 ? caches.values().next().value! : resolveCache((args as any)?.repo);
+      const cacheStatus = usedCache.lastWasCacheHit ? "hit" : "miss";
       const isError = Boolean(result.isError);
 
       // Estimate output tokens (filter to text blocks only — non-text blocks are ignored)
@@ -212,7 +253,7 @@ export function createAutodocsServer(
 
       // Append freshness metadata to every tool response
       if (!isError && result.content.length > 0) {
-        const meta = cache.getMeta();
+        const meta = usedCache.getMeta();
         const last = result.content[result.content.length - 1];
         if (last.type === "text") {
           last.text += `\n\n---\n*Analyzed: ${meta.analyzedAt} | Commit: ${meta.analyzedCommit} | ${meta.isFresh ? "Fresh" : "Stale — files changed since analysis"}*`;
@@ -234,9 +275,19 @@ WHEN TO CALL:
 DO NOT CALL:
 - User asks about architecture or where to put code (use get_architecture)
 - User asks about dependencies or what frameworks are used`,
-    { packagePath: z.string().optional().describe("Package path or name. Omit for single-package repos.") },
+    {
+      packagePath: z.string().optional().describe("Package path or name. Omit for single-package repos."),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
+    },
     async (args) =>
-      withTelemetry("get_commands", () => cache.get().then((a) => tools.handleGetCommands(a, args)), args),
+      withTelemetry(
+        "get_commands",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleGetCommands(a, args)),
+        args,
+      ),
   );
 
   // ─── P0: get_architecture ────────────────────────────────────────────
@@ -252,9 +303,19 @@ WHEN TO CALL:
 DO NOT CALL:
 - User asks about specific file contents or imports (use analyze_impact)
 - User asks about build/test commands (use get_commands)`,
-    { packagePath: z.string().optional().describe("Package path or name.") },
+    {
+      packagePath: z.string().optional().describe("Package path or name."),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
+    },
     async (args) =>
-      withTelemetry("get_architecture", () => cache.get().then((a) => tools.handleGetArchitecture(a, args)), args),
+      withTelemetry(
+        "get_architecture",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleGetArchitecture(a, args)),
+        args,
+      ),
   );
 
   // ─── P0: analyze_impact ──────────────────────────────────────────────
@@ -275,6 +336,7 @@ DO NOT CALL:
       filePath: z.string().optional().describe("File to analyze (e.g., 'src/types.ts')"),
       functionName: z.string().optional().describe("Function to find callers for"),
       packagePath: z.string().optional().describe("Package path or name"),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
       scope: z
         .enum(["all", "imports", "callers", "cochanges"])
         .optional()
@@ -284,7 +346,14 @@ DO NOT CALL:
       limit: z.number().min(1).max(50).optional().describe("Max results per section. Default: 20."),
     },
     async (args) =>
-      withTelemetry("analyze_impact", () => cache.get().then((a) => tools.handleAnalyzeImpact(a, args)), args),
+      withTelemetry(
+        "analyze_impact",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleAnalyzeImpact(a, args)),
+        args,
+      ),
   );
 
   // ─── P0: get_workflow_rules ──────────────────────────────────────────
@@ -303,9 +372,17 @@ DO NOT CALL:
     {
       filePath: z.string().optional().describe("Filter to rules mentioning this file (e.g., 'src/types.ts')"),
       packagePath: z.string().optional().describe("Package path or name."),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
     },
     async (args) =>
-      withTelemetry("get_workflow_rules", () => cache.get().then((a) => tools.handleGetWorkflowRules(a, args)), args),
+      withTelemetry(
+        "get_workflow_rules",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleGetWorkflowRules(a, args)),
+        args,
+      ),
   );
 
   // ─── P0: list_packages ──────────────────────────────────────────────
@@ -320,8 +397,16 @@ WHEN TO CALL:
 
 DO NOT CALL:
 - Single-package repos (will return one item, which is fine but unnecessary)`,
-    {},
-    async () => withTelemetry("list_packages", () => cache.get().then((a) => tools.handleListPackages(a))),
+    { repo: z.string().optional().describe("Repository name or path. Omit if single repo.") },
+    async (args) =>
+      withTelemetry(
+        "list_packages",
+        () =>
+          resolveCache(args.repo)
+            .get()
+            .then((a) => tools.handleListPackages(a)),
+        args,
+      ),
   );
 
   // ─── P1: get_contribution_guide ──────────────────────────────────────
@@ -335,11 +420,15 @@ WHEN TO CALL:
     {
       directory: z.string().optional().describe("Filter to patterns in this directory (e.g., 'src/detectors/')"),
       packagePath: z.string().optional().describe("Package path or name."),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
     },
     async (args) =>
       withTelemetry(
         "get_contribution_guide",
-        () => cache.get().then((a) => tools.handleGetContributionGuide(a, args)),
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleGetContributionGuide(a, args)),
         args,
       ),
   );
@@ -354,10 +443,19 @@ WHEN TO CALL:
 - User needs to find a specific export by name`,
     {
       packagePath: z.string().optional().describe("Package path or name."),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
       query: z.string().optional().describe("Filter exports by name (substring match)"),
       limit: z.number().min(1).max(100).optional().describe("Max results. Default: 20."),
     },
-    async (args) => withTelemetry("get_exports", () => cache.get().then((a) => tools.handleGetExports(a, args)), args),
+    async (args) =>
+      withTelemetry(
+        "get_exports",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleGetExports(a, args)),
+        args,
+      ),
   );
 
   // ─── P2: get_conventions ─────────────────────────────────────────────
@@ -373,9 +471,17 @@ WHEN TO CALL:
         .optional()
         .describe("Filter by convention category (e.g., 'file-naming', 'hooks', 'testing', 'ecosystem')"),
       packagePath: z.string().optional().describe("Package path or name."),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
     },
     async (args) =>
-      withTelemetry("get_conventions", () => cache.get().then((a) => tools.handleGetConventions(a, args)), args),
+      withTelemetry(
+        "get_conventions",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleGetConventions(a, args)),
+        args,
+      ),
   );
 
   // ─── New: plan_change ──────────────────────────────────────────────
@@ -402,8 +508,17 @@ DO NOT CALL:
           "Specific symbols being modified (e.g. ['Convention', 'WorkflowRule']). Narrows dependents to files importing these symbols.",
         ),
       packagePath: z.string().optional().describe("Package path or name"),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
     },
-    async (args) => withTelemetry("plan_change", () => cache.get().then((a) => tools.handlePlanChange(a, args)), args),
+    async (args) =>
+      withTelemetry(
+        "plan_change",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handlePlanChange(a, args)),
+        args,
+      ),
   );
 
   // ─── New: get_test_info ───────────────────────────────────────────
@@ -421,9 +536,17 @@ DO NOT CALL:
     {
       filePath: z.string().describe("Source file path (e.g., 'src/detectors/file-naming.ts')"),
       packagePath: z.string().optional().describe("Package path or name"),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
     },
     async (args) =>
-      withTelemetry("get_test_info", () => cache.get().then((a) => tools.handleGetTestInfo(a, args)), args),
+      withTelemetry(
+        "get_test_info",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleGetTestInfo(a, args)),
+        args,
+      ),
   );
 
   // ─── New: auto_register ─────────────────────────────────────────
@@ -441,9 +564,17 @@ DO NOT CALL:
     {
       newFilePath: z.string().describe("Path of the newly created file (e.g., 'src/detectors/graphql.ts')"),
       packagePath: z.string().optional().describe("Package path or name"),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
     },
     async (args) =>
-      withTelemetry("auto_register", () => cache.get().then((a) => tools.handleAutoRegister(a, args)), args),
+      withTelemetry(
+        "auto_register",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleAutoRegister(a, args)),
+        args,
+      ),
   );
 
   // ─── New: review_changes ──────────────────────────────────────────
@@ -468,9 +599,17 @@ DO NOT CALL:
         )
         .describe("Files to review"),
       packagePath: z.string().optional().describe("Package path or name"),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
     },
     async (args) =>
-      withTelemetry("review_changes", () => cache.get().then((a) => tools.handleReviewChanges(a, args)), args),
+      withTelemetry(
+        "review_changes",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleReviewChanges(a, args)),
+        args,
+      ),
   );
 
   // ─── New: diagnose ──────────────────────────────────────────────
@@ -492,8 +631,17 @@ DO NOT CALL:
       filePath: z.string().optional().describe("File where the error occurs (e.g., 'src/types.ts')"),
       testFile: z.string().optional().describe("Failing test file (e.g., 'test/pipeline.test.ts')"),
       packagePath: z.string().optional().describe("Package path or name"),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
     },
-    async (args) => withTelemetry("diagnose", () => cache.get().then((a) => tools.handleDiagnose(a, args)), args),
+    async (args) =>
+      withTelemetry(
+        "diagnose",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleDiagnose(a, args)),
+        args,
+      ),
   );
 
   // ─── New: search ────────────────────────────────────────────────
@@ -512,9 +660,18 @@ DO NOT CALL:
     {
       query: z.string().describe("Search term — matches symbol names, file paths, and convention descriptions"),
       packagePath: z.string().optional().describe("Package path or name"),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
       limit: z.number().min(1).max(50).optional().describe("Max results. Default: 20."),
     },
-    async (args) => withTelemetry("search", () => cache.get().then((a) => tools.handleSearch(a, args)), args),
+    async (args) =>
+      withTelemetry(
+        "search",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleSearch(a, args)),
+        args,
+      ),
   );
 
   // ─── New: rename ─────────────────────────────────────────────────
@@ -535,15 +692,24 @@ DO NOT CALL:
       newName: z.string().describe("New name for the symbol"),
       filePath: z.string().optional().describe("File where the symbol is defined (for disambiguation)"),
       packagePath: z.string().optional().describe("Package path or name"),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
     },
-    async (args) => withTelemetry("rename", () => cache.get().then((a) => tools.handleRename(a, args)), args),
+    async (args) =>
+      withTelemetry(
+        "rename",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleRename(a, args)),
+        args,
+      ),
   );
 
   // ─── MCP Resources ────────────────────────────────────────────────
   // Static data exposed as resources — cheaper than tool calls for context.
 
   server.resource("conventions", "autodocs://conventions", { mimeType: "text/markdown" }, async () => {
-    const a = await cache.get();
+    const a = await resolveCache().get();
     const pkg = a.packages[0];
     if (!pkg)
       return {
@@ -560,7 +726,7 @@ DO NOT CALL:
   });
 
   server.resource("processes", "autodocs://processes", { mimeType: "text/markdown" }, async () => {
-    const a = await cache.get();
+    const a = await resolveCache().get();
     const pkg = a.packages[0];
     const flows = pkg?.executionFlows ?? [];
     const lines = ["# Execution Flows", ""];
@@ -576,7 +742,7 @@ DO NOT CALL:
   });
 
   server.resource("clusters", "autodocs://clusters", { mimeType: "text/markdown" }, async () => {
-    const a = await cache.get();
+    const a = await resolveCache().get();
     const pkg = a.packages[0];
     const clusters = pkg?.coChangeClusters ?? [];
     const lines = [
@@ -598,7 +764,7 @@ DO NOT CALL:
   });
 
   server.resource("packages", "autodocs://packages", { mimeType: "text/markdown" }, async () => {
-    const a = await cache.get();
+    const a = await resolveCache().get();
     const lines = ["# Packages", ""];
     for (const pkg of a.packages) {
       lines.push(
@@ -681,7 +847,7 @@ DO NOT CALL:
     }),
   );
 
-  return { server, cache, session };
+  return { server, caches, cache: caches.get(primaryPath)!, session };
 }
 
 /**

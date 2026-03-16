@@ -120,10 +120,13 @@ async function main() {
   }
 
   // Handle "serve" subcommand — MCP server for live codebase intelligence
+  // Supports multiple paths: autodocs-engine serve /repo1 /repo2
   if (args.packages[0] === "serve") {
     const { runServe } = await import("./serve.js");
+    const servePaths = args.packages.slice(1);
     await runServe({
-      path: args.packages[1],
+      paths: servePaths.length > 1 ? servePaths : undefined,
+      path: servePaths.length === 1 ? servePaths[0] : undefined,
       verbose: args.verbose,
       telemetry: args.telemetry,
       typeChecking: args.typeChecking,

@@ -1,16 +1,19 @@
 // src/bin/serve.ts — CLI entry point for MCP server
-// Usage: autodocs-engine serve [path] [--verbose] [--telemetry]
+// Usage: autodocs-engine serve [path...] [--verbose] [--telemetry]
+// Supports multiple paths for multi-repo: autodocs-engine serve /repo1 /repo2
 
 import { appendFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 export async function runServe(args: {
   path?: string;
+  paths?: string[];
   verbose?: boolean;
   telemetry?: boolean;
   typeChecking?: boolean;
 }): Promise<void> {
-  const projectPath = resolve(args.path ?? ".");
+  // Support multiple paths: explicit array, single path, or default to cwd
+  const projectPaths = args.paths?.map((p) => resolve(p)) ?? [resolve(args.path ?? ".")];
 
   // Lazy-load MCP dependencies — users who don't use serve don't pay the cost
   const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
@@ -18,7 +21,7 @@ export async function runServe(args: {
 
   const verbose = args.verbose ?? Boolean(process.env.AUTODOCS_DEBUG);
   const telemetry = args.telemetry ?? process.env.AUTODOCS_TELEMETRY === "1";
-  const { server, cache, session } = createAutodocsServer(projectPath, {
+  const { server, caches, session } = createAutodocsServer(projectPaths, {
     verbose,
     telemetry,
     typeChecking: args.typeChecking,
@@ -28,12 +31,15 @@ export async function runServe(args: {
   // Connect first — handshake must complete before heavy analysis work
   await server.connect(transport);
 
-  process.stderr.write(`[autodocs] MCP server ready (project: ${projectPath})\n`);
+  const repoLabel = projectPaths.length === 1 ? `project: ${projectPaths[0]}` : `${projectPaths.length} projects`;
+  process.stderr.write(`[autodocs] MCP server ready (${repoLabel})\n`);
 
   // Defer warmup to next tick — ensures the MCP handshake response is fully
   // flushed before synchronous AST parsing blocks the event loop.
   // Without this, large repos block the transport and Claude Code times out.
-  setTimeout(() => cache.warm(), 100);
+  setTimeout(() => {
+    for (const cache of caches.values()) cache.warm();
+  }, 100);
 
   // Shutdown: process.on('exit') fires on all exit paths including stdin EOF
   // (the normal MCP shutdown path when Claude Code closes). Only sync I/O allowed.
