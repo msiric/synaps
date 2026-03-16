@@ -654,3 +654,46 @@ describe("handleSearch", () => {
     expect(text).toContain("47%");
   });
 });
+
+// ─── Rename Tool ──────────────────────────────────────────────────────────────
+
+describe("handleRename", () => {
+  it("finds definition and importers for a public API symbol", () => {
+    const result = tools.handleRename(makeAnalysis(), { symbolName: "Config", newName: "AppConfig" });
+    const text = result.content[0].text;
+    expect(text).toContain("Config → AppConfig");
+    expect(text).toContain("src/types.ts");
+    expect(text).toContain("Definition");
+  });
+
+  it("finds import references across files", () => {
+    // "StructuredAnalysis" is imported by src/pipeline.ts in the fixture
+    const result = tools.handleRename(makeAnalysis(), { symbolName: "StructuredAnalysis", newName: "Analysis" });
+    const text = result.content[0].text;
+    expect(text).toContain("Imports");
+    expect(text).toContain("src/pipeline.ts");
+  });
+
+  it("finds call graph references", () => {
+    // parseFile is called by analyzePackage (src/pipeline.ts → src/ast-parser.ts)
+    const result = tools.handleRename(makeAnalysis(), { symbolName: "parseFile", newName: "parseSourceFile" });
+    const text = result.content[0].text;
+    expect(text).toContain("parseFile → parseSourceFile");
+    // src/pipeline.ts imports parseFile AND calls it — should appear as call site or import
+    expect(text).toContain("src/pipeline.ts");
+  });
+
+  it("shows helpful message for nonexistent symbol", () => {
+    const result = tools.handleRename(makeAnalysis(), { symbolName: "nonExistent", newName: "foo" });
+    const text = result.content[0].text;
+    expect(text).toContain("not found");
+    expect(text).toContain("search");
+  });
+
+  it("includes rename checklist", () => {
+    const result = tools.handleRename(makeAnalysis(), { symbolName: "Config", newName: "AppConfig" });
+    const text = result.content[0].text;
+    expect(text).toContain("Rename Checklist");
+    expect(text).toContain("Run tests");
+  });
+});

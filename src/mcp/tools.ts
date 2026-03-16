@@ -922,6 +922,72 @@ export function handleSearch(
   return { content: [{ type: "text", text: lines.join("\n") }] };
 }
 
+// ─── rename ──────────────────────────────────────────────────────────────────
+
+export function handleRename(
+  analysis: StructuredAnalysis,
+  args: { symbolName: string; newName: string; filePath?: string; packagePath?: string },
+): ToolResult {
+  const { references, symbol, sourceFile, symbolKind } = Q.findReferences(analysis, args.symbolName, args.packagePath);
+
+  const lines: string[] = [];
+  lines.push(`## Rename: ${symbol} → ${args.newName}`);
+  lines.push("");
+
+  if (references.length === 0) {
+    lines.push(
+      `Symbol "${symbol}" not found in the analysis. Check spelling or try \`search\` to find the correct name.`,
+    );
+    return { content: [{ type: "text", text: lines.join("\n") }] };
+  }
+
+  lines.push(`**Symbol:** ${symbol} (${symbolKind})`);
+  if (sourceFile) lines.push(`**Defined in:** \`${sourceFile}\``);
+  lines.push(`**References found:** ${references.length} files`);
+  lines.push("");
+
+  // Group by kind for clear output
+  const definitions = references.filter((r) => r.kind === "definition");
+  const reExports = references.filter((r) => r.kind === "re-export");
+  const imports = references.filter((r) => r.kind === "import");
+  const calls = references.filter((r) => r.kind === "call");
+
+  if (definitions.length > 0) {
+    lines.push("### Definition");
+    for (const r of definitions) lines.push(`- \`${r.file}\` — ${r.context}`);
+    lines.push("");
+  }
+
+  if (reExports.length > 0) {
+    lines.push("### Re-exports");
+    for (const r of reExports) lines.push(`- \`${r.file}\` — ${r.context}`);
+    lines.push("");
+  }
+
+  if (imports.length > 0) {
+    lines.push(`### Imports (${imports.length} files)`);
+    for (const r of imports) lines.push(`- \`${r.file}\` — ${r.context}`);
+    lines.push("");
+  }
+
+  if (calls.length > 0) {
+    lines.push(`### Call Sites (${calls.length} files)`);
+    for (const r of calls) lines.push(`- \`${r.file}\` — ${r.context}`);
+    lines.push("");
+  }
+
+  // Checklist
+  lines.push("### Rename Checklist");
+  lines.push(`1. Rename the ${symbolKind} in \`${sourceFile ?? "source file"}\``);
+  if (reExports.length > 0) {
+    lines.push(`2. Update ${reExports.length} re-export(s): ${reExports.map((r) => `\`${r.file}\``).join(", ")}`);
+  }
+  lines.push(`${reExports.length > 0 ? 3 : 2}. Update ${imports.length} import statement(s)`);
+  lines.push(`${reExports.length > 0 ? 4 : 3}. Run tests to verify`);
+
+  return { content: [{ type: "text", text: lines.join("\n") }] };
+}
+
 // ─── diagnose ────────────────────────────────────────────────────────────────
 
 const CONFIG_FILES = ["tsconfig.json", "package.json", ".env", ".env.local"];

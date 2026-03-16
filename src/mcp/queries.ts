@@ -681,6 +681,105 @@ export function search(analysis: StructuredAnalysis, query: string, packagePath?
   return [...results.values()].slice(0, limit);
 }
 
+// ─── Rename Queries ──────────────────────────────────────────────────────────
+
+export interface RenameReference {
+  file: string;
+  kind: "definition" | "import" | "call" | "re-export";
+  context: string; // e.g., "imports { parseFile } from './ast-parser.js'"
+}
+
+export interface RenameResult {
+  symbol: string;
+  sourceFile: string | null;
+  symbolKind: string;
+  references: RenameReference[];
+}
+
+/**
+ * Find all references to a symbol across the codebase via import chain and call graph.
+ * Returns the definition location and every file that imports or calls the symbol.
+ */
+export function findReferences(analysis: StructuredAnalysis, symbolName: string, packagePath?: string): RenameResult {
+  const pkg = resolvePackage(analysis, packagePath);
+
+  // Determine definition location and kind
+  const apiEntry = pkg.publicAPI.find((e) => e.name === symbolName);
+  let sourceFile: string | null = apiEntry?.sourceFile ?? null;
+  let symbolKind: string = apiEntry?.kind ?? "unknown";
+
+  // Fall back to call graph for internal functions
+  if (!sourceFile) {
+    for (const edge of pkg.callGraph ?? []) {
+      if (edge.from === symbolName) {
+        sourceFile = edge.fromFile;
+        symbolKind = "function";
+        break;
+      }
+      if (edge.to === symbolName) {
+        sourceFile = edge.toFile;
+        symbolKind = "function";
+        break;
+      }
+    }
+  }
+
+  // Fall back to import chain (someone imports it — the source is where it's defined)
+  if (!sourceFile) {
+    const edge = (pkg.importChain ?? []).find((e) => e.symbols.includes(symbolName));
+    if (edge) {
+      sourceFile = edge.source;
+      if (symbolKind === "unknown") symbolKind = "symbol";
+    }
+  }
+
+  const refs: RenameReference[] = [];
+
+  // Definition site
+  if (sourceFile) {
+    refs.push({ file: sourceFile, kind: "definition", context: `defines ${symbolKind} ${symbolName}` });
+  }
+
+  // Import references
+  for (const edge of pkg.importChain ?? []) {
+    if (!edge.symbols.includes(symbolName)) continue;
+    if (edge.importer === sourceFile) continue; // Skip self-import
+    refs.push({
+      file: edge.importer,
+      kind: edge.importer === sourceFile ? "definition" : "import",
+      context: `imports { ${symbolName} } from '${edge.source}'`,
+    });
+  }
+
+  // Re-export references (barrel files re-exporting this symbol)
+  for (const edge of pkg.importChain ?? []) {
+    if (!edge.symbols.includes(symbolName)) continue;
+    if (edge.source !== sourceFile) continue;
+    // Check if this importer also exports the symbol (re-export chain)
+    const importerExports = pkg.publicAPI.filter((e) => e.sourceFile === edge.importer);
+    if (importerExports.some((e) => e.name === symbolName)) {
+      // Already counted as import — upgrade to re-export
+      const existing = refs.find((r) => r.file === edge.importer && r.kind === "import");
+      if (existing) {
+        existing.kind = "re-export";
+        existing.context = `re-exports { ${symbolName} } from '${edge.source}'`;
+      }
+    }
+  }
+
+  // Call graph references
+  for (const edge of pkg.callGraph ?? []) {
+    if (edge.to === symbolName && edge.fromFile !== sourceFile) {
+      // Avoid duplicating files already listed as importers
+      if (!refs.some((r) => r.file === edge.fromFile)) {
+        refs.push({ file: edge.fromFile, kind: "call", context: `${edge.from}() calls ${symbolName}()` });
+      }
+    }
+  }
+
+  return { symbol: symbolName, sourceFile, symbolKind, references: refs };
+}
+
 // ─── Diagnose Queries ───────────────────────────────────────────────────────
 
 // ─── Scoring Functions (Phase 4: continuous weights, bi-modal decay, sigmoid smoothing) ───

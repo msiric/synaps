@@ -110,6 +110,8 @@ function getNextStepHint(toolName: string): string {
       return "\n\n**Next:** Call `review_changes` to verify pattern compliance.";
     case "search":
       return "\n\n**Next:** Call `analyze_impact` or `plan_change` on a result to understand its dependencies.";
+    case "rename":
+      return "\n\n**Next:** Apply the rename edits, then run tests to verify.";
     default:
       return "";
   }
@@ -513,6 +515,28 @@ DO NOT CALL:
       limit: z.number().min(1).max(50).optional().describe("Max results. Default: 20."),
     },
     async (args) => withTelemetry("search", () => cache.get().then((a) => tools.handleSearch(a, args)), args),
+  );
+
+  // ─── New: rename ─────────────────────────────────────────────────
+  server.tool(
+    "rename",
+    `Find all references to a symbol for safe renaming. Returns the definition location, all import sites, re-exports, and call sites with a rename checklist. Preview only — does not modify files.
+
+WHEN TO CALL:
+- User wants to rename a function, type, class, or constant across the codebase
+- User asks "what would break if I rename X?" or "where is X used?"
+- User needs to find all import statements referencing a symbol
+
+DO NOT CALL:
+- For simple find-and-replace of string literals (use grep)
+- For renaming files (this tracks symbol references, not file paths)`,
+    {
+      symbolName: z.string().describe("Current name of the symbol to rename"),
+      newName: z.string().describe("New name for the symbol"),
+      filePath: z.string().optional().describe("File where the symbol is defined (for disambiguation)"),
+      packagePath: z.string().optional().describe("Package path or name"),
+    },
+    async (args) => withTelemetry("rename", () => cache.get().then((a) => tools.handleRename(a, args)), args),
   );
 
   // ─── MCP Resources ────────────────────────────────────────────────
