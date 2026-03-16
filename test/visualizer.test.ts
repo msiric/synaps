@@ -134,11 +134,12 @@ describe("generateReport", () => {
     expect(html).toContain("Public API");
   });
 
-  it("renders module dependency graph with Mermaid", () => {
+  it("renders interactive D3 topology graph", () => {
     const html = generateReport(makeAnalysis());
-    expect(html).toContain("Module Dependencies");
-    expect(html).toContain("mermaid");
-    expect(html).toContain("graph LR");
+    expect(html).toContain("Codebase Topology");
+    expect(html).toContain("d3.min.js");
+    expect(html).toContain("forceSimulation");
+    expect(html).toContain("svg");
   });
 
   it("renders co-change clusters", () => {
@@ -163,16 +164,10 @@ describe("generateReport", () => {
     expect(html).toContain("33%");
   });
 
-  it("renders blast radius explorer with file selector", () => {
+  it("includes blast radius interaction in graph", () => {
     const html = generateReport(makeAnalysis());
-    expect(html).toContain("Blast Radius Explorer");
-    expect(html).toContain("<select");
-    expect(html).toContain("src/types.ts");
-  });
-
-  it("includes interactive blast radius JavaScript", () => {
-    const html = generateReport(makeAnalysis());
-    expect(html).toContain("function showBlast");
+    expect(html).toContain("selectNode");
+    expect(html).toContain("graph-detail");
     expect(html).toContain("const imports");
     expect(html).toContain("const cochanges");
   });
