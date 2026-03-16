@@ -1,4 +1,3 @@
-// test/visualizer.test.ts — Tests for the HTML report generator
 import { describe, expect, it } from "vitest";
 import type { PackageAnalysis, StructuredAnalysis } from "../src/types.js";
 import { generateReport } from "../src/visualizer.js";
@@ -40,12 +39,7 @@ function makeAnalysis(overrides: Partial<PackageAnalysis> = {}): StructuredAnaly
           },
         ],
         commands: { packageManager: "npm" as const, other: [] },
-        architecture: {
-          entryPoint: "src/index.ts",
-          directories: [],
-          packageType: "library" as const,
-          hasJSX: false,
-        },
+        architecture: { entryPoint: "src/index.ts", directories: [], packageType: "library" as const, hasJSX: false },
         dependencies: { internal: [], external: [], totalUniqueDependencies: 0 },
         role: { summary: "Test library", purpose: "", whenToUse: "", inferredFrom: [] },
         antiPatterns: [
@@ -66,6 +60,22 @@ function makeAnalysis(overrides: Partial<PackageAnalysis> = {}): StructuredAnaly
             source: "src/types.ts",
             symbolCount: 3,
             symbols: ["C"],
+            confidence: 0.95,
+            resolution: "relative",
+          },
+          {
+            importer: "test/setup.ts",
+            source: "src/index.ts",
+            symbolCount: 1,
+            symbols: ["analyze"],
+            confidence: 0.95,
+            resolution: "relative",
+          },
+          {
+            importer: "scripts/check.ts",
+            source: "src/index.ts",
+            symbolCount: 1,
+            symbols: ["analyze"],
             confidence: 0.95,
             resolution: "relative",
           },
@@ -99,7 +109,7 @@ function makeAnalysis(overrides: Partial<PackageAnalysis> = {}): StructuredAnaly
         coChangeClusters: [["src/index.ts", "src/parser.ts", "src/types.ts"]],
         executionFlows: [
           {
-            label: "run → parse (2 steps, 2 files)",
+            label: "run \u2192 parse (2 steps, 2 files)",
             entryPoint: "run",
             entryFile: "src/index.ts",
             terminal: "parse",
@@ -110,7 +120,7 @@ function makeAnalysis(overrides: Partial<PackageAnalysis> = {}): StructuredAnaly
             confidence: 0.33,
           },
         ],
-        implicitCoupling: [{ file1: "src/index.ts", file2: "src/config.ts", jaccard: 0.25, coChangeCount: 3 }],
+        implicitCoupling: [{ file1: "src/mcp/tools.ts", file2: "scripts/check.ts", jaccard: 0.25, coChangeCount: 3 }],
         ...overrides,
       } as PackageAnalysis,
     ],
@@ -120,92 +130,59 @@ function makeAnalysis(overrides: Partial<PackageAnalysis> = {}): StructuredAnaly
 }
 
 describe("generateReport", () => {
-  it("produces valid HTML document", () => {
+  it("produces valid HTML with full-viewport graph", () => {
     const html = generateReport(makeAnalysis());
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("</html>");
     expect(html).toContain("test-pkg");
-  });
-
-  it("renders stats section", () => {
-    const html = generateReport(makeAnalysis());
-    expect(html).toContain("20"); // files total
-    expect(html).toContain("Files");
-    expect(html).toContain("Public API");
-  });
-
-  it("renders interactive D3 topology graph", () => {
-    const html = generateReport(makeAnalysis());
-    expect(html).toContain("Codebase Topology");
     expect(html).toContain("d3.min.js");
     expect(html).toContain("forceSimulation");
-    expect(html).toContain("svg");
   });
 
-  it("renders co-change clusters", () => {
+  it("renders floating header with stats", () => {
     const html = generateReport(makeAnalysis());
-    expect(html).toContain("Co-Change Clusters");
-    expect(html).toContain("Cluster 1");
-    expect(html).toContain("3 files");
+    expect(html).toContain("20"); // files
+    expect(html).toContain("Files");
+    expect(html).toContain("library");
   });
 
-  it("renders implicit coupling", () => {
+  it("renders three edge types in legend", () => {
     const html = generateReport(makeAnalysis());
-    expect(html).toContain("Implicit Coupling");
-    expect(html).toContain("config.ts");
-    expect(html).toContain("no import");
+    expect(html).toContain("import");
+    expect(html).toContain("co-change");
+    expect(html).toContain("implicit coupling");
   });
 
-  it("renders execution flows with confidence", () => {
+  it("includes graph data and interaction script", () => {
+    const html = generateReport(makeAnalysis());
+    expect(html).toContain("selectNode");
+    expect(html).toContain("closePanel");
+    expect(html).toContain("const G=");
+    expect(html).toContain("const IM=");
+  });
+
+  it("renders execution flows in drawer", () => {
     const html = generateReport(makeAnalysis());
     expect(html).toContain("Execution Flows");
     expect(html).toContain("run");
     expect(html).toContain("parse");
-    expect(html).toContain("33%");
   });
 
-  it("includes blast radius interaction in graph", () => {
-    const html = generateReport(makeAnalysis());
-    expect(html).toContain("selectNode");
-    expect(html).toContain("graph-detail");
-    expect(html).toContain("const imports");
-    expect(html).toContain("const cochanges");
-  });
-
-  it("renders conventions", () => {
+  it("renders conventions in drawer", () => {
     const html = generateReport(makeAnalysis());
     expect(html).toContain("Conventions");
     expect(html).toContain("kebab-case");
     expect(html).toContain("No camelCase");
   });
 
-  it("includes footer with engine version", () => {
-    const html = generateReport(makeAnalysis());
-    expect(html).toContain("autodocs-engine");
-    expect(html).toContain("0.10.2");
-  });
-
-  it("omits sections when data is empty", () => {
-    const html = generateReport(
-      makeAnalysis({
-        importChain: [],
-        callGraph: [],
-        executionFlows: [],
-        coChangeClusters: [],
-        implicitCoupling: [],
-        conventions: [],
-        antiPatterns: [],
-        gitHistory: undefined,
-      }),
-    );
-    expect(html).toContain("<!DOCTYPE html>");
-    expect(html).not.toContain("Module Dependencies");
-    expect(html).not.toContain("Co-Change Clusters");
-  });
-
   it("escapes HTML in package name", () => {
     const html = generateReport(makeAnalysis({ name: "test<img onerror=alert(1)>" } as any));
     expect(html).not.toContain("<img onerror");
     expect(html).toContain("&lt;img");
+  });
+
+  it("includes implicit coupling edges in graph data", () => {
+    const html = generateReport(makeAnalysis());
+    expect(html).toContain('"implicit"');
   });
 });

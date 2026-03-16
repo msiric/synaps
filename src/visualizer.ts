@@ -1,49 +1,219 @@
-// src/visualizer.ts — HTML report generator for codebase intelligence visualization.
-// Produces a self-contained HTML file with interactive D3 force-directed graph,
-// co-change clusters, execution flows, conventions, and project stats.
-// D3 loaded via CDN for graph rendering. No build step, no bundler.
+// src/visualizer.ts — Full-viewport codebase topology visualization.
+// The graph IS the page. Structural imports + behavioral co-change edges
+// rendered simultaneously on a dark canvas. Click to explore blast radius.
 
 import type { StructuredAnalysis } from "./types.js";
 
 type Pkg = StructuredAnalysis["packages"][0];
 
-/**
- * Generate a self-contained HTML report from a StructuredAnalysis.
- * Returns a complete HTML document string.
- */
 export function generateReport(analysis: StructuredAnalysis): string {
   const pkg = analysis.packages[0];
-  if (!pkg) return "<html><body><p>No packages found in analysis.</p></body></html>";
+  if (!pkg) return "<html><body><p>No packages found.</p></body></html>";
 
-  const graphData = buildGraphData(pkg);
+  const graph = buildGraphData(pkg);
+  const importData = (pkg.importChain ?? []).map((e) => [e.source, e.importer, e.symbolCount]);
+  const cochangeData = (pkg.gitHistory?.coChangeEdges ?? []).map((e) => [
+    e.file1,
+    e.file2,
+    Math.round(e.jaccard * 100),
+  ]);
+  const clusterData = pkg.coChangeClusters ?? [];
+
+  const statsHtml = [
+    ["Files", pkg.files.total],
+    ["Imports", pkg.importChain?.length ?? 0],
+    ["Co-changes", pkg.gitHistory?.coChangeEdges?.length ?? 0],
+    ["Clusters", pkg.coChangeClusters?.length ?? 0],
+    ["Flows", pkg.executionFlows?.length ?? 0],
+  ]
+    .map(([l, v]) => `<div class="s"><span class="sv">${v}</span><span class="sl">${l}</span></div>`)
+    .join("");
+
+  const flowsHtml = (pkg.executionFlows ?? [])
+    .slice(0, 6)
+    .map((f) => {
+      const conf =
+        f.confidence >= 0.3
+          ? '<i class="dot dot-g"></i>'
+          : f.confidence > 0
+            ? '<i class="dot dot-a"></i>'
+            : '<i class="dot dot-m"></i>';
+      return `<div class="fl">${conf}<span>${esc(f.steps.join(" \u2192 "))}</span></div>`;
+    })
+    .join("");
+
+  const convHtml = [
+    ...(pkg.conventions ?? []).map(
+      (c) => `<div class="cv cv-do">${esc(c.name)} <span class="cd">${c.confidence.percentage}%</span></div>`,
+    ),
+    ...(pkg.antiPatterns ?? []).map((a) => `<div class="cv cv-no">${esc(a.rule)}</div>`),
+  ].join("");
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${esc(pkg.name)} — Codebase Intelligence Report</title>
-${STYLES}
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(pkg.name)} \u2014 Codebase Topology</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0f;color:#e0e0e0}
+svg{display:block;width:100%;height:100%}
+.hdr{position:fixed;top:0;left:0;right:0;padding:16px 24px;display:flex;align-items:center;gap:16px;z-index:10;pointer-events:none}
+.hdr>*{pointer-events:auto}
+.hdr h1{font-size:18px;font-weight:700;letter-spacing:-0.02em;white-space:nowrap}
+.hdr .tag{font-size:11px;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,0.08);color:#888}
+.stats{display:flex;gap:2px;margin-left:auto}
+.s{text-align:center;padding:4px 12px}
+.sv{display:block;font-size:16px;font-weight:700;color:#7aa2f7}
+.sl{display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#555}
+.legend{position:fixed;bottom:16px;left:24px;display:flex;gap:16px;font-size:11px;color:#555;z-index:10}
+.legend i{display:inline-block;width:20px;height:2px;vertical-align:middle;margin-right:4px;border-radius:1px}
+.leg-imp{background:#333}
+.leg-coc{background:#c59a28;opacity:0.7}
+.leg-impl{background:#b44e8a;opacity:0.7}
+.panel{position:fixed;top:0;right:0;width:300px;height:100%;background:#0d0d14;border-left:1px solid #1a1a24;z-index:20;transform:translateX(100%);transition:transform 0.25s ease;overflow-y:auto;padding:20px}
+.panel.open{transform:translateX(0)}
+.panel h2{font-size:15px;font-weight:700;margin-bottom:2px}
+.panel .sub{font-size:12px;color:#555;margin-bottom:16px}
+.panel h3{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin:14px 0 6px}
+.panel ul{list-style:none}
+.panel li{font-size:12px;padding:4px 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #111}
+.panel li:last-child{border:none}
+.panel code{font-size:11px;color:#8a8a9a}
+.badge{font-size:9px;padding:1px 6px;border-radius:99px;font-weight:600}
+.badge-b{background:rgba(122,162,247,0.15);color:#7aa2f7}
+.badge-a{background:rgba(197,154,40,0.15);color:#c59a28}
+.badge-p{background:rgba(180,78,138,0.15);color:#b44e8a}
+.close-btn{position:absolute;top:12px;right:12px;background:none;border:none;color:#444;font-size:18px;cursor:pointer;padding:4px 8px}
+.close-btn:hover{color:#888}
+.drawer{position:fixed;bottom:0;left:0;right:0;z-index:10;pointer-events:none}
+.drawer>*{pointer-events:auto}
+.dtoggle{display:flex;justify-content:center;padding:8px}
+.dtoggle button{font-size:11px;padding:4px 16px;border-radius:99px 99px 0 0;border:1px solid #1a1a24;border-bottom:none;background:#0d0d14;color:#666;cursor:pointer}
+.dtoggle button:hover{color:#999}
+.dcontent{background:#0d0d14;border-top:1px solid #1a1a24;max-height:0;overflow:hidden;transition:max-height 0.3s ease}
+.dcontent.open{max-height:300px;overflow-y:auto}
+.dcontent-inner{padding:16px 24px;display:flex;gap:32px}
+.dcol{flex:1;min-width:200px}
+.dcol h3{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin-bottom:8px}
+.fl{font-size:11px;color:#666;padding:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl span{margin-left:4px}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%}
+.dot-g{background:#4ade80}.dot-a{background:#c59a28}.dot-m{background:#333}
+.cv{font-size:11px;padding:4px 8px;margin:2px 0;border-radius:4px;border-left:3px solid}
+.cv-do{border-color:#4ade80;background:rgba(74,222,128,0.05);color:#777}
+.cv-no{border-color:#f87171;background:rgba(248,113,113,0.05);color:#777}
+.cd{font-size:9px;color:#555}
+.hint{position:fixed;bottom:50px;left:50%;transform:translateX(-50%);font-size:12px;color:#333;z-index:5;transition:opacity 0.5s}
+</style>
 </head>
 <body>
-<div class="container">
-  ${renderHeader(pkg)}
-  <h2>Codebase Topology</h2>
-  <p class="section-desc">Interactive module dependency graph. Node size = file count. Edge thickness = symbol coupling. <strong>Click a node</strong> to explore its blast radius. Drag to rearrange.</p>
-  <div class="graph-wrapper">
-    <svg id="graph"></svg>
-    <div id="graph-detail" class="graph-detail"></div>
+<div class="hdr">
+  <h1>${esc(pkg.name)}</h1>
+  <span class="tag">${pkg.architecture.packageType}</span>
+  <div class="stats">${statsHtml}</div>
+</div>
+<div class="legend">
+  <span><i class="leg-imp"></i>import</span>
+  <span><i class="leg-coc" style="border:1px dashed #c59a28;height:0;width:20px"></i>co-change</span>
+  <span><i class="leg-impl" style="border:1px dotted #b44e8a;height:0;width:20px"></i>implicit coupling</span>
+</div>
+<div class="hint" id="hint">click a module to explore its blast radius</div>
+<svg id="graph"></svg>
+<div class="panel" id="panel">
+  <button class="close-btn" onclick="closePanel()">&times;</button>
+  <div id="panel-content"></div>
+</div>
+<div class="drawer">
+  <div class="dtoggle"><button onclick="toggleDrawer()">Flows &amp; Conventions</button></div>
+  <div class="dcontent" id="drawer">
+    <div class="dcontent-inner">
+      <div class="dcol"><h3>Execution Flows</h3>${flowsHtml || '<div class="fl">No flows detected</div>'}</div>
+      <div class="dcol"><h3>Conventions</h3>${convHtml || '<div class="cv">No conventions detected</div>'}</div>
+    </div>
   </div>
-  ${renderClusters(pkg)}
-  ${renderFlows(pkg)}
-  ${renderConventions(pkg)}
-  <footer>
-    <p>Generated by <strong>autodocs-engine</strong> v${analysis.meta.engineVersion} &mdash; ${analysis.meta.analyzedAt.slice(0, 10)}</p>
-  </footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script>
-${renderGraphScript(graphData, pkg)}
+const G=${JSON.stringify(graph)};
+const IM=${JSON.stringify(importData)};
+const CC=${JSON.stringify(cochangeData)};
+const CL=${JSON.stringify(clusterData)};
+const PAL=['#7aa2f7','#4ade80','#c59a28','#f87171','#a78bfa','#e879a0','#38bdf8','#fb923c'];
+const W=innerWidth,H=innerHeight;
+const svg=d3.select('#graph').attr('viewBox',[0,0,W,H]);
+const maxW=Math.max(1,...G.edges.map(e=>e.weight));
+const maxF=Math.max(1,...G.nodes.map(n=>n.files));
+const NC=G.nodes.length;
+const spread=Math.min(W,H)*0.35;
+const sim=d3.forceSimulation(G.nodes)
+  .force('link',d3.forceLink(G.edges).id(d=>d.id).distance(220))
+  .force('charge',d3.forceManyBody().strength(NC>12?-1200:NC>6?-1800:-2400))
+  .force('center',d3.forceCenter(W/2,H/2))
+  .force('collision',d3.forceCollide().radius(d=>30+Math.sqrt(d.files/maxF)*35))
+  .force('x',d3.forceX(W/2).strength(0.02))
+  .force('y',d3.forceY(H/2).strength(0.02));
+const link=svg.append('g').selectAll('line').data(G.edges).join('line')
+  .attr('stroke',d=>d.type==='cochange'?'#c59a28':d.type==='implicit'?'#b44e8a':'#222')
+  .attr('stroke-width',d=>d.type==='cochange'||d.type==='implicit'?1.5:Math.max(0.8,Math.sqrt(d.weight/maxW)*4))
+  .attr('stroke-dasharray',d=>d.type==='cochange'?'6,4':d.type==='implicit'?'2,3':'none')
+  .attr('opacity',d=>d.type==='import'?0.35:0.5);
+const defs=svg.append('defs');
+const glow=defs.append('filter').attr('id','glow');
+glow.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
+const m=glow.append('feMerge');m.append('feMergeNode').attr('in','blur');m.append('feMergeNode').attr('in','SourceGraphic');
+const node=svg.append('g').selectAll('g').data(G.nodes).join('g')
+  .call(d3.drag().on('start',(e,d)=>{if(!e.active)sim.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y})
+    .on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y}).on('end',(e,d)=>{if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null}))
+  .on('click',(e,d)=>{e.stopPropagation();selectNode(d)})
+  .style('cursor','pointer');
+node.append('circle')
+  .attr('r',d=>16+Math.sqrt(d.files/maxF)*32)
+  .attr('fill',d=>d.group>=0?PAL[d.group%PAL.length]+'22':'#151520')
+  .attr('stroke',d=>d.group>=0?PAL[d.group%PAL.length]:'#282830')
+  .attr('stroke-width',1.5);
+function lbl(d){const p=d.id.split('/');if(p.length<=1)return d.id||'root';const l=p.at(-1);return G.nodes.filter(n=>n.id.split('/').at(-1)===l).length>1?p.slice(-2).join('/'):l}
+node.append('text').text(d=>lbl(d))
+  .attr('text-anchor','middle').attr('dy',d=>-(22+Math.sqrt(d.files/maxF)*34))
+  .attr('font-size','13px').attr('fill','#888').attr('font-weight','600')
+  .attr('paint-order','stroke').attr('stroke','#0a0a0f').attr('stroke-width',4);
+node.append('text').text(d=>d.files)
+  .attr('text-anchor','middle').attr('dy',6)
+  .attr('font-size','13px').attr('fill','#555').attr('font-weight','700');
+sim.on('tick',()=>{
+  link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+  node.attr('transform',d=>\`translate(\${d.x},\${d.y})\`);
+});
+function selectNode(d){
+  document.getElementById('hint').style.opacity='0';
+  node.select('circle').attr('opacity',.15).attr('filter',null);
+  link.attr('opacity',.04);
+  node.filter(n=>n.id===d.id).select('circle').attr('opacity',1).attr('filter','url(#glow)').attr('stroke-width',2.5);
+  const conn=new Set();
+  G.edges.forEach(e=>{const s=typeof e.source==='object'?e.source.id:e.source,t=typeof e.target==='object'?e.target.id:e.target;if(s===d.id)conn.add(t);if(t===d.id)conn.add(s)});
+  node.filter(n=>conn.has(n.id)).select('circle').attr('opacity',.85);
+  link.filter(e=>{const s=typeof e.source==='object'?e.source.id:e.source,t=typeof e.target==='object'?e.target.id:e.target;return s===d.id||t===d.id}).attr('opacity',.9);
+  const dir=d.id;
+  const imp=IM.filter(e=>(e[0].startsWith(dir+'/')||e[0]===dir)&&!e[1].startsWith(dir+'/'));
+  const coc=CC.filter(e=>((e[0].startsWith(dir+'/')||e[0]===dir)&&!e[1].startsWith(dir+'/'))||((e[1].startsWith(dir+'/')||e[1]===dir)&&!e[0].startsWith(dir+'/')));
+  const seen=new Set();const ucoc=coc.filter(e=>{const k=e[0]+e[1];if(seen.has(k))return false;seen.add(k);return true});
+  const cl=CL.filter(c=>c.some(f=>f.startsWith(dir+'/')||f===dir));
+  let h='<h2>'+dir+'/</h2>';
+  h+='<div class="sub">'+d.files+' files &middot; '+d.imports+' imported &middot; '+d.exports+' exported</div>';
+  if(imp.length){h+='<h3>Imported by ('+imp.length+')</h3><ul>';imp.slice(0,10).forEach(e=>{h+='<li><code>'+e[1].split('/').slice(-2).join('/')+'</code><span class="badge badge-b">'+e[2]+'</span></li>'});h+='</ul>'}
+  if(ucoc.length){h+='<h3>Co-change partners</h3><ul>';ucoc.slice(0,6).forEach(e=>{const p=(e[0].startsWith(dir+'/')||e[0]===dir)?e[1]:e[0];h+='<li><code>'+p.split('/').slice(-2).join('/')+'</code><span class="badge badge-a">'+e[2]+'%</span></li>'});h+='</ul>'}
+  if(cl.length){h+='<h3>Cluster membership</h3><ul>';cl.forEach(c=>{h+='<li><span>'+c.length+'-file cluster</span><span class="badge badge-p">clique</span></li>'});h+='</ul>'}
+  if(!imp.length&&!ucoc.length&&!cl.length){h+='<div style="color:#333;padding:16px 0">No external dependencies detected</div>'}
+  document.getElementById('panel-content').innerHTML=h;
+  document.getElementById('panel').classList.add('open');
+}
+function closePanel(){
+  document.getElementById('panel').classList.remove('open');
+  node.select('circle').attr('opacity',1).attr('filter',null).attr('stroke-width',1.5);
+  link.attr('opacity',d=>d.type==='import'?.35:.5);
+}
+svg.on('click',()=>closePanel());
+function toggleDrawer(){document.getElementById('drawer').classList.toggle('open')}
 </script>
 </body>
 </html>`;
@@ -51,408 +221,104 @@ ${renderGraphScript(graphData, pkg)}
 
 // ─── Graph Data ──────────────────────────────────────────────────────────────
 
-interface GraphNode {
+interface GNode {
   id: string;
   files: number;
   imports: number;
   exports: number;
-  group: number; // cluster index or -1
+  group: number;
 }
-
-interface GraphEdge {
+interface GEdge {
   source: string;
   target: string;
   weight: number;
-  type: "import" | "cochange";
+  type: "import" | "cochange" | "implicit";
 }
 
-function buildGraphData(pkg: Pkg): { nodes: GraphNode[]; edges: GraphEdge[] } {
+function buildGraphData(pkg: Pkg): { nodes: GNode[]; edges: GEdge[] } {
   const importEdges = pkg.importChain ?? [];
   const coChangeEdges = pkg.gitHistory?.coChangeEdges ?? [];
+  const implicitEdges = pkg.implicitCoupling ?? [];
   const clusters = pkg.coChangeClusters ?? [];
 
-  // Aggregate files and edges to directory level
-  const dirStats = new Map<string, { files: Set<string>; imports: number; exports: number }>();
-  const dirImportEdges = new Map<string, number>();
+  const ds = new Map<string, { files: Set<string>; imports: number; exports: number }>();
+  const de = new Map<string, number>();
 
   for (const e of importEdges) {
-    const from = fileDir(e.importer);
-    const to = fileDir(e.source);
-    for (const d of [from, to]) {
-      if (!dirStats.has(d)) dirStats.set(d, { files: new Set(), imports: 0, exports: 0 });
-    }
-    dirStats.get(from)!.files.add(e.importer);
-    dirStats.get(to)!.files.add(e.source);
-    dirStats.get(from)!.imports += e.symbolCount;
-    dirStats.get(to)!.exports += e.symbolCount;
-    if (from !== to) {
-      const key = `${from}|${to}`;
-      dirImportEdges.set(key, (dirImportEdges.get(key) ?? 0) + e.symbolCount);
+    const f = fdir(e.importer);
+    const t = fdir(e.source);
+    for (const d of [f, t]) if (!ds.has(d)) ds.set(d, { files: new Set(), imports: 0, exports: 0 });
+    ds.get(f)!.files.add(e.importer);
+    ds.get(t)!.files.add(e.source);
+    ds.get(f)!.imports += e.symbolCount;
+    ds.get(t)!.exports += e.symbolCount;
+    if (f !== t) {
+      const k = `${f}|${t}`;
+      de.set(k, (de.get(k) ?? 0) + e.symbolCount);
     }
   }
 
-  // Co-change edges at directory level
-  const dirCoChangeEdges = new Map<string, number>();
+  const ce = new Map<string, number>();
   for (const e of coChangeEdges) {
-    const d1 = fileDir(e.file1);
-    const d2 = fileDir(e.file2);
-    if (d1 === d2) continue;
-    const key = [d1, d2].sort().join("|");
-    dirCoChangeEdges.set(key, (dirCoChangeEdges.get(key) ?? 0) + e.jaccard);
+    const a = fdir(e.file1);
+    const b = fdir(e.file2);
+    if (a === b) continue;
+    const k = [a, b].sort().join("|");
+    ce.set(k, (ce.get(k) ?? 0) + e.jaccard);
   }
 
-  // Assign cluster groups to directories
-  const dirCluster = new Map<string, number>();
+  const ie = new Map<string, number>();
+  for (const e of implicitEdges) {
+    const a = fdir(e.file1);
+    const b = fdir(e.file2);
+    if (a === b) continue;
+    const k = [a, b].sort().join("|");
+    ie.set(k, (ie.get(k) ?? 0) + e.jaccard);
+  }
+
+  const dc = new Map<string, number>();
   for (let i = 0; i < clusters.length; i++) {
     for (const f of clusters[i]) {
-      const d = fileDir(f);
-      if (!dirCluster.has(d)) dirCluster.set(d, i);
+      const d = fdir(f);
+      if (!dc.has(d)) dc.set(d, i);
     }
   }
 
-  const nodes: GraphNode[] = [...dirStats.entries()].map(([id, s]) => ({
+  const nodes: GNode[] = [...ds.entries()].map(([id, s]) => ({
     id,
     files: s.files.size,
     imports: s.imports,
     exports: s.exports,
-    group: dirCluster.get(id) ?? -1,
+    group: dc.get(id) ?? -1,
   }));
 
-  const edges: GraphEdge[] = [];
-  for (const [key, weight] of dirImportEdges) {
-    const [source, target] = key.split("|");
-    edges.push({ source, target, weight, type: "import" });
+  const edges: GEdge[] = [];
+  for (const [k, w] of de) {
+    const [s, t] = k.split("|");
+    edges.push({ source: s, target: t, weight: w, type: "import" });
   }
-  for (const [key, weight] of dirCoChangeEdges) {
-    const [source, target] = key.split("|");
-    if (!dirImportEdges.has(`${source}|${target}`) && !dirImportEdges.has(`${target}|${source}`)) {
-      edges.push({ source, target, weight: Math.round(weight * 20), type: "cochange" });
+  for (const [k, w] of ce) {
+    const [s, t] = k.split("|");
+    if (!de.has(`${s}|${t}`) && !de.has(`${t}|${s}`)) {
+      edges.push({ source: s, target: t, weight: Math.round(w * 20), type: "cochange" });
+    }
+  }
+  for (const [k, w] of ie) {
+    const [s, t] = k.split("|");
+    const ck = [s, t].sort().join("|");
+    if (!ce.has(ck) && !de.has(`${s}|${t}`) && !de.has(`${t}|${s}`)) {
+      edges.push({ source: s, target: t, weight: Math.round(w * 15), type: "implicit" });
     }
   }
 
   return { nodes, edges };
 }
 
-// ─── Graph Script ────────────────────────────────────────────────────────────
-
-function renderGraphScript(graphData: { nodes: GraphNode[]; edges: GraphEdge[] }, pkg: Pkg): string {
-  const importData = (pkg.importChain ?? []).map((e) => [e.source, e.importer, e.symbolCount]);
-  const coChangeData = (pkg.gitHistory?.coChangeEdges ?? []).map((e) => [
-    e.file1,
-    e.file2,
-    Math.round(e.jaccard * 100),
-  ]);
-  const clusters = pkg.coChangeClusters ?? [];
-
-  return `
-const graphData = ${JSON.stringify(graphData)};
-const imports = ${JSON.stringify(importData)};
-const cochanges = ${JSON.stringify(coChangeData)};
-const clusters = ${JSON.stringify(clusters)};
-const colors = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f97316'];
-const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-const width = document.querySelector('.graph-wrapper').clientWidth;
-const height = Math.max(420, Math.min(600, width * 0.55));
-const svg = d3.select('#graph').attr('width', width).attr('height', height);
-
-const maxWeight = Math.max(1, ...graphData.edges.map(e => e.weight));
-const maxFiles = Math.max(1, ...graphData.nodes.map(n => n.files));
-
-// Arrowhead marker
-svg.append('defs').append('marker')
-  .attr('id','arrow').attr('viewBox','0 0 10 10').attr('refX',20).attr('refY',5)
-  .attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
-  .append('path').attr('d','M0,0 L10,5 L0,10 Z').attr('fill', isDark ? '#555' : '#bbb');
-
-const sim = d3.forceSimulation(graphData.nodes)
-  .force('link', d3.forceLink(graphData.edges).id(d => d.id).distance(d => 120 - d.weight * 0.3))
-  .force('charge', d3.forceManyBody().strength(-400))
-  .force('center', d3.forceCenter(width/2, height/2))
-  .force('collision', d3.forceCollide().radius(d => 15 + d.files * 0.8));
-
-const link = svg.append('g')
-  .selectAll('line').data(graphData.edges).join('line')
-  .attr('stroke', d => d.type === 'cochange' ? '#f59e0b' : (isDark ? '#444' : '#ccc'))
-  .attr('stroke-width', d => Math.max(1, Math.sqrt(d.weight / maxWeight) * 5))
-  .attr('stroke-dasharray', d => d.type === 'cochange' ? '5,3' : 'none')
-  .attr('marker-end', d => d.type === 'import' ? 'url(#arrow)' : '');
-
-const node = svg.append('g')
-  .selectAll('g').data(graphData.nodes).join('g')
-  .call(d3.drag().on('start', dragStart).on('drag', dragged).on('end', dragEnd))
-  .on('click', (ev, d) => selectNode(d))
-  .style('cursor','pointer');
-
-node.append('circle')
-  .attr('r', d => 10 + Math.sqrt(d.files / maxFiles) * 20)
-  .attr('fill', d => d.group >= 0 ? colors[d.group % colors.length] : (isDark ? '#333' : '#e5e7eb'))
-  .attr('stroke', isDark ? '#555' : '#bbb')
-  .attr('stroke-width', 1.5)
-  .attr('opacity', 0.9);
-
-node.append('text')
-  .text(d => d.id.split('/').pop() || d.id)
-  .attr('text-anchor','middle').attr('dy', d => -(14 + Math.sqrt(d.files / maxFiles) * 20))
-  .attr('font-size','11px').attr('fill', isDark ? '#ccc' : '#333').attr('font-weight','500');
-
-node.append('text')
-  .text(d => d.files + ' files')
-  .attr('text-anchor','middle').attr('dy', 4)
-  .attr('font-size','9px').attr('fill', isDark ? '#999' : '#666');
-
-sim.on('tick', () => {
-  link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
-  node.attr('transform',d=>'translate('+d.x+','+d.y+')');
-});
-
-function dragStart(ev,d) { if(!ev.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; }
-function dragged(ev,d) { d.fx=ev.x; d.fy=ev.y; }
-function dragEnd(ev,d) { if(!ev.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }
-
-// Blast radius on node click
-function selectNode(d) {
-  // Reset
-  node.select('circle').attr('opacity', 0.9).attr('stroke-width', 1.5);
-  link.attr('opacity', 0.15);
-
-  // Highlight selected
-  node.filter(n => n.id === d.id).select('circle').attr('stroke-width', 3).attr('stroke','#2563eb');
-
-  // Find connected nodes
-  const connected = new Set();
-  graphData.edges.forEach(e => {
-    const s = typeof e.source === 'object' ? e.source.id : e.source;
-    const t = typeof e.target === 'object' ? e.target.id : e.target;
-    if (s === d.id) connected.add(t);
-    if (t === d.id) connected.add(s);
-  });
-
-  // Highlight connections
-  node.filter(n => connected.has(n.id)).select('circle').attr('opacity', 1).attr('stroke-width', 2.5).attr('stroke','#f59e0b');
-  link.filter(e => {
-    const s = typeof e.source === 'object' ? e.source.id : e.source;
-    const t = typeof e.target === 'object' ? e.target.id : e.target;
-    return s === d.id || t === d.id;
-  }).attr('opacity', 1).attr('stroke-width', e => Math.max(2, Math.sqrt(e.weight / maxWeight) * 6));
-
-  // Show detail panel
-  const dir = d.id;
-  const fileImporters = imports.filter(e => e[0].startsWith(dir + '/') || e[0] === dir).filter(e => !e[1].startsWith(dir + '/'));
-  const fileCochanges = cochanges.filter(e => (e[0].startsWith(dir + '/') || e[0] === dir) && !(e[1].startsWith(dir + '/')))
-    .concat(cochanges.filter(e => (e[1].startsWith(dir + '/') || e[1] === dir) && !(e[0].startsWith(dir + '/'))));
-  const dirClusters = clusters.filter(c => c.some(f => f.startsWith(dir + '/') || f.startsWith(dir)));
-
-  let html = '<h3>' + dir + '/</h3>';
-  html += '<p>' + d.files + ' files &middot; ' + d.imports + ' imports &middot; ' + d.exports + ' exports</p>';
-  if (fileImporters.length > 0) {
-    html += '<h4>Imported By</h4><ul>' + fileImporters.slice(0,8).map(e => '<li><code>'+e[1]+'</code> <span class="badge badge-import">'+e[2]+' sym</span></li>').join('') + '</ul>';
-  }
-  if (fileCochanges.length > 0) {
-    const seen = new Set();
-    const unique = fileCochanges.filter(e => { const k = e[0]+e[1]; if(seen.has(k)) return false; seen.add(k); return true; });
-    html += '<h4>Co-Changes</h4><ul>' + unique.slice(0,5).map(e => {
-      const partner = (e[0].startsWith(dir+'/') || e[0]===dir) ? e[1] : e[0];
-      return '<li><code>'+partner+'</code> <span class="badge badge-cochange">'+e[2]+'%</span></li>';
-    }).join('') + '</ul>';
-  }
-  if (dirClusters.length > 0) {
-    html += '<h4>Cluster</h4><ul>' + dirClusters.map(c => '<li>'+c.length+'-file cluster</li>').join('') + '</ul>';
-  }
-  document.getElementById('graph-detail').innerHTML = html;
-}
-
-// Click background to deselect
-svg.on('click', (ev) => {
-  if (ev.target === svg.node()) {
-    node.select('circle').attr('opacity', 0.9).attr('stroke-width', 1.5).attr('stroke', isDark ? '#555' : '#bbb');
-    link.attr('opacity', 0.6);
-    document.getElementById('graph-detail').innerHTML = '<p class="empty">Click a module node to explore its dependencies</p>';
-  }
-});
-
-// Initial state
-link.attr('opacity', 0.6);
-`;
-}
-
-// ─── Styles ──────────────────────────────────────────────────────────────────
-
-const STYLES = `<style>
-:root { --bg: #fafafa; --card: #fff; --border: #e0e0e0; --accent: #2563eb; --text: #1a1a1a; --muted: #666; }
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #0a0a0a; --card: #141414; --border: #2a2a2a; --accent: #60a5fa; --text: #e5e5e5; --muted: #888; }
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
-.container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
-h1 { font-size: 2rem; margin-bottom: 0.25rem; letter-spacing: -0.02em; }
-h2 { font-size: 1.3rem; margin: 2.5rem 0 0.5rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.3rem; }
-h3 { font-size: 1.1rem; margin-bottom: 0.3rem; }
-h4 { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0.75rem 0 0.25rem; }
-.subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
-.section-desc { color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem; }
-.stats { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1.5rem 0 0.5rem; }
-.stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1.2rem; min-width: 120px; transition: transform 0.15s; }
-.stat:hover { transform: translateY(-2px); }
-.stat-value { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
-.stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.graph-wrapper { display: flex; gap: 1rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; margin: 0.75rem 0; min-height: 440px; }
-#graph { flex: 1; min-width: 0; }
-.graph-detail { width: 260px; flex-shrink: 0; font-size: 0.85rem; overflow-y: auto; max-height: 500px; padding: 0.5rem; }
-.graph-detail h3 { color: var(--accent); }
-.graph-detail p { color: var(--muted); margin-bottom: 0.5rem; }
-.graph-detail ul { list-style: none; padding: 0; }
-.graph-detail li { padding: 0.15rem 0; }
-.graph-detail code { background: var(--bg); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.8rem; word-break: break-all; }
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin: 0.75rem 0; }
-.cluster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem; }
-.cluster-card { background: var(--card); border-left: 4px solid var(--accent); border-radius: 0 10px 10px 0; padding: 1rem; border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); transition: transform 0.15s; }
-.cluster-card:hover { transform: translateY(-2px); }
-.cluster-card:nth-child(2) { border-left-color: #10b981; }
-.cluster-card:nth-child(3) { border-left-color: #f59e0b; }
-.cluster-card:nth-child(4) { border-left-color: #ef4444; }
-.cluster-card:nth-child(5) { border-left-color: #8b5cf6; }
-.cluster-title { font-weight: 600; margin-bottom: 0.4rem; }
-.cluster-files { font-size: 0.85rem; color: var(--muted); }
-.cluster-files code { background: var(--bg); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.8rem; }
-.flow { display: flex; align-items: center; flex-wrap: wrap; gap: 0; margin: 0.6rem 0; }
-.flow-step { background: var(--card); border: 1.5px solid var(--border); padding: 0.35rem 0.7rem; font-size: 0.82rem; white-space: nowrap; }
-.flow-step:first-child { border-radius: 6px 0 0 6px; border-left-width: 1.5px; }
-.flow-step:last-of-type { border-radius: 0 6px 6px 0; }
-.flow-step:not(:first-child) { border-left: none; }
-.flow-conf { margin-left: 0.6rem; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: 600; }
-.conf-high { background: #dcfce7; color: #166534; }
-.conf-med { background: #fef3c7; color: #92400e; }
-.conf-low { background: #f3f4f6; color: #6b7280; }
-.badge { display: inline-block; font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 3px; margin-left: 0.25rem; font-weight: 500; }
-.badge-import { background: #dbeafe; color: #1e40af; }
-.badge-cochange { background: #fef3c7; color: #92400e; }
-.badge-implicit { background: #fce7f3; color: #9d174d; }
-.convention-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 0.5rem; }
-.convention-item { font-size: 0.85rem; padding: 0.5rem 0.75rem; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
-.convention-do { border-left: 3px solid #10b981; }
-.convention-dont { border-left: 3px solid #ef4444; }
-footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; text-align: center; }
-.empty { color: var(--muted); font-style: italic; font-size: 0.9rem; }
-@media (max-width: 768px) { .graph-wrapper { flex-direction: column; } .graph-detail { width: 100%; max-height: 200px; } }
-</style>`;
-
-// ─── Header + Stats ──────────────────────────────────────────────────────────
-
-function renderHeader(pkg: Pkg): string {
-  const stats = [
-    { value: pkg.files.total, label: "Files" },
-    { value: pkg.publicAPI.length, label: "Public API" },
-    { value: pkg.callGraph?.length ?? 0, label: "Call Graph" },
-    { value: pkg.importChain?.length ?? 0, label: "Imports" },
-    { value: pkg.gitHistory?.coChangeEdges?.length ?? 0, label: "Co-changes" },
-    { value: pkg.coChangeClusters?.length ?? 0, label: "Clusters" },
-    { value: pkg.executionFlows?.length ?? 0, label: "Flows" },
-    { value: pkg.conventions?.length ?? 0, label: "Conventions" },
-  ];
-
-  return `
-  <h1>${esc(pkg.name)}</h1>
-  <p class="subtitle">${esc(pkg.role.summary || pkg.description || "")} &mdash; ${pkg.architecture.packageType}</p>
-  <div class="stats">
-    ${stats.map((s) => `<div class="stat"><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div></div>`).join("\n    ")}
-  </div>`;
-}
-
-// ─── Co-Change Clusters ──────────────────────────────────────────────────────
-
-function renderClusters(pkg: Pkg): string {
-  const clusters = pkg.coChangeClusters ?? [];
-  const implicit = pkg.implicitCoupling ?? [];
-  if (clusters.length === 0 && implicit.length === 0) return "";
-
-  const cards = clusters.map(
-    (c, i) => `
-      <div class="cluster-card">
-        <div class="cluster-title">Cluster ${i + 1} &mdash; ${c.length} files</div>
-        <div class="cluster-files">${c.map((f) => `<code>${esc(shortPath(f))}</code>`).join("<br>")}</div>
-      </div>`,
-  );
-
-  let implicitHtml = "";
-  if (implicit.length > 0) {
-    const items = implicit
-      .slice(0, 8)
-      .map(
-        (e) =>
-          `<li><code>${esc(shortPath(e.file1))}</code> &harr; <code>${esc(shortPath(e.file2))}</code> <span class="badge badge-implicit">${Math.round(e.jaccard * 100)}% co-change, no import</span></li>`,
-      )
-      .join("\n");
-    implicitHtml = `<h4 style="margin-top:1.5rem">Implicit Coupling</h4><ul style="list-style:none;padding:0;font-size:0.85rem">${items}</ul>`;
-  }
-
-  return `
-  <h2>Co-Change Clusters</h2>
-  <p class="section-desc">Files that frequently change together in commits. Each cluster is a group where every pair co-changes.</p>
-  <div class="cluster-grid">${cards.join("\n")}</div>
-  ${implicitHtml}`;
-}
-
-// ─── Execution Flows ─────────────────────────────────────────────────────────
-
-function renderFlows(pkg: Pkg): string {
-  const flows = pkg.executionFlows ?? [];
-  if (flows.length === 0) return "";
-
-  const flowHtml = flows.slice(0, 7).map((f) => {
-    const steps = f.steps.map((s, i) => {
-      const file = f.files[i] ? ` title="${esc(f.files[i])}"` : "";
-      return `<span class="flow-step"${file}>${esc(s)}</span>`;
-    });
-
-    const confClass = f.confidence >= 0.3 ? "conf-high" : f.confidence >= 0.1 ? "conf-med" : "conf-low";
-    const confLabel = f.confidence > 0 ? `${Math.round(f.confidence * 100)}%` : "structural";
-
-    return `<div class="flow">${steps.join("")}<span class="flow-conf ${confClass}">${confLabel}</span></div>`;
-  });
-
-  return `
-  <h2>Execution Flows</h2>
-  <p class="section-desc">Detected execution paths through the call graph. Confidence scored by git co-change history.</p>
-  <div class="card">${flowHtml.join("\n")}</div>`;
-}
-
-// ─── Conventions ─────────────────────────────────────────────────────────────
-
-function renderConventions(pkg: Pkg): string {
-  const conventions = pkg.conventions ?? [];
-  const antiPatterns = pkg.antiPatterns ?? [];
-  if (conventions.length === 0 && antiPatterns.length === 0) return "";
-
-  const items = [
-    ...conventions.map(
-      (c) =>
-        `<div class="convention-item convention-do"><strong>DO:</strong> ${esc(c.name)} &mdash; ${esc(c.description)} <span class="badge" style="background:#dcfce7;color:#166534">${c.confidence.percentage}%</span></div>`,
-    ),
-    ...antiPatterns.map(
-      (a) =>
-        `<div class="convention-item convention-dont"><strong>DON'T:</strong> ${esc(a.rule)} &mdash; ${esc(a.reason)}</div>`,
-    ),
-  ];
-
-  return `
-  <h2>Conventions</h2>
-  <div class="convention-list">${items.join("\n")}</div>`;
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function fileDir(path: string): string {
-  const idx = path.lastIndexOf("/");
-  return idx >= 0 ? path.slice(0, idx) : ".";
-}
-
-function shortPath(path: string): string {
-  const parts = path.split("/");
-  return parts.length > 2 ? parts.slice(-2).join("/") : path;
+function fdir(p: string): string {
+  const i = p.lastIndexOf("/");
+  return i >= 0 ? p.slice(0, i) : ".";
 }
