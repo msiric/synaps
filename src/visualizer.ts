@@ -145,14 +145,17 @@ const svg=d3.select('#graph').attr('viewBox',[0,0,W,H]);
 const maxW=Math.max(1,...G.edges.map(e=>e.weight));
 const maxF=Math.max(1,...G.nodes.map(n=>n.files));
 const NC=G.nodes.length;
-const spread=Math.min(W,H)*0.35;
+const linkDist=NC>50?60:NC>20?100:NC>12?150:220;
+const charge=NC>50?-200:NC>20?-400:NC>12?-800:-1400;
+const center=NC>50?0.12:NC>20?0.06:0.03;
+const nodeR=NC>50?6:NC>20?8:12;
 const sim=d3.forceSimulation(G.nodes)
-  .force('link',d3.forceLink(G.edges).id(d=>d.id).distance(220))
-  .force('charge',d3.forceManyBody().strength(NC>12?-1200:NC>6?-1800:-2400))
+  .force('link',d3.forceLink(G.edges).id(d=>d.id).distance(linkDist))
+  .force('charge',d3.forceManyBody().strength(charge))
   .force('center',d3.forceCenter(W/2,H/2))
-  .force('collision',d3.forceCollide().radius(d=>30+Math.sqrt(d.files/maxF)*35))
-  .force('x',d3.forceX(W/2).strength(0.02))
-  .force('y',d3.forceY(H/2).strength(0.02));
+  .force('collision',d3.forceCollide().radius(d=>nodeR+4+Math.sqrt(d.files/maxF)*(NC>50?10:NC>20?18:28)))
+  .force('x',d3.forceX(W/2).strength(center))
+  .force('y',d3.forceY(H/2).strength(center));
 const link=svg.append('g').selectAll('line').data(G.edges).join('line')
   .attr('stroke',d=>d.type==='cochange'?'#c59a28':d.type==='implicit'?'#b44e8a':'#222')
   .attr('stroke-width',d=>d.type==='cochange'||d.type==='implicit'?1.5:Math.max(0.8,Math.sqrt(d.weight/maxW)*4))
@@ -168,19 +171,23 @@ const node=svg.append('g').selectAll('g').data(G.nodes).join('g')
   .on('click',(e,d)=>{e.stopPropagation();selectNode(d)})
   .style('cursor','pointer');
 node.append('circle')
-  .attr('r',d=>16+Math.sqrt(d.files/maxF)*32)
+  .attr('r',d=>nodeR+Math.sqrt(d.files/maxF)*(NC>50?12:NC>20?20:32))
   .attr('fill',d=>d.group>=0?PAL[d.group%PAL.length]+'22':'#151520')
   .attr('stroke',d=>d.group>=0?PAL[d.group%PAL.length]:'#282830')
   .attr('stroke-width',1.5);
 function lbl(d){const p=d.id.split('/');if(p.length<=1)return d.id||'root';const l=p.at(-1);return G.nodes.filter(n=>n.id.split('/').at(-1)===l).length>1?p.slice(-2).join('/'):l}
+const fontSize=NC>50?'9px':NC>20?'10px':'13px';
+const labelOffset=NC>50?12:NC>20?16:22;
 node.append('text').text(d=>lbl(d))
-  .attr('text-anchor','middle').attr('dy',d=>-(22+Math.sqrt(d.files/maxF)*34))
-  .attr('font-size','13px').attr('fill','#888').attr('font-weight','600')
-  .attr('paint-order','stroke').attr('stroke','#0a0a0f').attr('stroke-width',4);
+  .attr('text-anchor','middle').attr('dy',d=>-(labelOffset+Math.sqrt(d.files/maxF)*(NC>50?12:NC>20?20:34)))
+  .attr('font-size',fontSize).attr('fill','#888').attr('font-weight','600')
+  .attr('paint-order','stroke').attr('stroke','#0a0a0f').attr('stroke-width',NC>50?2:4);
 node.append('text').text(d=>d.files)
-  .attr('text-anchor','middle').attr('dy',6)
-  .attr('font-size','13px').attr('fill','#555').attr('font-weight','700');
+  .attr('text-anchor','middle').attr('dy',NC>50?3:5)
+  .attr('font-size',NC>50?'8px':fontSize).attr('fill','#555').attr('font-weight','700');
+const pad=60;
 sim.on('tick',()=>{
+  G.nodes.forEach(d=>{d.x=Math.max(pad,Math.min(W-pad,d.x));d.y=Math.max(pad,Math.min(H-pad,d.y))});
   link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
   node.attr('transform',d=>\`translate(\${d.x},\${d.y})\`);
 });
@@ -241,12 +248,34 @@ function buildGraphData(pkg: Pkg): { nodes: GNode[]; edges: GEdge[] } {
   const implicitEdges = pkg.implicitCoupling ?? [];
   const clusters = pkg.coChangeClusters ?? [];
 
+  // Determine aggregation depth: count unique dirs at full depth, reduce if too many
+  const fullDirs = new Set<string>();
+  for (const e of importEdges) {
+    fullDirs.add(fdir(e.importer));
+    fullDirs.add(fdir(e.source));
+  }
+  const maxNodes = 30;
+  let depth = 10; // effectively unlimited
+  if (fullDirs.size > maxNodes) {
+    // Try progressively shallower depths until we get <=maxNodes
+    for (depth = 3; depth >= 1; depth--) {
+      const test = new Set<string>();
+      for (const e of importEdges) {
+        test.add(fdirN(e.importer, depth));
+        test.add(fdirN(e.source, depth));
+      }
+      if (test.size <= maxNodes) break;
+    }
+    if (depth < 1) depth = 1;
+  }
+  const dir = (p: string) => (fullDirs.size > maxNodes ? fdirN(p, depth) : fdir(p));
+
   const ds = new Map<string, { files: Set<string>; imports: number; exports: number }>();
   const de = new Map<string, number>();
 
   for (const e of importEdges) {
-    const f = fdir(e.importer);
-    const t = fdir(e.source);
+    const f = dir(e.importer);
+    const t = dir(e.source);
     for (const d of [f, t]) if (!ds.has(d)) ds.set(d, { files: new Set(), imports: 0, exports: 0 });
     ds.get(f)!.files.add(e.importer);
     ds.get(t)!.files.add(e.source);
@@ -260,8 +289,8 @@ function buildGraphData(pkg: Pkg): { nodes: GNode[]; edges: GEdge[] } {
 
   const ce = new Map<string, number>();
   for (const e of coChangeEdges) {
-    const a = fdir(e.file1);
-    const b = fdir(e.file2);
+    const a = dir(e.file1);
+    const b = dir(e.file2);
     if (a === b) continue;
     const k = [a, b].sort().join("|");
     ce.set(k, (ce.get(k) ?? 0) + e.jaccard);
@@ -269,8 +298,8 @@ function buildGraphData(pkg: Pkg): { nodes: GNode[]; edges: GEdge[] } {
 
   const ie = new Map<string, number>();
   for (const e of implicitEdges) {
-    const a = fdir(e.file1);
-    const b = fdir(e.file2);
+    const a = dir(e.file1);
+    const b = dir(e.file2);
     if (a === b) continue;
     const k = [a, b].sort().join("|");
     ie.set(k, (ie.get(k) ?? 0) + e.jaccard);
@@ -279,7 +308,7 @@ function buildGraphData(pkg: Pkg): { nodes: GNode[]; edges: GEdge[] } {
   const dc = new Map<string, number>();
   for (let i = 0; i < clusters.length; i++) {
     for (const f of clusters[i]) {
-      const d = fdir(f);
+      const d = dir(f);
       if (!dc.has(d)) dc.set(d, i);
     }
   }
@@ -321,4 +350,11 @@ function esc(s: string): string {
 function fdir(p: string): string {
   const i = p.lastIndexOf("/");
   return i >= 0 ? p.slice(0, i) : ".";
+}
+
+/** Get directory path limited to N segments: "a/b/c/d/file.ts" at depth 2 → "a/b" */
+function fdirN(p: string, depth: number): string {
+  const d = fdir(p);
+  const parts = d.split("/");
+  return parts.length <= depth ? d : parts.slice(0, depth).join("/");
 }
