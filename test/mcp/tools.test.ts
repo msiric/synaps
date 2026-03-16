@@ -131,11 +131,31 @@ function makeAnalysis(overrides: Partial<PackageAnalysis> = {}): StructuredAnaly
               jaccard: 0.47,
               lastCoChangeTimestamp: Date.now() / 1000,
             },
+            // Cluster: pipeline <-> types <-> formatter (3-file clique)
+            {
+              file1: "src/formatter.ts",
+              file2: "src/pipeline.ts",
+              coChangeCount: 6,
+              file1Commits: 10,
+              file2Commits: 12,
+              jaccard: 0.38,
+              lastCoChangeTimestamp: Date.now() / 1000,
+            },
+            {
+              file1: "src/pipeline.ts",
+              file2: "src/types.ts",
+              coChangeCount: 7,
+              file1Commits: 12,
+              file2Commits: 15,
+              jaccard: 0.35,
+              lastCoChangeTimestamp: Date.now() / 1000,
+            },
           ],
           totalCommitsAnalyzed: 25,
           commitsFilteredBySize: 1,
           historySpanDays: 30,
         },
+        implicitCoupling: [{ file1: "src/formatter.ts", file2: "src/config.ts", jaccard: 0.32, coChangeCount: 4 }],
         configAnalysis: {
           typescript: { strict: true, target: "ES2022", module: "esnext", moduleResolution: "bundler" },
         },
@@ -239,6 +259,50 @@ describe("handleAnalyzeImpact", () => {
       scope: "imports",
     });
     expect(result.content[0].text).toContain("No files import");
+  });
+
+  it("shows implicit coupling in cochanges scope", () => {
+    const result = tools.handleAnalyzeImpact(makeAnalysis(), {
+      filePath: "src/formatter.ts",
+      scope: "cochanges",
+    });
+    const text = result.content[0].text;
+    expect(text).toContain("Implicit Coupling");
+    expect(text).toContain("src/config.ts");
+    expect(text).toContain("no import path");
+  });
+
+  it("shows co-change cluster membership", () => {
+    const result = tools.handleAnalyzeImpact(makeAnalysis(), {
+      filePath: "src/types.ts",
+      scope: "cochanges",
+    });
+    const text = result.content[0].text;
+    expect(text).toContain("Co-change Cluster");
+    expect(text).toContain("3-file cluster");
+    expect(text).toContain("src/formatter.ts");
+    expect(text).toContain("src/pipeline.ts");
+  });
+
+  it("shows git history metadata", () => {
+    const result = tools.handleAnalyzeImpact(makeAnalysis(), {
+      filePath: "src/types.ts",
+      scope: "cochanges",
+    });
+    const text = result.content[0].text;
+    expect(text).toContain("25 commits analyzed");
+    expect(text).toContain("30 days");
+    expect(text).toContain("1 large commits excluded");
+  });
+
+  it("omits implicit coupling section when none exist", () => {
+    const result = tools.handleAnalyzeImpact(makeAnalysis(), {
+      filePath: "src/types.ts",
+      scope: "cochanges",
+    });
+    const text = result.content[0].text;
+    // src/types.ts has no implicit coupling in fixture — only src/formatter.ts does
+    expect(text).not.toContain("Implicit Coupling");
   });
 });
 

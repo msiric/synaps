@@ -4,6 +4,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import ts from "typescript";
+import { detectClusters } from "../git-history.js";
 import type { StructuredAnalysis } from "../types.js";
 import * as Q from "./queries.js";
 
@@ -198,6 +199,7 @@ export function handleAnalyzeImpact(
 
   // Co-change section
   if (args.filePath && (scope === "all" || scope === "cochanges")) {
+    const pkg = Q.resolvePackage(analysis, args.packagePath);
     const coChanges = Q.getCoChangesForFile(analysis, args.filePath, args.packagePath);
     const shown = coChanges.slice(0, limit);
     lines.push(
@@ -213,6 +215,45 @@ export function handleAnalyzeImpact(
       }
     }
     lines.push("");
+
+    // Implicit coupling (co-change with no import relationship — highest-signal subset)
+    const implicit = Q.getImplicitCouplingForFile(analysis, args.filePath, args.packagePath);
+    if (implicit.length > 0) {
+      lines.push(`### Implicit Coupling (${implicit.length} files co-change without import relationship)`);
+      for (const edge of implicit.slice(0, limit)) {
+        const partner = edge.file1 === args.filePath ? edge.file2 : edge.file1;
+        const pct = Math.round(edge.jaccard * 100);
+        lines.push(`- \`${partner}\` — Jaccard ${pct}%, co-changed ${edge.coChangeCount} times, no import path`);
+      }
+      lines.push("");
+    }
+
+    // Co-change cluster membership
+    const coChangeEdges = pkg.gitHistory?.coChangeEdges ?? [];
+    if (coChangeEdges.length > 0) {
+      const clusters = detectClusters(coChangeEdges);
+      const fileClusters = clusters.filter((c) => c.includes(args.filePath!));
+      if (fileClusters.length > 0) {
+        lines.push("### Co-change Cluster");
+        for (const cluster of fileClusters) {
+          const others = cluster.filter((f) => f !== args.filePath);
+          lines.push(`This file belongs to a ${cluster.length}-file cluster that frequently changes together:`);
+          for (const f of others) {
+            lines.push(`- \`${f}\``);
+          }
+        }
+        lines.push("");
+      }
+    }
+
+    // Git history metadata (analysis quality signal)
+    const history = pkg.gitHistory;
+    if (history) {
+      lines.push(
+        `*Git history: ${history.totalCommitsAnalyzed} commits analyzed over ${history.historySpanDays} days${history.commitsFilteredBySize > 0 ? ` (${history.commitsFilteredBySize} large commits excluded)` : ""}*`,
+      );
+      lines.push("");
+    }
   }
 
   return { content: [{ type: "text", text: lines.join("\n") }] };
