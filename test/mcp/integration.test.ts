@@ -84,7 +84,7 @@ afterAll(() => {
 // ─── Tool Listing ─────────────────────────────────────────────────────────
 
 describe("MCP server integration", () => {
-  it("lists all 15 tools", async () => {
+  it("lists all 16 tools", async () => {
     const resp = await sendRequest("tools/list");
     const toolNames = resp.result.tools.map((t: any) => t.name).sort();
     expect(toolNames).toContain("get_commands");
@@ -94,7 +94,8 @@ describe("MCP server integration", () => {
     expect(toolNames).toContain("review_changes");
     expect(toolNames).toContain("search");
     expect(toolNames).toContain("rename");
-    expect(toolNames.length).toBe(15);
+    expect(toolNames).toContain("get_module_doc");
+    expect(toolNames.length).toBe(16);
   });
 
   it("lists MCP resources", async () => {

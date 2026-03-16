@@ -112,6 +112,8 @@ function getNextStepHint(toolName: string): string {
       return "\n\n**Next:** Call `analyze_impact` or `plan_change` on a result to understand its dependencies.";
     case "rename":
       return "\n\n**Next:** Apply the rename edits, then run tests to verify.";
+    case "get_module_doc":
+      return "\n\n**Next:** Call `plan_change` on specific files to check impact before editing.";
     default:
       return "";
   }
@@ -608,6 +610,35 @@ DO NOT CALL:
           resolveCache(args?.repo)
             .get()
             .then((a) => tools.handleReviewChanges(a, args)),
+        args,
+      ),
+  );
+
+  // ─── New: get_module_doc ────────────────────────────────────────
+  server.tool(
+    "get_module_doc",
+    `Get structured documentation for a directory/module: files, exports, dependencies, dependents, internal call graph, execution flows, co-change partners, and contribution patterns.
+
+WHEN TO CALL:
+- User asks "tell me about the MCP module" or "what does src/detectors/ do?"
+- User needs an overview of a directory before modifying it
+- User wants to understand module boundaries and dependencies
+
+DO NOT CALL:
+- For individual file or symbol details (use analyze_impact or get_exports)
+- For finding code by concept (use search)`,
+    {
+      directory: z.string().describe("Directory path (e.g., 'src/mcp', 'src/detectors')"),
+      packagePath: z.string().optional().describe("Package path or name"),
+      repo: z.string().optional().describe("Repository name or path. Omit if single repo."),
+    },
+    async (args) =>
+      withTelemetry(
+        "get_module_doc",
+        () =>
+          resolveCache(args?.repo)
+            .get()
+            .then((a) => tools.handleGetModuleDoc(a, args)),
         args,
       ),
   );

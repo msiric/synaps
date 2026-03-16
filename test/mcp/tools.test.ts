@@ -697,3 +697,46 @@ describe("handleRename", () => {
     expect(text).toContain("Run tests");
   });
 });
+
+// ─── Module Doc Tool ──────────────────────────────────────────────────────────
+
+describe("handleGetModuleDoc", () => {
+  it("returns files and exports for a directory", () => {
+    // src/ contains pipeline.ts, types.ts, formatter.ts, index.ts, ast-parser.ts per fixture
+    const result = tools.handleGetModuleDoc(makeAnalysis(), { directory: "src" });
+    const text = result.content[0].text;
+    expect(text).toContain("Module: src/");
+    expect(text).toContain("Files");
+    expect(text).toContain("src/types.ts");
+    expect(text).toContain("src/pipeline.ts");
+  });
+
+  it("shows exports on files that have them", () => {
+    const result = tools.handleGetModuleDoc(makeAnalysis(), { directory: "src" });
+    const text = result.content[0].text;
+    // src/index.ts exports 'analyze' and 'format' per the fixture publicAPI
+    expect(text).toContain("analyze");
+  });
+
+  it("shows internal call graph", () => {
+    // runPipeline → analyzePackage both in src/pipeline.ts (both in src/)
+    const result = tools.handleGetModuleDoc(makeAnalysis(), { directory: "src" });
+    const text = result.content[0].text;
+    expect(text).toContain("Internal Call Graph");
+    expect(text).toContain("runPipeline");
+  });
+
+  it("shows cluster membership", () => {
+    // Fixture has cluster: [formatter, pipeline, types] — all in src/
+    const result = tools.handleGetModuleDoc(makeAnalysis(), { directory: "src" });
+    const text = result.content[0].text;
+    expect(text).toContain("Co-change Clusters");
+    expect(text).toContain("3-file cluster");
+  });
+
+  it("handles empty directory gracefully", () => {
+    const result = tools.handleGetModuleDoc(makeAnalysis(), { directory: "nonexistent" });
+    const text = result.content[0].text;
+    expect(text).toContain("No files found");
+  });
+});

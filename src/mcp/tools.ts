@@ -922,6 +922,104 @@ export function handleSearch(
   return { content: [{ type: "text", text: lines.join("\n") }] };
 }
 
+// ─── get_module_doc ──────────────────────────────────────────────────────────
+
+export function handleGetModuleDoc(
+  analysis: StructuredAnalysis,
+  args: { directory: string; packagePath?: string },
+): ToolResult {
+  const doc = Q.getModuleDoc(analysis, args.directory, args.packagePath);
+  const lines: string[] = [];
+
+  lines.push(`## Module: ${doc.directory}/`);
+  if (doc.purpose) lines.push(doc.purpose);
+  lines.push(`**${doc.fileCount} files**`);
+  lines.push("");
+
+  if (doc.fileCount === 0) {
+    lines.push(
+      "No files found in this directory. Check the path or try `get_architecture` to see available directories.",
+    );
+    return { content: [{ type: "text", text: lines.join("\n") }] };
+  }
+
+  // Files with exports
+  lines.push("### Files");
+  for (const f of doc.files) {
+    const exStr = f.exports.length > 0 ? ` — exports: ${f.exports.join(", ")}` : "";
+    lines.push(`- \`${f.path}\`${exStr}`);
+  }
+  lines.push("");
+
+  // Dependencies
+  if (doc.dependencies.length > 0) {
+    lines.push(`### Dependencies (${doc.dependencies.length} external files)`);
+    for (const d of doc.dependencies.slice(0, 10)) {
+      lines.push(`- \`${d.file}\` (${d.symbolCount} symbols)`);
+    }
+    if (doc.dependencies.length > 10) lines.push(`- ...and ${doc.dependencies.length - 10} more`);
+    lines.push("");
+  }
+
+  // Dependents
+  if (doc.dependents.length > 0) {
+    lines.push(`### Dependents (${doc.dependents.length} external files import from this module)`);
+    for (const d of doc.dependents.slice(0, 10)) {
+      lines.push(`- \`${d.file}\` (${d.symbolCount} symbols)`);
+    }
+    if (doc.dependents.length > 10) lines.push(`- ...and ${doc.dependents.length - 10} more`);
+    lines.push("");
+  }
+
+  // Internal call graph
+  if (doc.internalCalls.length > 0) {
+    lines.push("### Internal Call Graph");
+    for (const c of doc.internalCalls) {
+      lines.push(`- ${c.from} → ${c.to}`);
+    }
+    lines.push("");
+  }
+
+  // Execution flows
+  if (doc.flows.length > 0) {
+    lines.push(`### Execution Flows (${doc.flows.length})`);
+    for (const f of doc.flows.slice(0, 5)) {
+      lines.push(`- ${f.label} — this module at ${f.position}`);
+    }
+    lines.push("");
+  }
+
+  // Co-change partners
+  if (doc.coChangePartners.length > 0) {
+    lines.push("### Co-change Partners");
+    for (const p of doc.coChangePartners.slice(0, 5)) {
+      lines.push(`- \`${p.internal}\` ↔ \`${p.external}\` (Jaccard ${Math.round(p.jaccard * 100)}%)`);
+    }
+    lines.push("");
+  }
+
+  // Clusters
+  if (doc.clusters.length > 0) {
+    lines.push("### Co-change Clusters");
+    for (const c of doc.clusters) {
+      lines.push(`- ${c.length}-file cluster: ${c.map((f) => `\`${f}\``).join(", ")}`);
+    }
+    lines.push("");
+  }
+
+  // Contribution pattern
+  if (doc.contribution) {
+    lines.push("### How to Add Code");
+    lines.push(`File pattern: \`${doc.contribution.filePattern}\``);
+    if (doc.contribution.exportSuffix) lines.push(`Export suffix: \`${doc.contribution.exportSuffix}\``);
+    if (doc.contribution.registrationFile) lines.push(`Register in: \`${doc.contribution.registrationFile}\``);
+    lines.push(`Steps: ${doc.contribution.steps.join(" → ")}`);
+    lines.push("");
+  }
+
+  return { content: [{ type: "text", text: lines.join("\n") }] };
+}
+
 // ─── rename ──────────────────────────────────────────────────────────────────
 
 export function handleRename(
