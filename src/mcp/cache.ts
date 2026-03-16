@@ -144,12 +144,24 @@ export class AnalysisCache {
           callGraph: pkg.callGraph,
           gitHistory: pkg.gitHistory ? { coChangeEdges: pkg.gitHistory.coChangeEdges } : undefined,
           executionFlows: pkg.executionFlows,
+          implicitCoupling: pkg.implicitCoupling,
+          conventions: pkg.conventions?.map((c) => ({
+            name: c.name,
+            description: c.description,
+            category: c.category,
+            source: c.source,
+          })),
           publicAPI: pkg.publicAPI.map((e) => ({
             name: e.name,
             kind: e.kind,
             sourceFile: e.sourceFile,
             importCount: e.importCount,
           })),
+        })),
+        workflowRules: analysis.crossPackage?.workflowRules?.map((r) => ({
+          trigger: r.trigger,
+          action: r.action,
+          source: r.source,
         })),
       };
 

@@ -156,48 +156,34 @@ function augment(snapshot, pattern) {
   if (pkgs.length === 0) return null;
   const pkg = pkgs.reduce((a, b) => ((a.publicAPI || []).length > (b.publicAPI || []).length ? a : b));
 
-  const patternLower = pattern.toLowerCase();
+  const q = pattern.toLowerCase();
+  const callGraph = pkg.callGraph || [];
+  const sections = [];
 
-  // Match against public API symbols AND call graph functions
-  const apiMatches = (pkg.publicAPI || []).filter((e) => e.name.toLowerCase().includes(patternLower));
+  // ── Pass 1: Public API symbols ──
+  const apiMatches = (pkg.publicAPI || []).filter((e) => e.name.toLowerCase().includes(q));
+  const matchedNames = new Set(apiMatches.map((e) => e.name));
 
-  // Also search call graph for internal functions not in publicAPI
-  const apiNames = new Set(apiMatches.map((e) => e.name));
-  const callGraphFns = new Set();
-  for (const e of pkg.callGraph || []) {
-    if (!apiNames.has(e.from) && e.from.toLowerCase().includes(patternLower)) callGraphFns.add(e.from);
-    if (!apiNames.has(e.to) && e.to.toLowerCase().includes(patternLower)) callGraphFns.add(e.to);
+  // ── Pass 2: Internal call graph functions not in public API ──
+  for (const e of callGraph) {
+    for (const fn of [e.from, e.to]) {
+      if (matchedNames.has(fn) || !fn.toLowerCase().includes(q)) continue;
+      matchedNames.add(fn);
+      const file = e.from === fn ? e.fromFile : e.toFile;
+      apiMatches.push({ name: fn, kind: "function", sourceFile: file, importCount: 0 });
+    }
   }
 
-  // Build unified match list: API symbols first, then call graph functions
-  const matches = [
-    ...apiMatches.map((e) => ({ name: e.name, kind: e.kind, sourceFile: e.sourceFile, importCount: e.importCount })),
-    ...[...callGraphFns].slice(0, 3).map((name) => {
-      const edge = (pkg.callGraph || []).find((e) => e.from === name || e.to === name);
-      return { name, kind: "function", sourceFile: edge ? (edge.from === name ? edge.fromFile : edge.toFile) : "unknown", importCount: 0 };
-    }),
-  ];
-  if (matches.length === 0) return null;
-
-  const results = [];
-  for (const exp of matches.slice(0, 3)) {
+  // Format symbol results (top 3) with call graph + co-change + flow context
+  for (const exp of apiMatches.slice(0, 3)) {
     const lines = [`**${exp.name}** (${exp.kind}) — \`${exp.sourceFile}\``];
 
-    // Callers from call graph
-    const callers = (pkg.callGraph || [])
-      .filter((e) => e.to === exp.name)
-      .map((e) => e.from)
-      .slice(0, 3);
+    const callers = callGraph.filter((e) => e.to === exp.name).map((e) => e.from).slice(0, 3);
     if (callers.length > 0) lines.push(`  Called by: ${callers.join(", ")}`);
 
-    // Callees from call graph
-    const callees = (pkg.callGraph || [])
-      .filter((e) => e.from === exp.name)
-      .map((e) => e.to)
-      .slice(0, 3);
+    const callees = callGraph.filter((e) => e.from === exp.name).map((e) => e.to).slice(0, 3);
     if (callees.length > 0) lines.push(`  Calls: ${callees.join(", ")}`);
 
-    // Co-change partners
     const coChanges = (pkg.gitHistory?.coChangeEdges || [])
       .filter((e) => e.file1 === exp.sourceFile || e.file2 === exp.sourceFile)
       .sort((a, b) => b.jaccard - a.jaccard)
@@ -208,7 +194,6 @@ function augment(snapshot, pattern) {
       });
     if (coChanges.length > 0) lines.push(`  Co-changes with: ${coChanges.join(", ")}`);
 
-    // Execution flows
     const flows = (pkg.executionFlows || [])
       .filter((f) => f.steps.includes(exp.name))
       .slice(0, 2)
@@ -218,14 +203,49 @@ function augment(snapshot, pattern) {
       });
     if (flows.length > 0) lines.push(`  Flows: ${flows.join("; ")}`);
 
-    // Import count
     if (exp.importCount > 0) lines.push(`  Imported by: ${exp.importCount} files`);
 
-    results.push(lines.join("\n"));
+    sections.push(lines.join("\n"));
   }
 
-  if (results.length === 0) return null;
-  return `[autodocs] ${results.length} related symbol${results.length > 1 ? "s" : ""} found:\n\n${results.join("\n\n")}`;
+  // ── Pass 3: File paths from import chain ──
+  const coveredFiles = new Set(apiMatches.slice(0, 3).map((e) => e.sourceFile));
+  const seenFiles = new Set();
+  const fileResults = [];
+
+  for (const edge of pkg.importChain || []) {
+    for (const fp of [edge.importer, edge.source]) {
+      if (seenFiles.has(fp) || coveredFiles.has(fp) || !fp.toLowerCase().includes(q)) continue;
+      seenFiles.add(fp);
+
+      let context = "";
+      const coChange = (pkg.gitHistory?.coChangeEdges || []).find((e) => e.file1 === fp || e.file2 === fp);
+      if (coChange) {
+        const partner = coChange.file1 === fp ? coChange.file2 : coChange.file1;
+        context = ` — co-changes with ${partner} (${Math.round(coChange.jaccard * 100)}%)`;
+      }
+      fileResults.push(`\`${fp}\`${context}`);
+    }
+  }
+  if (fileResults.length > 0) {
+    sections.push(`**Files:** ${fileResults.slice(0, 3).join(", ")}`);
+  }
+
+  // ── Pass 4: Conventions and workflow rules ──
+  for (const conv of pkg.conventions || []) {
+    if (!conv.name.toLowerCase().includes(q) && !(conv.description || "").toLowerCase().includes(q)) continue;
+    sections.push(`**Convention:** ${conv.name} — ${conv.description}`);
+    break; // At most 1 convention match to keep output concise
+  }
+
+  for (const rule of snapshot.workflowRules || []) {
+    if (!rule.trigger.toLowerCase().includes(q) && !rule.action.toLowerCase().includes(q)) continue;
+    sections.push(`**Rule:** ${rule.trigger} → ${rule.action}`);
+    break; // At most 1 rule match
+  }
+
+  if (sections.length === 0) return null;
+  return `[autodocs] ${sections.length} result${sections.length > 1 ? "s" : ""} found:\n\n${sections.join("\n\n")}`;
 }
 
 // ─── Output ────────────────────────────────────────────────────────────────

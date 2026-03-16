@@ -104,6 +104,18 @@ describe("autodocs-hook.cjs", () => {
             },
           ],
         },
+        importChain: [
+          { importer: "src/pipeline.ts", source: "src/types.ts", symbolCount: 12, symbols: ["StructuredAnalysis"] },
+          { importer: "src/convention-extractor.ts", source: "src/types.ts", symbolCount: 5, symbols: ["Convention"] },
+        ],
+        conventions: [
+          {
+            name: "kebab-case",
+            description: "Use kebab-case for filenames",
+            category: "file-naming",
+            source: "fileNaming",
+          },
+        ],
         executionFlows: [
           {
             label: "runPipeline → parseFile → extractExports (3 steps, 2 files)",
@@ -118,6 +130,9 @@ describe("autodocs-hook.cjs", () => {
           },
         ],
       },
+    ],
+    workflowRules: [
+      { trigger: "When modifying src/types.ts", action: "Check dependent files", source: "Import chain" },
     ],
   };
 
@@ -243,6 +258,60 @@ describe("autodocs-hook.cjs", () => {
       const result = parseHookOutput(output);
       expect(result).not.toBeNull();
       expect(result!.additionalContext).toContain("Flows:");
+    } finally {
+      cleanupTempSnapshot(tempDir);
+    }
+  });
+
+  it("finds files by path when no symbol matches", () => {
+    createTempSnapshot(tempDir, sampleSnapshot);
+    try {
+      const output = runHook({
+        hook_event_name: "PreToolUse",
+        tool_name: "Grep",
+        tool_input: { pattern: "convention-extractor" },
+        cwd: tempDir,
+      });
+      const result = parseHookOutput(output);
+      expect(result).not.toBeNull();
+      expect(result!.additionalContext).toContain("convention-extractor.ts");
+      expect(result!.additionalContext).toContain("Files:");
+    } finally {
+      cleanupTempSnapshot(tempDir);
+    }
+  });
+
+  it("finds conventions by description", () => {
+    createTempSnapshot(tempDir, sampleSnapshot);
+    try {
+      const output = runHook({
+        hook_event_name: "PreToolUse",
+        tool_name: "Grep",
+        tool_input: { pattern: "kebab" },
+        cwd: tempDir,
+      });
+      const result = parseHookOutput(output);
+      expect(result).not.toBeNull();
+      expect(result!.additionalContext).toContain("Convention:");
+      expect(result!.additionalContext).toContain("kebab-case");
+    } finally {
+      cleanupTempSnapshot(tempDir);
+    }
+  });
+
+  it("finds workflow rules by trigger", () => {
+    createTempSnapshot(tempDir, sampleSnapshot);
+    try {
+      const output = runHook({
+        hook_event_name: "PreToolUse",
+        tool_name: "Grep",
+        tool_input: { pattern: "types.ts" },
+        cwd: tempDir,
+      });
+      const result = parseHookOutput(output);
+      expect(result).not.toBeNull();
+      expect(result!.additionalContext).toContain("Rule:");
+      expect(result!.additionalContext).toContain("Check dependent files");
     } finally {
       cleanupTempSnapshot(tempDir);
     }
