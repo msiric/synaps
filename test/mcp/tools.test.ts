@@ -2,7 +2,18 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { findBestPattern, getRegistrationInsertions } from "../../src/mcp/queries.js";
+import {
+  findBestPattern,
+  findReferences,
+  getCoChangesForFile,
+  getExecutionFlows,
+  getFlowsForFiles,
+  getFlowsForFunction,
+  getImplicitCouplingForFile,
+  getModuleDoc,
+  getRegistrationInsertions,
+  search,
+} from "../../src/mcp/queries.js";
 import { formatSessionSummary, type SessionTelemetry } from "../../src/mcp/server.js";
 import * as tools from "../../src/mcp/tools.js";
 import type { PackageAnalysis, StructuredAnalysis } from "../../src/types.js";
@@ -110,6 +121,18 @@ function makeAnalysis(overrides: Partial<PackageAnalysis> = {}): StructuredAnaly
             symbols: ["StructuredAnalysis", "PackageAnalysis"],
           },
           {
+            importer: "src/detectors/file-naming.ts",
+            source: "src/types.ts",
+            symbolCount: 2,
+            symbols: ["Convention", "ConventionDetector"],
+          },
+          {
+            importer: "src/convention-extractor.ts",
+            source: "src/detectors/file-naming.ts",
+            symbolCount: 1,
+            symbols: ["fileNamingDetector"],
+          },
+          {
             importer: "src/formatter.ts",
             source: "src/types.ts",
             symbolCount: 8,
@@ -157,6 +180,19 @@ function makeAnalysis(overrides: Partial<PackageAnalysis> = {}): StructuredAnaly
         },
         implicitCoupling: [{ file1: "src/formatter.ts", file2: "src/config.ts", jaccard: 0.32, coChangeCount: 4 }],
         coChangeClusters: [["src/formatter.ts", "src/pipeline.ts", "src/types.ts"]],
+        executionFlows: [
+          {
+            label: "runPipeline → analyzePackage (2 steps, 1 files)",
+            entryPoint: "runPipeline",
+            entryFile: "src/pipeline.ts",
+            terminal: "analyzePackage",
+            terminalFile: "src/pipeline.ts",
+            steps: ["runPipeline", "analyzePackage"],
+            files: ["src/pipeline.ts", "src/pipeline.ts"],
+            length: 2,
+            confidence: 0.35,
+          },
+        ],
         configAnalysis: {
           typescript: { strict: true, target: "ES2022", module: "esnext", moduleResolution: "bundler" },
         },
@@ -738,5 +774,177 @@ describe("handleGetModuleDoc", () => {
     const result = tools.handleGetModuleDoc(makeAnalysis(), { directory: "nonexistent" });
     const text = result.content[0].text;
     expect(text).toContain("No files found");
+  });
+
+  it("shows contribution pattern for matching directory", () => {
+    const result = tools.handleGetModuleDoc(makeAnalysis(), { directory: "src/detectors" });
+    const text = result.content[0].text;
+    expect(text).toContain("How to Add Code");
+    expect(text).toContain("Detector");
+    expect(text).toContain("src/convention-extractor.ts");
+  });
+});
+
+// ─── Query Function Unit Tests ────────────────────────────────────────────────
+
+describe("getCoChangesForFile", () => {
+  it("returns co-change edges sorted by jaccard", () => {
+    const edges = getCoChangesForFile(makeAnalysis(), "src/types.ts");
+    expect(edges.length).toBeGreaterThan(0);
+    expect(edges[0].jaccard).toBeGreaterThanOrEqual(edges[edges.length - 1].jaccard);
+  });
+
+  it("returns empty array for file with no co-changes", () => {
+    const edges = getCoChangesForFile(makeAnalysis(), "src/nonexistent.ts");
+    expect(edges).toEqual([]);
+  });
+
+  it("filters to edges involving the requested file", () => {
+    const edges = getCoChangesForFile(makeAnalysis(), "src/formatter.ts");
+    for (const e of edges) {
+      expect(e.file1 === "src/formatter.ts" || e.file2 === "src/formatter.ts").toBe(true);
+    }
+  });
+});
+
+describe("getImplicitCouplingForFile", () => {
+  it("returns implicit coupling edges for a file", () => {
+    const edges = getImplicitCouplingForFile(makeAnalysis(), "src/formatter.ts");
+    expect(edges.length).toBe(1);
+    expect(edges[0].file2).toBe("src/config.ts");
+  });
+
+  it("returns empty array for file with no implicit coupling", () => {
+    const edges = getImplicitCouplingForFile(makeAnalysis(), "src/types.ts");
+    expect(edges).toEqual([]);
+  });
+});
+
+describe("search (query function)", () => {
+  it("finds public API symbols", () => {
+    const results = search(makeAnalysis(), "analyze");
+    expect(results.some((r) => r.name === "analyze")).toBe(true);
+  });
+
+  it("finds call graph functions not in API", () => {
+    const results = search(makeAnalysis(), "parseFile");
+    expect(results.some((r) => r.name === "parseFile")).toBe(true);
+  });
+
+  it("finds file paths", () => {
+    const results = search(makeAnalysis(), "formatter");
+    expect(results.some((r) => r.kind === "file")).toBe(true);
+  });
+
+  it("finds conventions by description", () => {
+    const results = search(makeAnalysis(), "kebab");
+    expect(results.some((r) => r.kind === "convention")).toBe(true);
+  });
+
+  it("respects limit", () => {
+    const results = search(makeAnalysis(), "a", undefined, 2);
+    expect(results.length).toBeLessThanOrEqual(2);
+  });
+
+  it("returns empty for no matches", () => {
+    const results = search(makeAnalysis(), "xyznonexistent");
+    expect(results).toEqual([]);
+  });
+
+  it("deduplicates API vs call graph", () => {
+    // "analyze" is in publicAPI — should not appear twice from call graph
+    const results = search(makeAnalysis(), "analyze");
+    const analyzeResults = results.filter((r) => r.name === "analyze");
+    expect(analyzeResults.length).toBe(1);
+  });
+});
+
+describe("findReferences", () => {
+  it("finds definition and importers for a public API type", () => {
+    const result = findReferences(makeAnalysis(), "Config");
+    expect(result.sourceFile).toBe("src/types.ts");
+    expect(result.symbolKind).toBe("type");
+    expect(result.references.length).toBeGreaterThan(0);
+    expect(result.references.some((r) => r.kind === "definition")).toBe(true);
+  });
+
+  it("finds importers via import chain", () => {
+    const result = findReferences(makeAnalysis(), "StructuredAnalysis");
+    const imports = result.references.filter((r) => r.kind === "import");
+    expect(imports.length).toBeGreaterThan(0);
+    expect(imports.some((r) => r.file === "src/pipeline.ts")).toBe(true);
+  });
+
+  it("returns empty references for nonexistent symbol", () => {
+    const result = findReferences(makeAnalysis(), "nonExistent");
+    expect(result.sourceFile).toBeNull();
+    expect(result.references.length).toBe(0);
+  });
+
+  it("resolves source file from import chain when not in API", () => {
+    // fileNamingDetector is imported from src/detectors/file-naming.ts
+    const result = findReferences(makeAnalysis(), "fileNamingDetector");
+    expect(result.sourceFile).toBe("src/detectors/file-naming.ts");
+  });
+});
+
+describe("getModuleDoc (query function)", () => {
+  it("returns files in the requested directory only", () => {
+    const doc = getModuleDoc(makeAnalysis(), "src/detectors");
+    // Only files directly in src/detectors/, not in src/ or nested dirs
+    for (const f of doc.files) {
+      expect(f.path.startsWith("src/detectors/")).toBe(true);
+    }
+  });
+
+  it("returns dependencies on external files", () => {
+    // src/detectors/file-naming.ts imports from src/types.ts (external to module)
+    const doc = getModuleDoc(makeAnalysis(), "src/detectors");
+    expect(doc.dependencies.some((d) => d.file === "src/types.ts")).toBe(true);
+  });
+
+  it("returns dependents that import from this module", () => {
+    // src/convention-extractor.ts imports from src/detectors/file-naming.ts
+    const doc = getModuleDoc(makeAnalysis(), "src/detectors");
+    expect(doc.dependents.some((d) => d.file === "src/convention-extractor.ts")).toBe(true);
+  });
+
+  it("includes contribution pattern", () => {
+    const doc = getModuleDoc(makeAnalysis(), "src/detectors");
+    expect(doc.contribution).toBeDefined();
+    expect(doc.contribution!.exportSuffix).toBe("Detector");
+    expect(doc.contribution!.registrationFile).toBe("src/convention-extractor.ts");
+  });
+});
+
+describe("getExecutionFlows", () => {
+  it("returns flows for the package", () => {
+    const flows = getExecutionFlows(makeAnalysis());
+    expect(flows.length).toBeGreaterThan(0);
+    expect(flows[0].entryPoint).toBe("runPipeline");
+  });
+});
+
+describe("getFlowsForFiles", () => {
+  it("returns flows containing the specified files", () => {
+    const flows = getFlowsForFiles(makeAnalysis(), ["src/pipeline.ts"]);
+    expect(flows.length).toBeGreaterThan(0);
+  });
+
+  it("returns empty for files not in any flow", () => {
+    const flows = getFlowsForFiles(makeAnalysis(), ["src/nonexistent.ts"]);
+    expect(flows).toEqual([]);
+  });
+});
+
+describe("getFlowsForFunction", () => {
+  it("returns flows containing the specified function", () => {
+    const flows = getFlowsForFunction(makeAnalysis(), "runPipeline");
+    expect(flows.length).toBeGreaterThan(0);
+  });
+
+  it("returns empty for function not in any flow", () => {
+    const flows = getFlowsForFunction(makeAnalysis(), "nonExistent");
+    expect(flows).toEqual([]);
   });
 });
