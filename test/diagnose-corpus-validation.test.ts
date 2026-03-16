@@ -1,14 +1,14 @@
-// test/diagnose-corpus-validation.test.ts — Empirical validation of diagnose scoring
+// test/diagnose-corpus-validation.test.ts — Empirical validation of MCP tools
 // against a corpus of real bug-fix commits from 7+ repos.
 //
 // Each fixture contains: import chain, co-change edges, call graph, workflow rules,
 // and bug-fix commits with known root cause files.
 //
-// Metrics:
-//   precision@1: % of commits where #1 suspect IS the root cause
-//   recall@3:    % of commits where root cause appears in top 3 suspects
-//   recall@5:    % of commits where root cause appears in top 5 suspects
-//   MRR:         mean reciprocal rank (1/rank of first correct result)
+// Tools evaluated:
+//   diagnose:       P@1, R@3, R@5, MRR (root cause identification)
+//   plan_change:    recall of co-modified source files
+//   analyze_impact: recall of all co-committed files (source + test)
+//   search:         hit rate (does search find modified files by name?)
 
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -224,5 +224,168 @@ describe("diagnose corpus validation", () => {
 
     // With recency signal, results should be at least as good as structural-only
     expect(p1).toBeGreaterThanOrEqual(15);
+  });
+});
+
+// ─── plan_change Evaluation ──────────────────────────────────────────────────
+// For multi-source commits: input one source file, check if the tool's
+// import graph + co-change data predicts the other modified source files.
+
+describe("plan_change corpus validation", () => {
+  const corpus = loadCorpus();
+
+  it("measures recall of co-modified source files", () => {
+    let tested = 0;
+    let totalRecall = 0;
+    const perRepo: Record<string, { tested: number; recallSum: number }> = {};
+
+    for (const entry of corpus) {
+      const analysis = buildMockAnalysis(entry);
+      const repoStats = { tested: 0, recallSum: 0 };
+
+      for (const commit of entry.commits) {
+        if (commit.sourceFiles.length < 2) continue; // Need 2+ source files
+
+        const inputFile = commit.sourceFiles[0];
+        const expectedOthers = commit.sourceFiles.filter((f) => f !== inputFile);
+
+        // Collect what plan_change would predict: importers + co-change partners
+        const importers = Q.getImportersForFile(analysis, inputFile);
+        const coChanges = Q.getCoChangesForFile(analysis, inputFile);
+        const implicit = Q.getImplicitCouplingForFile(analysis, inputFile);
+        const predicted = new Set([
+          ...importers.map((e) => e.importer),
+          ...importers.map((e) => e.source),
+          ...coChanges.map((e) => (e.file1 === inputFile ? e.file2 : e.file1)),
+          ...implicit.map((e) => (e.file1 === inputFile ? e.file2 : e.file1)),
+        ]);
+
+        const hits = expectedOthers.filter((f) => predicted.has(f));
+        const recall = hits.length / expectedOthers.length;
+
+        tested++;
+        totalRecall += recall;
+        repoStats.tested++;
+        repoStats.recallSum += recall;
+      }
+
+      if (repoStats.tested > 0) perRepo[entry.repo] = repoStats;
+    }
+
+    const avgRecall = tested > 0 ? Math.round((totalRecall / tested) * 100) : 0;
+
+    console.log(`\n  ═══ plan_change Corpus Validation ═══`);
+    console.log(`  Multi-source commits tested: ${tested}`);
+    console.log(`  Average recall: ${avgRecall}%`);
+    console.log(``);
+    console.log(`  Per-repo breakdown:`);
+    for (const [repo, stats] of Object.entries(perRepo)) {
+      const r = Math.round((stats.recallSum / stats.tested) * 100);
+      console.log(`    ${repo.padEnd(20)} tested=${stats.tested}  recall=${r}%`);
+    }
+
+    expect(tested).toBeGreaterThanOrEqual(10);
+    expect(avgRecall).toBeGreaterThanOrEqual(20);
+  });
+});
+
+// ─── analyze_impact Evaluation ───────────────────────────────────────────────
+// For multi-file commits: input one source file, check if blast radius
+// (importers + co-change) includes the other committed files (source + test).
+
+describe("analyze_impact corpus validation", () => {
+  const corpus = loadCorpus();
+
+  it("measures recall of all co-committed files", () => {
+    let tested = 0;
+    let totalRecall = 0;
+    const perRepo: Record<string, { tested: number; recallSum: number }> = {};
+
+    for (const entry of corpus) {
+      const analysis = buildMockAnalysis(entry);
+      const repoStats = { tested: 0, recallSum: 0 };
+
+      for (const commit of entry.commits) {
+        const allFiles = [...new Set([...commit.sourceFiles, ...commit.testFiles])];
+        if (allFiles.length < 3) continue; // Need 3+ files for meaningful blast radius test
+
+        const inputFile = commit.sourceFiles[0];
+        const expectedOthers = allFiles.filter((f) => f !== inputFile);
+
+        // Collect what analyze_impact would report
+        const importers = Q.getImportersForFile(analysis, inputFile);
+        const coChanges = Q.getCoChangesForFile(analysis, inputFile);
+        const predicted = new Set([
+          ...importers.map((e) => e.importer),
+          ...importers.map((e) => e.source),
+          ...coChanges.map((e) => (e.file1 === inputFile ? e.file2 : e.file1)),
+        ]);
+
+        const hits = expectedOthers.filter((f) => predicted.has(f));
+        const recall = hits.length / expectedOthers.length;
+
+        tested++;
+        totalRecall += recall;
+        repoStats.tested++;
+        repoStats.recallSum += recall;
+      }
+
+      if (repoStats.tested > 0) perRepo[entry.repo] = repoStats;
+    }
+
+    const avgRecall = tested > 0 ? Math.round((totalRecall / tested) * 100) : 0;
+
+    console.log(`\n  ═══ analyze_impact Corpus Validation ═══`);
+    console.log(`  Multi-file commits tested: ${tested}`);
+    console.log(`  Average recall: ${avgRecall}%`);
+    console.log(``);
+    console.log(`  Per-repo breakdown:`);
+    for (const [repo, stats] of Object.entries(perRepo)) {
+      const r = Math.round((stats.recallSum / stats.tested) * 100);
+      console.log(`    ${repo.padEnd(20)} tested=${stats.tested}  recall=${r}%`);
+    }
+
+    expect(tested).toBeGreaterThanOrEqual(10);
+    expect(avgRecall).toBeGreaterThanOrEqual(15);
+  });
+});
+
+// ─── search Evaluation ───────────────────────────────────────────────────────
+// For each commit: extract filename stems from modified files, search for them,
+// check if the search results include the actual file.
+
+describe("search corpus validation", () => {
+  const corpus = loadCorpus();
+
+  it("measures hit rate — does search find modified files by name?", () => {
+    let tested = 0;
+    let hits = 0;
+
+    for (const entry of corpus) {
+      const analysis = buildMockAnalysis(entry);
+
+      for (const commit of entry.commits) {
+        for (const file of commit.sourceFiles) {
+          // Extract filename stem: "src/ast-parser.ts" → "ast-parser"
+          const stem = file.replace(/.*\//, "").replace(/\.[^.]+$/, "");
+          if (stem.length < 3) continue; // Skip very short names (e.g., "a.ts")
+
+          const results = Q.search(analysis, stem);
+          const found = results.some((r) => r.sourceFile === file || r.name === file);
+
+          tested++;
+          if (found) hits++;
+        }
+      }
+    }
+
+    const hitRate = tested > 0 ? Math.round((hits / tested) * 100) : 0;
+
+    console.log(`\n  ═══ search Corpus Validation ═══`);
+    console.log(`  File searches tested: ${tested}`);
+    console.log(`  Hit rate: ${hits}/${tested} (${hitRate}%)`);
+
+    expect(tested).toBeGreaterThanOrEqual(50);
+    expect(hitRate).toBeGreaterThanOrEqual(50);
   });
 });
