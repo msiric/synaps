@@ -28,7 +28,7 @@ npx autodocs-engine setup-hooks
 npx autodocs-engine init
 ```
 
-## MCP Tools (13)
+## MCP Tools (14)
 
 | Tool | What It Returns |
 |------|----------------|
@@ -44,6 +44,7 @@ npx autodocs-engine init
 | `auto_register` | Exact code insertions for registration + barrel updates |
 | `review_changes` | Pattern compliance: suffix, imports, registration, barrel, tests |
 | `diagnose` | Root cause analysis with confidence level (high/medium/low), import path traces, and 7 scoring signals |
+| `search` | Find symbols, files, and conventions by name or concept — searches public API, internal functions, file paths, and conventions with call graph enrichment |
 | `list_packages` | Monorepo package inventory |
 
 Every tool response includes **next-step hints** guiding the agent to the logical next action.
@@ -160,8 +161,8 @@ Options:
 
 ## Stats
 
-- 713 tests across 53 files
-- 13 MCP tools with next-step hints
+- 722 tests across 53 files
+- 14 MCP tools with next-step hints
 - 13 convention detectors
 - 95-commit diagnose validation corpus (10 repos)
 - 10 execution flows detected on medium codebases

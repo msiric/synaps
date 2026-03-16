@@ -506,3 +506,86 @@ describe("formatSessionSummary", () => {
     expect(json).toContain("3");
   });
 });
+
+// ─── Search Tool ──────────────────────────────────────────────────────────────
+
+describe("handleSearch", () => {
+  it("finds public API symbols by name", () => {
+    const result = tools.handleSearch(makeAnalysis(), { query: "analyze" });
+    const text = result.content[0].text;
+    expect(text).toContain("analyze");
+    expect(text).toContain("function");
+    expect(text).toContain("src/index.ts");
+    expect(text).toContain("imported by 12 files");
+  });
+
+  it("finds call-graph-only functions not in public API", () => {
+    const result = tools.handleSearch(makeAnalysis(), { query: "parseFile" });
+    const text = result.content[0].text;
+    expect(text).toContain("parseFile");
+    expect(text).toContain("src/ast-parser.ts");
+    // parseFile is a callee of analyzePackage — verify caller enrichment
+    expect(text).toContain("called by: analyzePackage");
+  });
+
+  it("finds files by path", () => {
+    const result = tools.handleSearch(makeAnalysis(), { query: "formatter" });
+    const text = result.content[0].text;
+    // src/formatter.ts appears in importChain as an importer
+    expect(text).toContain("src/formatter.ts");
+    expect(text).toContain("Files");
+  });
+
+  it("finds conventions by description", () => {
+    const result = tools.handleSearch(makeAnalysis(), { query: "kebab" });
+    const text = result.content[0].text;
+    expect(text).toContain("kebab-case");
+    expect(text).toContain("convention");
+  });
+
+  it("finds workflow rules", () => {
+    const result = tools.handleSearch(makeAnalysis(), { query: "types.ts" });
+    const text = result.content[0].text;
+    // types.ts is in publicAPI (Config type), importChain, and workflow rules
+    expect(text).toContain("Conventions & Rules");
+    expect(text).toContain("When modifying src/types.ts");
+  });
+
+  it("deduplicates API vs call graph — API entry wins", () => {
+    // "runPipeline" is in call graph (from field). It's not in publicAPI in default fixture.
+    // "analyze" IS in publicAPI. Verify it doesn't appear twice.
+    const result = tools.handleSearch(makeAnalysis(), { query: "analyze" });
+    const text = result.content[0].text;
+    const matches = text.match(/\*\*analyze\*\*/g);
+    expect(matches).toHaveLength(1);
+  });
+
+  it("returns helpful message when nothing found", () => {
+    const result = tools.handleSearch(makeAnalysis(), { query: "xyznonexistent" });
+    const text = result.content[0].text;
+    expect(text).toContain("No results found");
+  });
+
+  it("respects limit parameter", () => {
+    const result = tools.handleSearch(makeAnalysis(), { query: "a", limit: 2 });
+    const text = result.content[0].text;
+    const resultLines = text.split("\n").filter((l) => l.startsWith("- "));
+    expect(resultLines.length).toBeLessThanOrEqual(2);
+  });
+
+  it("enriches function results with callees", () => {
+    const result = tools.handleSearch(makeAnalysis(), { query: "runPipeline" });
+    const text = result.content[0].text;
+    expect(text).toContain("runPipeline");
+    // runPipeline calls analyzePackage per the fixture call graph
+    expect(text).toContain("calls: analyzePackage");
+  });
+
+  it("file results include co-change context", () => {
+    const result = tools.handleSearch(makeAnalysis(), { query: "formatter" });
+    const text = result.content[0].text;
+    // src/formatter.ts co-changes with src/types.ts per the fixture gitHistory
+    expect(text).toContain("co-changes with");
+    expect(text).toContain("47%");
+  });
+});

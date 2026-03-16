@@ -833,6 +833,59 @@ export function handleReviewChanges(
   return { content: [{ type: "text", text: lines.join("\n") }] };
 }
 
+// ─── search ──────────────────────────────────────────────────────────────────
+
+export function handleSearch(
+  analysis: StructuredAnalysis,
+  args: { query: string; packagePath?: string; limit?: number },
+): ToolResult {
+  const results = Q.search(analysis, args.query, args.packagePath, args.limit);
+
+  const lines: string[] = [];
+  lines.push(`## Search Results: "${args.query}"`);
+  lines.push("");
+
+  if (results.length === 0) {
+    lines.push("No results found. Try a different search term or check spelling.");
+    return { content: [{ type: "text", text: lines.join("\n") }] };
+  }
+
+  // Group results by kind category
+  const symbols = results.filter((r) => r.kind !== "file" && r.kind !== "convention" && r.kind !== "rule");
+  const files = results.filter((r) => r.kind === "file");
+  const conventions = results.filter((r) => r.kind === "convention" || r.kind === "rule");
+
+  if (symbols.length > 0) {
+    lines.push(`### Symbols (${symbols.length})`);
+    for (const r of symbols) {
+      let detail = `\`${r.sourceFile}\``;
+      if (r.importCount > 0) detail += ` | imported by ${r.importCount} files`;
+      if (r.callers.length > 0) detail += ` | called by: ${r.callers.join(", ")}`;
+      if (r.callees.length > 0) detail += ` | calls: ${r.callees.join(", ")}`;
+      lines.push(`- **${r.name}** (${r.kind}) — ${detail}`);
+    }
+    lines.push("");
+  }
+
+  if (files.length > 0) {
+    lines.push(`### Files (${files.length})`);
+    for (const r of files) {
+      lines.push(`- \`${r.name}\`${r.context ? ` — ${r.context}` : ""}`);
+    }
+    lines.push("");
+  }
+
+  if (conventions.length > 0) {
+    lines.push(`### Conventions & Rules (${conventions.length})`);
+    for (const r of conventions) {
+      lines.push(`- **${r.name}** (${r.kind}) — ${r.context ?? r.sourceFile}`);
+    }
+    lines.push("");
+  }
+
+  return { content: [{ type: "text", text: lines.join("\n") }] };
+}
+
 // ─── diagnose ────────────────────────────────────────────────────────────────
 
 const CONFIG_FILES = ["tsconfig.json", "package.json", ".env", ".env.local"];

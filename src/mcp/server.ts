@@ -67,6 +67,7 @@ ONBOARDING (new codebase):
 - Call get_commands for build/test/lint commands and tech stack
 - Call get_conventions for project-specific DO/DON'T rules
 - Call get_architecture for directory structure and entry points
+- Call search to find code by concept when you don't know the file path
 
 BEFORE MODIFYING FILES:
 - Call plan_change with the files you plan to edit — it returns dependent files from the import graph, co-change partners from git history, registration/barrel files that need updating, and an ordered checklist. This information is NOT available from reading files or grep.
@@ -107,6 +108,8 @@ function getNextStepHint(toolName: string): string {
       return "\n\n**Next:** Call `get_architecture` with a specific package to explore it.";
     case "auto_register":
       return "\n\n**Next:** Call `review_changes` to verify pattern compliance.";
+    case "search":
+      return "\n\n**Next:** Call `analyze_impact` or `plan_change` on a result to understand its dependencies.";
     default:
       return "";
   }
@@ -489,6 +492,27 @@ DO NOT CALL:
       packagePath: z.string().optional().describe("Package path or name"),
     },
     async (args) => withTelemetry("diagnose", () => cache.get().then((a) => tools.handleDiagnose(a, args)), args),
+  );
+
+  // ─── New: search ────────────────────────────────────────────────
+  server.tool(
+    "search",
+    `Search for symbols, files, and patterns across the codebase. Returns functions, types, files, and conventions matching the query, enriched with call graph context (callers/callees) and co-change partners.
+
+WHEN TO CALL:
+- User asks "where is X?", "find the authentication code", "what handles validation?"
+- User needs to discover code by concept before knowing specific file paths
+- User wants to find internal functions not in the public API
+
+DO NOT CALL:
+- User already knows the file and wants impact analysis (use analyze_impact)
+- User wants to understand what changes when modifying known files (use plan_change)`,
+    {
+      query: z.string().describe("Search term — matches symbol names, file paths, and convention descriptions"),
+      packagePath: z.string().optional().describe("Package path or name"),
+      limit: z.number().min(1).max(50).optional().describe("Max results. Default: 20."),
+    },
+    async (args) => withTelemetry("search", () => cache.get().then((a) => tools.handleSearch(a, args)), args),
   );
 
   return { server, cache, session };
