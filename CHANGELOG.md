@@ -18,10 +18,28 @@
 - **Co-change clusters persisted** — Computed once in pipeline via `detectClusters()`, stored on `PackageAnalysis`, read by tools and resources. No longer recomputed per tool call.
 - **Disk snapshot expanded** — Cache snapshot now includes conventions, implicit coupling, co-change clusters, and workflow rules for hook consumption.
 
+### Visualization
+
+- **`autodocs-engine visualize`** — Full-viewport interactive codebase topology. Dark canvas with D3 force-directed graph showing three edge types simultaneously: imports (solid), co-change (dashed amber), implicit coupling (dotted pink). Click any module to see blast radius in a slide-in panel. Collapsible drawer for execution flows and conventions. Self-contained HTML file, no framework.
+
+### Benchmarks
+
+- **Production-grade tool evaluation** — 14 repos, 174 commits. diagnose R@3=33%, plan_change recall=69%, analyze_impact recall=42%, search hit_rate=82%. Corpus includes 4 application-style repos (documenso, formbricks, payload, vendure).
+- **Automated corpus builder** — `scripts/build-corpus-entry.ts` generates corpus entries from any repo.
+
+### Performance & Security
+
+- Pre-indexed scoring loops in `buildSuspectList` (O(n) with Map lookups, was O(n²))
+- Pre-indexed `findReferences` re-export detection
+- Eliminated duplicate query calls in `analyze_impact`
+- TOCTOU cache bug fixed (key captured before analysis, was after)
+- Multi-repo error path no longer crashes telemetry
+- `resolveCache` suffix matching tightened (requires `/` for path matching)
+
 ### Stats
 
 - 16 MCP tools + 5 resources + 2 prompts (was 13 tools)
-- 770 tests (was 713)
+- 781 tests across 54 files (was 713 across 53)
 
 ## 0.10.1 (2026-03-15)
 
