@@ -1026,7 +1026,12 @@ export function handleRename(
   analysis: StructuredAnalysis,
   args: { symbolName: string; newName: string; filePath?: string; packagePath?: string },
 ): ToolResult {
-  const { references, symbol, sourceFile, symbolKind } = Q.findReferences(analysis, args.symbolName, args.packagePath);
+  const { references, symbol, sourceFile, symbolKind } = Q.findReferences(
+    analysis,
+    args.symbolName,
+    args.packagePath,
+    args.filePath,
+  );
 
   const lines: string[] = [];
   lines.push(`## Rename: ${symbol} → ${args.newName}`);

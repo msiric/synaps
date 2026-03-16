@@ -208,11 +208,17 @@ export function createAutodocsServer(
 
     return safeToolHandler(fn).then((result) => {
       const latencyMs = Math.round(performance.now() - start);
-      const usedCache =
-        caches.size === 1
-          ? caches.values().next().value!
-          : resolveCache((args as Record<string, unknown> | undefined)?.repo as string | undefined);
-      const cacheStatus = usedCache.lastWasCacheHit ? "hit" : "miss";
+      let cacheStatus = "unknown";
+      let usedCache: AnalysisCache | null = null;
+      try {
+        usedCache =
+          caches.size === 1
+            ? caches.values().next().value!
+            : resolveCache((args as Record<string, unknown> | undefined)?.repo as string | undefined);
+        cacheStatus = usedCache.lastWasCacheHit ? "hit" : "miss";
+      } catch {
+        // resolveCache may throw if repo param was invalid — telemetry should not crash
+      }
       const isError = Boolean(result.isError);
 
       // Estimate output tokens (filter to text blocks only — non-text blocks are ignored)
@@ -259,7 +265,7 @@ export function createAutodocsServer(
       }
 
       // Append freshness metadata to every tool response
-      if (!isError && result.content.length > 0) {
+      if (!isError && usedCache && result.content.length > 0) {
         const meta = usedCache.getMeta();
         const last = result.content[result.content.length - 1];
         if (last.type === "text") {
@@ -409,7 +415,7 @@ DO NOT CALL:
       withTelemetry(
         "list_packages",
         () =>
-          resolveCache(args.repo)
+          resolveCache(args?.repo)
             .get()
             .then((a) => tools.handleListPackages(a)),
         args,

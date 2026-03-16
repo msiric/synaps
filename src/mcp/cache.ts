@@ -103,12 +103,13 @@ export class AnalysisCache {
     // At-most-one concurrent analysis
     if (this.inflight) return this.inflight;
 
+    const keyAtStart = key; // Capture before analysis — avoids TOCTOU if files change during analysis
     this.inflight = (async () => {
       const analysis = await analyze({
         packages: [this.projectPath],
         typeChecking: this.options.typeChecking,
       });
-      this.cached = { analysis, key: this.getCacheKey(), analyzedAt: new Date().toISOString() };
+      this.cached = { analysis, key: keyAtStart, analyzedAt: new Date().toISOString() };
       this.persistToDisk(analysis);
       return analysis;
     })();

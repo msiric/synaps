@@ -627,9 +627,14 @@ export function search(analysis: StructuredAnalysis, query: string, packagePath?
       if (!filePath.toLowerCase().includes(q)) continue;
       seenFiles.add(filePath);
 
-      // Find top co-change partner for context
+      // Find highest-Jaccard co-change partner for context
       let context: string | undefined;
-      const coChange = coChangeEdges.find((e) => e.file1 === filePath || e.file2 === filePath);
+      let coChange: (typeof coChangeEdges)[number] | undefined;
+      for (const e of coChangeEdges) {
+        if ((e.file1 === filePath || e.file2 === filePath) && (!coChange || e.jaccard > coChange.jaccard)) {
+          coChange = e;
+        }
+      }
       if (coChange) {
         const partner = coChange.file1 === filePath ? coChange.file2 : coChange.file1;
         context = `co-changes with ${partner} (${Math.round(coChange.jaccard * 100)}%)`;
@@ -699,13 +704,21 @@ export interface RenameResult {
 /**
  * Find all references to a symbol across the codebase via import chain and call graph.
  * Returns the definition location and every file that imports or calls the symbol.
+ * Optional filePath narrows to the definition in that specific file (disambiguation).
  */
-export function findReferences(analysis: StructuredAnalysis, symbolName: string, packagePath?: string): RenameResult {
+export function findReferences(
+  analysis: StructuredAnalysis,
+  symbolName: string,
+  packagePath?: string,
+  filePath?: string,
+): RenameResult {
   const pkg = resolvePackage(analysis, packagePath);
 
-  // Determine definition location and kind
-  const apiEntry = pkg.publicAPI.find((e) => e.name === symbolName);
-  let sourceFile: string | null = apiEntry?.sourceFile ?? null;
+  // Determine definition location and kind (filePath narrows when multiple files export same name)
+  const apiEntry = filePath
+    ? pkg.publicAPI.find((e) => e.name === symbolName && e.sourceFile === filePath)
+    : pkg.publicAPI.find((e) => e.name === symbolName);
+  let sourceFile: string | null = apiEntry?.sourceFile ?? filePath ?? null;
   let symbolKind: string = apiEntry?.kind ?? "unknown";
 
   // Fall back to call graph for internal functions
@@ -1396,9 +1409,9 @@ export function buildSuspectList(
   const relevant = [...changedFiles].filter((f) => errorSet.has(f) || allCandidates.has(f));
 
   for (const changedFile of relevant) {
-    for (const edge of coChangeEdges) {
-      const partner = edge.file1 === changedFile ? edge.file2 : edge.file2 === changedFile ? edge.file1 : null;
-      if (!partner || changedFiles.has(partner)) continue;
+    for (const edge of coChangeByFile.get(changedFile) ?? []) {
+      const partner = edge.file1 === changedFile ? edge.file2 : edge.file1;
+      if (changedFiles.has(partner)) continue;
       // Joint sigmoid: both Jaccard and count must be strong
       const score = sigmoid(edge.jaccard, 0.4, 5) * sigmoid(Math.log(edge.coChangeCount), Math.log(5), 3);
       if (score > 0.05) {
@@ -1418,7 +1431,13 @@ export function buildSuspectList(
     // Extract file paths from trigger/action text (they contain backtick-quoted paths)
     for (const text of [r.trigger, r.action]) {
       const matches = text.match(/`([^`]+)`/g);
-      if (matches) for (const m of matches) workflowFiles.add(m.slice(1, -1));
+      if (matches) {
+        for (const m of matches) {
+          const extracted = m.slice(1, -1);
+          // Only include file-path-like strings (contain / or have a file extension)
+          if (extracted.includes("/") || /\.\w+$/.test(extracted)) workflowFiles.add(extracted);
+        }
+      }
     }
   }
 
@@ -1494,7 +1513,7 @@ export function buildSuspectList(
     }
     if (signals.dependency > 0) {
       const isUpstream = (upstreamSymbols.get(file) ?? 0) > 0;
-      const symCount = Math.max(upstreamSymbols.get(file) ?? 0, downstreamSymbols.get(file) ?? 0);
+      const symCount = Math.round(Math.max(upstreamSymbols.get(file) ?? 0, downstreamSymbols.get(file) ?? 0));
       reasons.push(`${symCount} symbols ${isUpstream ? "(dependency of" : "(depends on"} error site)`);
     }
     if (signals.directoryLocality > 0) {
