@@ -135,6 +135,13 @@ async function main() {
     return;
   }
 
+  // Handle "visualize" subcommand — generate HTML report
+  if (args.packages[0] === "visualize") {
+    const { runVisualize } = await import("./visualize.js");
+    await runVisualize({ path: args.packages[1], verbose: args.verbose });
+    process.exit(0);
+  }
+
   // Strip "analyze" subcommand if present
   if (args.packages[0] === "analyze") {
     args.packages.shift();

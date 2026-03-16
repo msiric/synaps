@@ -35,3 +35,4 @@ benchmark-results/
 
 # Telemetry
 .autodocs/
+autodocs-report.html
