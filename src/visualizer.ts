@@ -144,12 +144,12 @@ const svg=d3.select('#graph').attr('viewBox',[0,0,W,H]);
 const NC=G.nodes.length;
 const maxImp=Math.max(1,...G.nodes.map(n=>n.importedBy));
 
-// Directory cluster centers — spread evenly across the viewport
+// Directory cluster centers — spread across the full viewport
 const dirs=[...new Set(G.nodes.map(n=>n.dir))];
 const dirCenters={};
 dirs.forEach((d,i)=>{
-  const angle=(2*Math.PI*i)/dirs.length;
-  const rx=W*0.3,ry=H*0.3;
+  const angle=(2*Math.PI*i)/dirs.length - Math.PI/2;
+  const rx=W*0.38,ry=H*0.36;
   dirCenters[d]={x:W/2+Math.cos(angle)*rx, y:H/2+Math.sin(angle)*ry};
 });
 
@@ -157,31 +157,33 @@ dirs.forEach((d,i)=>{
 const dirColor={};
 dirs.forEach((d,i)=>{dirColor[d]=PAL[i%PAL.length]});
 
-// Force simulation — files cluster toward their directory center
+// Force simulation — strong directory clustering, strong inter-cluster repulsion
 const sim=d3.forceSimulation(G.nodes)
-  .force('link',d3.forceLink(G.edges).id(d=>d.id).distance(NC>80?25:NC>40?40:60).strength(0.3))
-  .force('charge',d3.forceManyBody().strength(NC>80?-15:NC>40?-30:-60))
-  .force('collision',d3.forceCollide().radius(NC>80?6:NC>40?8:12))
-  .force('x',d3.forceX(d=>dirCenters[d.dir].x).strength(0.15))
-  .force('y',d3.forceY(d=>dirCenters[d.dir].y).strength(0.15));
+  .force('link',d3.forceLink(G.edges).id(d=>d.id).distance(30).strength(0.15))
+  .force('charge',d3.forceManyBody().strength(-80))
+  .force('collision',d3.forceCollide().radius(14))
+  .force('x',d3.forceX(d=>dirCenters[d.dir].x).strength(0.35))
+  .force('y',d3.forceY(d=>dirCenters[d.dir].y).strength(0.35));
 
-// Directory group hulls — rounded boundaries around each directory's files
+// Directory group hulls
 const hullLayer=svg.append('g');
-const hullPad=NC>80?12:NC>40?18:28;
+const hullPad=30;
 const hulls=hullLayer.selectAll('path').data(dirs).join('path')
-  .attr('fill',d=>dirColor[d]).attr('fill-opacity',0.04)
-  .attr('stroke',d=>dirColor[d]).attr('stroke-opacity',0.12)
-  .attr('stroke-width',1).attr('stroke-linejoin','round');
+  .attr('fill',d=>dirColor[d]).attr('fill-opacity',0.05)
+  .attr('stroke',d=>dirColor[d]).attr('stroke-opacity',0.15)
+  .attr('stroke-width',1.5).attr('stroke-linejoin','round');
 
-// Directory name labels — anchored to hull centroid
+// Directory name labels — prominent, above hull
 const dirLabels=hullLayer.selectAll('text').data(dirs).join('text')
   .attr('text-anchor','middle')
   .attr('fill',d=>dirColor[d])
-  .attr('opacity',0.3)
-  .attr('font-size',NC>80?'9px':NC>40?'10px':'11px')
-  .attr('font-weight','600')
-  .attr('paint-order','stroke').attr('stroke','#0a0a0f').attr('stroke-width',3)
-  .text(d=>{const p=d.split('/');return p.at(-1)||d});
+  .attr('opacity',0.7)
+  .attr('font-size','13px')
+  .attr('font-weight','700')
+  .attr('paint-order','stroke').attr('stroke','#0a0a0f').attr('stroke-width',4)
+  .text(d=>{const p=d.split('/');return p.at(-1)||d})
+  .style('cursor','pointer')
+  .on('click',(e,d)=>{e.stopPropagation();selectDir(d)});
 
 function computeHullPath(points,pad){
   if(points.length<1)return'';
@@ -209,7 +211,6 @@ glow.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
 const mg=glow.append('feMerge');mg.append('feMergeNode').attr('in','blur');mg.append('feMergeNode').attr('in','SourceGraphic');
 
 // File nodes
-const nodeR=NC>80?3:NC>40?4:6;
 const node=svg.append('g').selectAll('g').data(G.nodes).join('g')
   .call(d3.drag().on('start',(e,d)=>{if(!e.active)sim.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y})
     .on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y}).on('end',(e,d)=>{if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null}))
@@ -217,20 +218,19 @@ const node=svg.append('g').selectAll('g').data(G.nodes).join('g')
   .style('cursor','pointer');
 
 node.append('circle')
-  .attr('r',d=>nodeR+Math.sqrt(d.importedBy/maxImp)*(NC>80?6:NC>40?10:16))
+  .attr('r',d=>5+Math.sqrt(d.importedBy/maxImp)*14)
   .attr('fill',d=>dirColor[d.dir]+'33')
   .attr('stroke',d=>dirColor[d.dir])
-  .attr('stroke-width',0.8);
+  .attr('stroke-width',1);
 
-// Labels — only show for larger/more-imported files to reduce clutter
-const labelThreshold=NC>80?5:NC>40?2:1;
-node.filter(d=>d.importedBy>=labelThreshold).append('text')
-  .text(d=>d.name.replace(/\\.[^.]+$/,''))
+// ALL files get labels
+node.append('text')
+  .text(d=>d.name.replace(/.[^.]+$/,''))
   .attr('text-anchor','middle')
-  .attr('dy',d=>-(nodeR+2+Math.sqrt(d.importedBy/maxImp)*(NC>80?6:NC>40?10:16)))
-  .attr('font-size',NC>80?'7px':NC>40?'8px':'10px')
-  .attr('fill','#666').attr('font-weight','500')
-  .attr('paint-order','stroke').attr('stroke','#0a0a0f').attr('stroke-width',NC>80?2:3);
+  .attr('dy',d=>-(9+Math.sqrt(d.importedBy/maxImp)*14))
+  .attr('font-size','8px')
+  .attr('fill','#555').attr('font-weight','500')
+  .attr('paint-order','stroke').attr('stroke','#0a0a0f').attr('stroke-width',3);
 
 const pad=50;
 sim.on('tick',()=>{
@@ -243,7 +243,7 @@ sim.on('tick',()=>{
     return computeHullPath(pts,hullPad);
   });
   dirLabels.attr('x',d=>{const fs=G.nodes.filter(n=>n.dir===d);return fs.length?d3.mean(fs,n=>n.x):0})
-    .attr('y',d=>{const fs=G.nodes.filter(n=>n.dir===d);return fs.length?d3.mean(fs,n=>n.y)-((NC>80?12:NC>40?18:28)+4):0});
+    .attr('y',d=>{const fs=G.nodes.filter(n=>n.dir===d);if(!fs.length)return 0;return d3.min(fs,n=>n.y)-(hullPad+8)});
 });
 
 function selectFile(d){
@@ -280,6 +280,40 @@ function selectFile(d){
   if(impBy.length){h+='<h3>Imported by ('+impBy.length+')</h3><ul>';impBy.slice(0,10).forEach(e=>{const s=typeof e.source==='object'?e.source.id:e.source;h+='<li><code>'+s.split('/').pop()+'</code><span class="badge badge-b">'+e.weight+'</span></li>'});h+='</ul>'}
   if(imp.length){h+='<h3>Imports ('+imp.length+')</h3><ul>';imp.slice(0,10).forEach(e=>{const t=typeof e.target==='object'?e.target.id:e.target;h+='<li><code>'+t.split('/').pop()+'</code><span class="badge badge-b">'+e.weight+'</span></li>'});h+='</ul>'}
   if(ucoc.length){h+='<h3>Co-changes</h3><ul>';ucoc.slice(0,8).forEach(e=>{const p=e[0]===path?e[1]:e[0];h+='<li><code>'+p.split('/').pop()+'</code><span class="badge badge-a">'+e[2]+'%</span></li>'});h+='</ul>'}
+  document.getElementById('panel-content').innerHTML=h;
+  document.getElementById('panel').classList.add('open');
+}
+
+function selectDir(dir){
+  document.getElementById('hint').style.opacity='0';
+  node.select('circle').attr('opacity',.12).attr('filter',null);
+  link.attr('opacity',.03);
+  // Highlight all files in this directory
+  node.filter(d=>d.dir===dir).select('circle').attr('opacity',1);
+  // Highlight edges connected to any file in this directory
+  const dirFiles=new Set(G.nodes.filter(n=>n.dir===dir).map(n=>n.id));
+  link.filter(e=>{
+    const s=typeof e.source==='object'?e.source.id:e.source;
+    const t=typeof e.target==='object'?e.target.id:e.target;
+    return dirFiles.has(s)||dirFiles.has(t);
+  }).attr('opacity',.7);
+
+  const files=G.nodes.filter(n=>n.dir===dir);
+  const totalImp=files.reduce((s,f)=>s+f.importedBy,0);
+  let h='<h2>'+dir+'/</h2>';
+  h+='<div class="sub">'+files.length+' files &middot; '+totalImp+' total imports</div>';
+  h+='<h3>Files</h3><ul>';
+  files.sort((a,b)=>b.importedBy-a.importedBy).forEach(f=>{
+    h+='<li><code>'+f.name+'</code><span class="badge badge-b">'+f.importedBy+'</span></li>';
+  });
+  h+='</ul>';
+  const coc=CC.filter(e=>(e[0].startsWith(dir+'/')&&!e[1].startsWith(dir+'/'))||(e[1].startsWith(dir+'/')&&!e[0].startsWith(dir+'/')));
+  if(coc.length){
+    const seen=new Set();const ucoc=coc.filter(e=>{const k=e[0]+e[1];if(seen.has(k))return false;seen.add(k);return true});
+    h+='<h3>Co-changes with other dirs</h3><ul>';
+    ucoc.slice(0,8).forEach(e=>{const p=e[0].startsWith(dir+'/')?e[1]:e[0];h+='<li><code>'+p.split('/').pop()+'</code><span class="badge badge-a">'+e[2]+'%</span></li>'});
+    h+='</ul>';
+  }
   document.getElementById('panel-content').innerHTML=h;
   document.getElementById('panel').classList.add('open');
 }
