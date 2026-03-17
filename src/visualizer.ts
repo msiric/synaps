@@ -75,7 +75,8 @@ svg{display:block;width:100%;height:100%}
 .panel .sub{font-size:12px;color:#555;margin-bottom:16px}
 .panel h3{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin:14px 0 6px}
 .panel ul{list-style:none}
-.panel li{font-size:12px;padding:4px 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #111}
+.panel li{font-size:12px;padding:4px 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #111;cursor:pointer;border-radius:4px;padding:4px 6px;transition:background 0.15s}
+.panel li:hover{background:rgba(255,255,255,0.04)}
 .panel li:last-child{border:none}
 .panel code{font-size:11px;color:#8a8a9a}
 .badge{font-size:9px;padding:1px 6px;border-radius:99px;font-weight:600}
@@ -103,6 +104,33 @@ svg{display:block;width:100%;height:100%}
 .cv-no{border-color:#f87171;background:rgba(248,113,113,0.05);color:#777}
 .cd{font-size:9px;color:#555}
 .hint{position:fixed;bottom:50px;left:50%;transform:translateX(-50%);font-size:12px;color:#333;z-index:5;transition:opacity 0.5s}
+/* ── Default visual state (all via CSS so .sel class can override) ── */
+.n-c{opacity:1;stroke-width:1px}
+.n-t{opacity:1;font-size:8px;font-weight:500}
+.edge-i{opacity:0.2;stroke-width:0.4px}
+.edge-c{opacity:0.5;stroke-width:1.2px}
+.edge-m{opacity:0.5;stroke-width:1.2px}
+.hull-v{fill-opacity:0.05;stroke-opacity:0.15;stroke-width:1.5px}
+.dir-l{opacity:0.7;font-size:13px}
+/* ── Selection: dim everything with one class toggle ── */
+svg.sel .n-c{opacity:0.12;filter:none}
+svg.sel .n-t{opacity:0.15}
+svg.sel .edge-i,svg.sel .edge-c,svg.sel .edge-m{opacity:0.03}
+svg.sel .hull-v{fill-opacity:0.02;stroke-opacity:0.06;stroke-width:1.5px}
+svg.sel .dir-l{opacity:0.25;font-size:13px}
+/* ── Highlight tiers (override dim) ── */
+svg.sel .hl>.n-c,svg.sel .n-c.hl{opacity:1}
+svg.sel .hl>.n-t,svg.sel .n-t.hl{opacity:1}
+svg.sel .hl-conn>.n-c{opacity:0.8}
+svg.sel .hl-conn>.n-t{opacity:0.8}
+svg.sel .hl-ext>.n-c{opacity:0.5}
+svg.sel .hl-ext>.n-t{opacity:0.5}
+svg.sel .hl-sel>.n-c{opacity:1;stroke-width:2px}
+svg.sel .hl-sel>.n-t{opacity:1;font-size:11px;font-weight:700}
+svg.sel .edge-i.hl{opacity:0.55;stroke-width:0.8px}
+svg.sel .edge-c.hl,svg.sel .edge-m.hl{opacity:0.7;stroke-width:1.4px}
+svg.sel .hull-v.hl{fill-opacity:0.12;stroke-opacity:0.6;stroke-width:2.5px}
+svg.sel .dir-l.hl{opacity:1;font-size:15px}
 </style>
 </head>
 <body>
@@ -165,20 +193,39 @@ const sim=d3.forceSimulation(G.nodes)
   .force('x',d3.forceX(d=>dirCenters[d.dir].x).strength(0.35))
   .force('y',d3.forceY(d=>dirCenters[d.dir].y).strength(0.35));
 
+// ── Pre-computed indexes (built once, used everywhere) ──
+
+// 1. dirNodes: dir → node[] (eliminates repeated G.nodes.filter per dir)
+const dirNodes={};
+dirs.forEach(d=>{dirNodes[d]=[]});
+G.nodes.forEach(n=>dirNodes[n.dir].push(n));
+
+// 2. Resolved edge IDs: after forceLink init, source/target are objects.
+//    Pre-resolve to avoid typeof checks at every call site (~15 occurrences).
+G.edges.forEach(e=>{e._s=e.source.id||e.source;e._t=e.target.id||e.target});
+
+// 3. adj: nodeId → edge[] (eliminates full edge scans on selection)
+const adj={};
+G.nodes.forEach(n=>{adj[n.id]=[]});
+G.edges.forEach(e=>{adj[e._s].push(e);if(e._s!==e._t)adj[e._t].push(e)});
+
+// 4. nodeById: fast node lookup for navTo
+const nodeById={};
+G.nodes.forEach(n=>{nodeById[n.id]=n});
+
 // Directory group hulls
 const hullLayer=svg.append('g');
 const hullPad=30;
 const hulls=hullLayer.selectAll('path').data(dirs).join('path')
-  .attr('fill',d=>dirColor[d]).attr('fill-opacity',0.05)
-  .attr('stroke',d=>dirColor[d]).attr('stroke-opacity',0.15)
-  .attr('stroke-width',1.5).attr('stroke-linejoin','round');
+  .attr('class','hull-v')
+  .attr('fill',d=>dirColor[d]).attr('stroke',d=>dirColor[d])
+  .attr('stroke-linejoin','round').attr('pointer-events','none');
 
 // Directory name labels — prominent, above hull
 const dirLabels=hullLayer.selectAll('text').data(dirs).join('text')
+  .attr('class','dir-l')
   .attr('text-anchor','middle')
   .attr('fill',d=>dirColor[d])
-  .attr('opacity',0.7)
-  .attr('font-size','13px')
   .attr('font-weight','700')
   .attr('paint-order','stroke').attr('stroke','#0a0a0f').attr('stroke-width',4)
   .text(d=>{const p=d.split('/');return p.at(-1)||d})
@@ -188,7 +235,7 @@ const dirLabels=hullLayer.selectAll('text').data(dirs).join('text')
 function computeHullPath(points,pad){
   if(points.length<1)return'';
   if(points.length===1)return'M'+(points[0][0]-pad)+','+(points[0][1]-pad)+' a'+pad+','+pad+' 0 1,0 '+(pad*2)+',0 a'+pad+','+pad+' 0 1,0 '+(-pad*2)+',0';
-  if(points.length===2){const[a,b]=points;const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.sqrt(dx*dx+dy*dy)||1;const nx=-dy/len*pad,ny=dx/len*pad;return'M'+(a[0]+nx)+','+(a[1]+ny)+'L'+(b[0]+nx)+','+(b[1]+ny)+'A'+pad+','+pad+' 0 0,1 '+(b[0]-nx)+','+(b[1]-ny)+'L'+(a[0]-nx)+','+(a[1]-ny)+'A'+pad+','+pad+' 0 0,1 '+(a[0]+nx)+','+(a[1]+ny)+'Z'}
+  if(points.length===2){const[a,b]=points;const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.sqrt(dx*dx+dy*dy)||1;const nx=-dy/len*pad,ny=dx/len*pad;const expanded=[[a[0]+nx,a[1]+ny],[b[0]+nx,b[1]+ny],[b[0]-nx,b[1]-ny],[a[0]-nx,a[1]-ny]];const cx=d3.mean(expanded,p=>p[0]),cy=d3.mean(expanded,p=>p[1]);const rounded=expanded.map(p=>{const ddx=p[0]-cx,ddy=p[1]-cy,l=Math.sqrt(ddx*ddx+ddy*ddy)||1;return[p[0]+ddx/l*pad*0.5,p[1]+ddy/l*pad*0.5]});return'M'+rounded.map(p=>p[0]+','+p[1]).join('L')+'Z'}
   const hull=d3.polygonHull(points);
   if(!hull)return'';
   // Expand hull outward by pad
@@ -197,131 +244,210 @@ function computeHullPath(points,pad){
   return'M'+expanded.map(p=>p[0]+','+p[1]).join('L')+'Z';
 }
 
-// Edges
-const link=svg.append('g').selectAll('line').data(G.edges).join('line')
-  .attr('stroke',d=>d.type==='cochange'?'#c59a28':d.type==='implicit'?'#b44e8a':'#1a1a1f')
-  .attr('stroke-width',d=>d.type==='cochange'||d.type==='implicit'?1.2:0.4)
-  .attr('stroke-dasharray',d=>d.type==='cochange'?'5,3':d.type==='implicit'?'2,3':'none')
-  .attr('opacity',d=>d.type==='import'?0.2:0.5);
-
-// Glow filter
+// Glow filters
 const defs=svg.append('defs');
 const glow=defs.append('filter').attr('id','glow');
 glow.append('feGaussianBlur').attr('stdDeviation','3').attr('result','blur');
 const mg=glow.append('feMerge');mg.append('feMergeNode').attr('in','blur');mg.append('feMergeNode').attr('in','SourceGraphic');
 
-// File nodes
+// Edges — invisible wide hit-area lines behind visible edges for easier clicking
+const linkG=svg.append('g');
+const linkHit=linkG.selectAll('line.hit').data(G.edges).join('line')
+  .attr('class','hit').attr('stroke','transparent').attr('stroke-width',12)
+  .style('cursor','pointer')
+  .on('click',(e,d)=>{e.stopPropagation();selectEdge(d)});
+const link=linkG.selectAll('line.vis').data(G.edges).join('line')
+  .attr('class',d=>d.type==='cochange'?'vis edge-c':d.type==='implicit'?'vis edge-m':'vis edge-i')
+  .attr('stroke',d=>d.type==='cochange'?'#c59a28':d.type==='implicit'?'#b44e8a':'#1a1a1f')
+  .attr('stroke-dasharray',d=>d.type==='cochange'?'5,3':d.type==='implicit'?'2,3':'none')
+  .attr('pointer-events','none');
+
+// Interactive hull overlay — between edges and nodes so hull gaps are draggable
+const hullInteract=svg.append('g').selectAll('path').data(dirs).join('path')
+  .attr('fill','transparent').attr('stroke','none')
+  .attr('pointer-events','all').style('cursor','pointer')
+  .on('click',(e,d)=>{e.stopPropagation();selectDir(d)});
+
+// File nodes — on top so individual node drag/click takes priority
 const node=svg.append('g').selectAll('g').data(G.nodes).join('g')
   .call(d3.drag().on('start',(e,d)=>{if(!e.active)sim.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y})
-    .on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y}).on('end',(e,d)=>{if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null}))
+    .on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y}).on('end',(e,d)=>{if(!e.active)sim.alphaTarget(0)}))
   .on('click',(e,d)=>{e.stopPropagation();selectFile(d)})
   .style('cursor','pointer');
 
 node.append('circle')
+  .attr('class','n-c')
   .attr('r',d=>5+Math.sqrt(d.importedBy/maxImp)*14)
   .attr('fill',d=>dirColor[d.dir]+'33')
-  .attr('stroke',d=>dirColor[d.dir])
-  .attr('stroke-width',1);
+  .attr('stroke',d=>dirColor[d.dir]);
 
 // ALL files get labels
 node.append('text')
-  .text(d=>d.name.replace(/.[^.]+$/,''))
+  .attr('class','n-t')
+  .text(d=>d.name)
   .attr('text-anchor','middle')
   .attr('dy',d=>-(9+Math.sqrt(d.importedBy/maxImp)*14))
-  .attr('font-size','8px')
-  .attr('fill','#555').attr('font-weight','500')
+  .attr('fill','#555')
   .attr('paint-order','stroke').attr('stroke','#0a0a0f').attr('stroke-width',3);
 
 const pad=50;
+// Per-dir tick cache: hull path string, centroid x, min y (reused by hull + labels)
+const dirTick={};dirs.forEach(d=>{dirTick[d]={path:'',cx:0,minY:0}});
+
 sim.on('tick',()=>{
+  // Clamp nodes to viewport
   G.nodes.forEach(d=>{d.x=Math.max(pad,Math.min(W-pad,d.x));d.y=Math.max(pad,Math.min(H-pad,d.y))});
+  // Update edge positions
   link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+  linkHit.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+  // Update node positions
   node.attr('transform',d=>\`translate(\${d.x},\${d.y})\`);
-  // Update hull boundaries and labels per directory
-  hulls.attr('d',d=>{
-    const pts=G.nodes.filter(n=>n.dir===d).map(n=>[n.x,n.y]);
-    return computeHullPath(pts,hullPad);
-  });
-  dirLabels.attr('x',d=>{const fs=G.nodes.filter(n=>n.dir===d);return fs.length?d3.mean(fs,n=>n.x):0})
-    .attr('y',d=>{const fs=G.nodes.filter(n=>n.dir===d);if(!fs.length)return 0;return d3.min(fs,n=>n.y)-(hullPad+8)});
+  // Compute per-dir hull + label data in a single pass (was 3 separate filter scans per dir)
+  for(const d of dirs){
+    const ns=dirNodes[d];
+    if(!ns.length){dirTick[d].path='';continue}
+    const pts=ns.map(n=>[n.x,n.y]);
+    dirTick[d].path=computeHullPath(pts,hullPad);
+    let sx=0,minY=Infinity;
+    for(let i=0;i<ns.length;i++){sx+=ns[i].x;if(ns[i].y<minY)minY=ns[i].y}
+    dirTick[d].cx=sx/ns.length;
+    dirTick[d].minY=minY;
+  }
+  hulls.attr('d',d=>dirTick[d].path);
+  hullInteract.attr('d',d=>dirTick[d].path);
+  dirLabels.attr('x',d=>dirTick[d].cx).attr('y',d=>dirTick[d].minY-(hullPad+8));
 });
+
+function clearHighlights(){
+  node.classed('hl',false).classed('hl-sel',false).classed('hl-conn',false).classed('hl-ext',false);
+  node.select('circle').attr('filter',null);
+  link.classed('hl',false).attr('stroke',d=>d.type==='cochange'?'#c59a28':d.type==='implicit'?'#b44e8a':'#1a1a1f');
+  hulls.classed('hl',false);
+  dirLabels.classed('hl',false);
+}
 
 function selectFile(d){
   document.getElementById('hint').style.opacity='0';
-  node.select('circle').attr('opacity',.12).attr('filter',null);
-  link.attr('opacity',.03);
+  clearHighlights();
+  svg.classed('sel',true);
 
-  // Highlight selected
-  node.filter(n=>n.id===d.id).select('circle').attr('opacity',1).attr('filter','url(#glow)').attr('stroke-width',2);
+  // Highlight selected node (1 element)
+  node.filter(n=>n.id===d.id).classed('hl-sel',true).select('circle').attr('filter','url(#glow)');
 
-  // Connected nodes
+  // Build connected set + categorized edges from adjacency index
+  const myEdges=adj[d.id]||[];
   const conn=new Set();
-  G.edges.forEach(e=>{
-    const s=typeof e.source==='object'?e.source.id:e.source;
-    const t=typeof e.target==='object'?e.target.id:e.target;
-    if(s===d.id)conn.add(t);if(t===d.id)conn.add(s);
-  });
-  node.filter(n=>conn.has(n.id)).select('circle').attr('opacity',.8);
-  link.filter(e=>{
-    const s=typeof e.source==='object'?e.source.id:e.source;
-    const t=typeof e.target==='object'?e.target.id:e.target;
-    return s===d.id||t===d.id;
-  }).attr('opacity',.9);
+  const imp=[],impBy=[];
+  for(const e of myEdges){
+    const other=e._s===d.id?e._t:e._s;
+    conn.add(other);
+    if(e.type==='import'){if(e._s===d.id)imp.push(e);else impBy.push(e)}
+  }
+  // Highlight connected nodes
+  node.filter(n=>conn.has(n.id)).classed('hl-conn',true);
+  // Highlight connected edges (brighter stroke, no filter, no raise)
+  link.filter(e=>e._s===d.id||e._t===d.id).classed('hl',true)
+    .attr('stroke',e=>e.type==='cochange'?'#e8b83a':e.type==='implicit'?'#d468a8':'#556');
 
   // Panel
   const path=d.id;
-  const imp=G.edges.filter(e=>{const s=typeof e.source==='object'?e.source.id:e.source;return s===path&&e.type==='import'});
-  const impBy=G.edges.filter(e=>{const t=typeof e.target==='object'?e.target.id:e.target;return t===path&&e.type==='import'});
   const coc=CC.filter(e=>e[0]===path||e[1]===path);
   const seen=new Set();const ucoc=coc.filter(e=>{const k=e[0]+e[1];if(seen.has(k))return false;seen.add(k);return true});
 
   let h='<h2>'+d.name+'</h2>';
   h+='<div class="sub">'+d.dir+'/ &middot; imported by '+d.importedBy+' files</div>';
-  if(impBy.length){h+='<h3>Imported by ('+impBy.length+')</h3><ul>';impBy.slice(0,10).forEach(e=>{const s=typeof e.source==='object'?e.source.id:e.source;h+='<li><code>'+s.split('/').pop()+'</code><span class="badge badge-b">'+e.weight+'</span></li>'});h+='</ul>'}
-  if(imp.length){h+='<h3>Imports ('+imp.length+')</h3><ul>';imp.slice(0,10).forEach(e=>{const t=typeof e.target==='object'?e.target.id:e.target;h+='<li><code>'+t.split('/').pop()+'</code><span class="badge badge-b">'+e.weight+'</span></li>'});h+='</ul>'}
-  if(ucoc.length){h+='<h3>Co-changes</h3><ul>';ucoc.slice(0,8).forEach(e=>{const p=e[0]===path?e[1]:e[0];h+='<li><code>'+p.split('/').pop()+'</code><span class="badge badge-a">'+e[2]+'%</span></li>'});h+='</ul>'}
+  if(impBy.length){h+='<h3>Imported by ('+impBy.length+')</h3><ul>';impBy.slice(0,10).forEach(e=>{h+='<li onclick="navTo(\\''+e._s+'\\')"><code>'+e._s.split('/').pop()+'</code><span class="badge badge-b">'+e.weight+'</span></li>'});h+='</ul>'}
+  if(imp.length){h+='<h3>Imports ('+imp.length+')</h3><ul>';imp.slice(0,10).forEach(e=>{h+='<li onclick="navTo(\\''+e._t+'\\')"><code>'+e._t.split('/').pop()+'</code><span class="badge badge-b">'+e.weight+'</span></li>'});h+='</ul>'}
+  if(ucoc.length){h+='<h3>Co-changes</h3><ul>';ucoc.slice(0,8).forEach(e=>{const p=e[0]===path?e[1]:e[0];h+='<li onclick="navTo(\\''+p+'\\')"><code>'+p.split('/').pop()+'</code><span class="badge badge-a">'+e[2]+'%</span></li>'});h+='</ul>'}
   document.getElementById('panel-content').innerHTML=h;
   document.getElementById('panel').classList.add('open');
 }
 
 function selectDir(dir){
   document.getElementById('hint').style.opacity='0';
-  node.select('circle').attr('opacity',.12).attr('filter',null);
-  link.attr('opacity',.03);
-  // Highlight all files in this directory
-  node.filter(d=>d.dir===dir).select('circle').attr('opacity',1);
-  // Highlight edges connected to any file in this directory
-  const dirFiles=new Set(G.nodes.filter(n=>n.dir===dir).map(n=>n.id));
-  link.filter(e=>{
-    const s=typeof e.source==='object'?e.source.id:e.source;
-    const t=typeof e.target==='object'?e.target.id:e.target;
-    return dirFiles.has(s)||dirFiles.has(t);
-  }).attr('opacity',.7);
+  clearHighlights();
+  svg.classed('sel',true);
 
-  const files=G.nodes.filter(n=>n.dir===dir);
+  // Highlight selected directory hull + label (2 elements)
+  hulls.filter(d=>d===dir).classed('hl',true);
+  dirLabels.filter(d=>d===dir).classed('hl',true);
+
+  // Highlight all files in this directory
+  node.filter(d=>d.dir===dir).classed('hl',true);
+
+  // Build dir file set from pre-computed dirNodes
+  const files=dirNodes[dir]||[];
+  const dirFileSet=new Set(files.map(n=>n.id));
+
+  // Highlight connected edges (brighter stroke, no filter, no raise)
+  link.filter(e=>dirFileSet.has(e._s)||dirFileSet.has(e._t)).classed('hl',true)
+    .attr('stroke',e=>e.type==='cochange'?'#e8b83a':e.type==='implicit'?'#d468a8':'#556');
+
+  // Find connected external nodes via adjacency index
+  const connNodes=new Set();
+  for(const f of files){
+    for(const e of adj[f.id]||[]){
+      const other=e._s===f.id?e._t:e._s;
+      if(!dirFileSet.has(other))connNodes.add(other);
+    }
+  }
+  node.filter(n=>connNodes.has(n.id)).classed('hl-ext',true);
+
+  // Panel
   const totalImp=files.reduce((s,f)=>s+f.importedBy,0);
   let h='<h2>'+dir+'/</h2>';
   h+='<div class="sub">'+files.length+' files &middot; '+totalImp+' total imports</div>';
   h+='<h3>Files</h3><ul>';
-  files.sort((a,b)=>b.importedBy-a.importedBy).forEach(f=>{
-    h+='<li><code>'+f.name+'</code><span class="badge badge-b">'+f.importedBy+'</span></li>';
+  files.slice().sort((a,b)=>b.importedBy-a.importedBy).forEach(f=>{
+    h+='<li onclick="navTo(\\''+f.id+'\\')"><code>'+f.name+'</code><span class="badge badge-b">'+f.importedBy+'</span></li>';
   });
   h+='</ul>';
-  const coc=CC.filter(e=>(e[0].startsWith(dir+'/')&&!e[1].startsWith(dir+'/'))||(e[1].startsWith(dir+'/')&&!e[0].startsWith(dir+'/')));
+  const dirPrefix=dir+'/';
+  const coc=CC.filter(e=>(e[0].startsWith(dirPrefix)&&!e[1].startsWith(dirPrefix))||(e[1].startsWith(dirPrefix)&&!e[0].startsWith(dirPrefix)));
   if(coc.length){
     const seen=new Set();const ucoc=coc.filter(e=>{const k=e[0]+e[1];if(seen.has(k))return false;seen.add(k);return true});
     h+='<h3>Co-changes with other dirs</h3><ul>';
-    ucoc.slice(0,8).forEach(e=>{const p=e[0].startsWith(dir+'/')?e[1]:e[0];h+='<li><code>'+p.split('/').pop()+'</code><span class="badge badge-a">'+e[2]+'%</span></li>'});
+    ucoc.slice(0,8).forEach(e=>{const p=e[0].startsWith(dirPrefix)?e[1]:e[0];h+='<li onclick="navTo(\\''+p+'\\')"><code>'+p.split('/').pop()+'</code><span class="badge badge-a">'+e[2]+'%</span></li>'});
     h+='</ul>';
   }
   document.getElementById('panel-content').innerHTML=h;
   document.getElementById('panel').classList.add('open');
 }
 
+function selectEdge(d){
+  document.getElementById('hint').style.opacity='0';
+  clearHighlights();
+  svg.classed('sel',true);
+  const s=d._s,t=d._t;
+  // Highlight the two endpoint nodes
+  node.filter(n=>n.id===s||n.id===t).classed('hl',true).select('circle').attr('filter','url(#glow)');
+  // Highlight the clicked edge
+  link.filter(e=>(e._s===s&&e._t===t)||(e._s===t&&e._t===s)).classed('hl',true)
+    .attr('stroke',d.type==='cochange'?'#e8b83a':d.type==='implicit'?'#d468a8':'#7aa2f7');
+  // Panel content
+  const sName=s.split('/').pop(), tName=t.split('/').pop();
+  const typeLabel=d.type==='cochange'?'Co-change':d.type==='implicit'?'Implicit Coupling':'Import';
+  const typeColor=d.type==='cochange'?'badge-a':d.type==='implicit'?'badge-p':'badge-b';
+  let h='<h2>Connection</h2>';
+  h+='<div class="sub"><span class="badge '+typeColor+'">'+typeLabel+'</span></div>';
+  h+='<h3>Source</h3><ul><li onclick="navTo(\\''+s+'\\')"><code>'+sName+'</code></li></ul>';
+  h+='<h3>Target</h3><ul><li onclick="navTo(\\''+t+'\\')"><code>'+tName+'</code></li></ul>';
+  if(d.type==='import'){h+='<h3>Symbols imported</h3><ul><li>'+d.weight+' symbol'+(d.weight!==1?'s':'')+'</li></ul>'}
+  if(d.type==='cochange'){h+='<h3>Co-change similarity</h3><ul><li>Jaccard: '+d.weight+'%</li></ul><p style="font-size:11px;color:#555;margin-top:8px">These files frequently change together in commits, suggesting a functional relationship.</p>'}
+  if(d.type==='implicit'){h+='<h3>Coupling strength</h3><ul><li>Jaccard: '+d.weight+'%</li></ul><p style="font-size:11px;color:#555;margin-top:8px">These files co-change in commits but have no direct import relationship\\u2014a potential hidden dependency.</p>'}
+  document.getElementById('panel-content').innerHTML=h;
+  document.getElementById('panel').classList.add('open');
+}
+
+function navTo(fileId){
+  const target=nodeById[fileId];
+  if(target)selectFile(target);
+}
+
 function closePanel(){
   document.getElementById('panel').classList.remove('open');
-  node.select('circle').attr('opacity',1).attr('filter',null).attr('stroke-width',0.8);
-  link.attr('opacity',d=>d.type==='import'?0.2:0.5);
+  svg.classed('sel',false);
+  clearHighlights();
 }
 svg.on('click',()=>closePanel());
 function toggleDrawer(){document.getElementById('drawer').classList.toggle('open')}
