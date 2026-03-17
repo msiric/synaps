@@ -185,4 +185,12 @@ describe("generateReport", () => {
     const html = generateReport(makeAnalysis());
     expect(html).toContain('"implicit"');
   });
+
+  it("includes per-directory file data for expansion", () => {
+    const html = generateReport(makeAnalysis());
+    expect(html).toContain("filesByDir");
+    expect(html).toContain("expandDir");
+    expect(html).toContain("collapseDir");
+    expect(html).toContain("double-click to expand");
+  });
 });
