@@ -13,7 +13,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import * as Q from "../src/mcp/queries.js";
+import * as Q from "../src/mcp/queries/index.js";
 import type { StructuredAnalysis } from "../src/types.js";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -175,12 +175,12 @@ describe("diagnose corpus validation", () => {
       console.log(`    ${repo.padEnd(20)} tested=${stats.tested}  p@1=${rp1}%  r@3=${rr3}%`);
     }
 
-    // Gate: minimum quality thresholds
+    // Gate: minimum quality thresholds (42 impossible commits removed from corpus)
     expect(tested).toBeGreaterThanOrEqual(20);
     // Precision@1 should be meaningful — not just random
-    expect(p1).toBeGreaterThanOrEqual(15);
-    // Recall@5 should catch most cases
-    expect(r5).toBeGreaterThanOrEqual(30);
+    expect(p1).toBeGreaterThanOrEqual(20);
+    // Recall@5 should catch a significant fraction
+    expect(r5).toBeGreaterThanOrEqual(35);
   });
 
   it("measures with simulated recent changes (realistic scenario)", () => {

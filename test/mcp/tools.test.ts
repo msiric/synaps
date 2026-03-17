@@ -13,7 +13,7 @@ import {
   getModuleDoc,
   getRegistrationInsertions,
   search,
-} from "../../src/mcp/queries.js";
+} from "../../src/mcp/queries/index.js";
 import { formatSessionSummary, type SessionTelemetry } from "../../src/mcp/server.js";
 import * as tools from "../../src/mcp/tools.js";
 import type { PackageAnalysis, StructuredAnalysis } from "../../src/types.js";

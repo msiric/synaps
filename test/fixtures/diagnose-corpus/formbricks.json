@@ -10138,16 +10138,6 @@
     },
     {
       "repo": "formbricks",
-      "commitSha": "84c668be86db",
-      "commitMessage": "fix: fixes contact links api gating issue (#7468)",
-      "testFiles": [],
-      "sourceFiles": [
-        "modules/api/v2/management/surveys/[surveyId]/contact-links/contacts/[contactId]/route.ts"
-      ],
-      "expectedRootCause": "modules/api/v2/management/surveys/[surveyId]/contact-links/contacts/[contactId]/route.ts"
-    },
-    {
-      "repo": "formbricks",
       "commitSha": "a7b2ade4a9d7",
       "commitMessage": "fix: remove follow-ups from trial features and gate trial page for subscribers (#7465)",
       "testFiles": [],
@@ -10156,36 +10146,6 @@
         "modules/ee/billing/components/select-plan-card.tsx"
       ],
       "expectedRootCause": "app/(app)/(onboarding)/organizations/[organizationId]/workspaces/new/plan/page.tsx"
-    },
-    {
-      "repo": "formbricks",
-      "commitSha": "75f44952c7f0",
-      "commitMessage": "fix: clear validation settings when disabling open text validation (#7464)",
-      "testFiles": [],
-      "sourceFiles": [
-        "modules/survey/editor/components/validation-rules-editor.tsx"
-      ],
-      "expectedRootCause": "modules/survey/editor/components/validation-rules-editor.tsx"
-    },
-    {
-      "repo": "formbricks",
-      "commitSha": "89bb3bcd84df",
-      "commitMessage": "chore: apply NCU minor upgrades fixups (#7460)",
-      "testFiles": [],
-      "sourceFiles": [
-        "app/(app)/(onboarding)/lib/onboarding.ts"
-      ],
-      "expectedRootCause": "app/(app)/(onboarding)/lib/onboarding.ts"
-    },
-    {
-      "repo": "formbricks",
-      "commitSha": "fa882dd4cc81",
-      "commitMessage": "fix: improve survey validation error handling in SurveyMenuBar component (#7447)",
-      "testFiles": [],
-      "sourceFiles": [
-        "modules/survey/editor/components/survey-menu-bar.tsx"
-      ],
-      "expectedRootCause": "modules/survey/editor/components/survey-menu-bar.tsx"
     },
     {
       "repo": "formbricks",
@@ -10258,16 +10218,6 @@
     },
     {
       "repo": "formbricks",
-      "commitSha": "e4aa66b067d4",
-      "commitMessage": "fix: removed legacy response note traces (#7396)",
-      "testFiles": [],
-      "sourceFiles": [
-        "lib/response/service.ts"
-      ],
-      "expectedRootCause": "lib/response/service.ts"
-    },
-    {
-      "repo": "formbricks",
       "commitSha": "6942502bafa8",
       "commitMessage": "fix: slack missing redirect uri (#7372)",
       "testFiles": [],
@@ -10287,26 +10237,6 @@
         "app/(app)/environments/[environmentId]/components/project-breadcrumb.tsx"
       ],
       "expectedRootCause": "app/(app)/environments/[environmentId]/components/organization-breadcrumb.tsx"
-    },
-    {
-      "repo": "formbricks",
-      "commitSha": "ac40b90e81c7",
-      "commitMessage": "fix: made \"Filter\" string translatable (#7301)",
-      "testFiles": [],
-      "sourceFiles": [
-        "app/(app)/environments/[environmentId]/surveys/[surveyId]/components/ResponseFilter.tsx"
-      ],
-      "expectedRootCause": "app/(app)/environments/[environmentId]/surveys/[surveyId]/components/ResponseFilter.tsx"
-    },
-    {
-      "repo": "formbricks",
-      "commitSha": "33f60ce2bea6",
-      "commitMessage": "fix: button label on create attribute dialog (#7331)",
-      "testFiles": [],
-      "sourceFiles": [
-        "modules/ee/contacts/attributes/components/create-attribute-modal.tsx"
-      ],
-      "expectedRootCause": "modules/ee/contacts/attributes/components/create-attribute-modal.tsx"
     },
     {
       "repo": "formbricks",

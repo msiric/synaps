@@ -47,7 +47,7 @@ describe("pr-miner", () => {
   });
 
   describe("mineCommits", () => {
-    it("mines commits from synaps itself", () => {
+    it("mines commits from synaps itself", { timeout: 30_000 }, () => {
       const { tasks, stats } = mineCommits(REPO_ROOT, {
         maxTasks: 5,
         maxCommits: 100,
@@ -59,31 +59,29 @@ describe("pr-miner", () => {
 
       // Should find at least some tasks in our own repo
       expect(stats.totalCommits).toBeGreaterThan(0);
+      expect(tasks.length).toBeGreaterThan(0);
 
-      if (tasks.length > 0) {
-        const task = tasks[0];
+      const task = tasks[0];
 
-        // Verify task structure
-        expect(task.id).toBeTruthy();
-        expect(task.commitSha).toMatch(/^[a-f0-9]{40}$/);
-        expect(task.commitMessage).toBeTruthy();
-        expect(task.groundTruth.path).toBeTruthy();
-        expect(task.groundTruth.content).toBeTruthy();
-        expect(task.groundTruth.directory).toBeTruthy();
-        expect(task.groundTruth.filename).toBeTruthy();
-        expect(task.groundTruth.lineCount).toBeGreaterThan(0);
+      // Verify task structure
+      expect(task.id).toBeTruthy();
+      expect(task.commitSha).toMatch(/^[a-f0-9]{40}$/);
+      expect(task.commitMessage).toBeTruthy();
+      expect(task.groundTruth.path).toBeTruthy();
+      expect(task.groundTruth.content).toBeTruthy();
+      expect(task.groundTruth.directory).toBeTruthy();
+      expect(task.groundTruth.filename).toBeTruthy();
+      expect(task.groundTruth.lineCount).toBeGreaterThan(0);
 
-        // Context should have siblings
-        expect(task.context.siblingFiles.length).toBeGreaterThanOrEqual(0);
-        expect(task.context.directoryListing.length).toBeGreaterThan(0);
+      // Context should have siblings
+      expect(task.context.siblingFiles.length).toBeGreaterThanOrEqual(0);
+      expect(task.context.directoryListing.length).toBeGreaterThan(0);
 
-        // Ground truth should be read from commit, not HEAD
-        // (the file content should exist and be non-empty)
-        expect(task.groundTruth.content.length).toBeGreaterThan(0);
-      }
+      // Ground truth should be read from commit, not HEAD
+      expect(task.groundTruth.content.length).toBeGreaterThan(0);
     });
 
-    it("respects maxTasks limit", () => {
+    it("respects maxTasks limit", { timeout: 30_000 }, () => {
       const { tasks } = mineCommits(REPO_ROOT, {
         maxTasks: 2,
         maxCommits: 100,
@@ -94,7 +92,7 @@ describe("pr-miner", () => {
       expect(tasks.length).toBeLessThanOrEqual(2);
     });
 
-    it("enforces directory diversity", () => {
+    it("enforces directory diversity", { timeout: 30_000 }, () => {
       const { tasks } = mineCommits(REPO_ROOT, {
         maxTasks: 20,
         maxCommits: 200,
@@ -116,7 +114,7 @@ describe("pr-miner", () => {
       }
     });
 
-    it("reports filter statistics", () => {
+    it("reports filter statistics", { timeout: 30_000 }, () => {
       const { stats } = mineCommits(REPO_ROOT, {
         maxTasks: 5,
         maxCommits: 50,

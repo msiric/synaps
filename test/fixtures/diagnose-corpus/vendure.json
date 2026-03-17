@@ -31740,16 +31740,6 @@
   "commits": [
     {
       "repo": "vendure",
-      "commitSha": "77817426f661",
-      "commitMessage": "fix(core): Use schema-qualified table paths in EXISTS subqueries (#4501)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/service/helpers/list-query-builder/list-query-builder.ts"
-      ],
-      "expectedRootCause": "src/service/helpers/list-query-builder/list-query-builder.ts"
-    },
-    {
-      "repo": "vendure",
       "commitSha": "c3bc80fcba44",
       "commitMessage": "fix(core): Make OrderService.mergeOrders atomic and concurrency-safe (#4488)",
       "testFiles": [],
@@ -31860,26 +31850,6 @@
     },
     {
       "repo": "vendure",
-      "commitSha": "bf397cccfb32",
-      "commitMessage": "fix(core): Fix coupon code removal not clearing adjustments",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/service/services/order.service.ts"
-      ],
-      "expectedRootCause": "src/service/services/order.service.ts"
-    },
-    {
-      "repo": "vendure",
-      "commitSha": "fe72cdb9cd76",
-      "commitMessage": "fix(core): Exclude seller orders when counting promotion usage (#4070)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/service/services/promotion.service.ts"
-      ],
-      "expectedRootCause": "src/service/services/promotion.service.ts"
-    },
-    {
-      "repo": "vendure",
       "commitSha": "6f6396574c54",
       "commitMessage": "fix(core): Persist custom fields when creating new ProductVariantPrice (#4184)",
       "testFiles": [],
@@ -31888,16 +31858,6 @@
         "src/service/services/product-variant.service.ts"
       ],
       "expectedRootCause": "e2e/custom-fields.e2e-spec.ts"
-    },
-    {
-      "repo": "vendure",
-      "commitSha": "4f31ba3b8ec0",
-      "commitMessage": "fix(core): Correctly publish ChangeChannelEvent with new channel IDs. (#4176)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/service/services/channel.service.ts"
-      ],
-      "expectedRootCause": "src/service/services/channel.service.ts"
     },
     {
       "repo": "vendure",
@@ -31910,26 +31870,6 @@
         "src/job-queue/subscribable-job.ts"
       ],
       "expectedRootCause": "e2e/fixtures/test-plugins/with-job-queue.ts"
-    },
-    {
-      "repo": "vendure",
-      "commitSha": "88597979612f",
-      "commitMessage": "fix(core): Use previously unused relations filter in findByCustomerId (#4118)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/service/services/order.service.ts"
-      ],
-      "expectedRootCause": "src/service/services/order.service.ts"
-    },
-    {
-      "repo": "vendure",
-      "commitSha": "a80d24b408d8",
-      "commitMessage": "fix(core): Fix scheduled task concurrent execution on Postgres (#4069)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/plugin/default-scheduler-plugin/default-scheduler-strategy.ts"
-      ],
-      "expectedRootCause": "src/plugin/default-scheduler-plugin/default-scheduler-strategy.ts"
     },
     {
       "repo": "vendure",

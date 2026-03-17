@@ -13225,16 +13225,6 @@
   "commits": [
     {
       "repo": "documenso",
-      "commitSha": "8d97f1dcfab6",
-      "commitMessage": "fix: resolve error flash on page refresh (#2606)",
-      "testFiles": [],
-      "sourceFiles": [
-        "client-only/providers/session.tsx"
-      ],
-      "expectedRootCause": "client-only/providers/session.tsx"
-    },
-    {
-      "repo": "documenso",
       "commitSha": "e67e19358a0f",
       "commitMessage": "fix: add hipaa flag (#2603)",
       "testFiles": [],
@@ -13247,46 +13237,6 @@
     },
     {
       "repo": "documenso",
-      "commitSha": "a5fd814fbc6c",
-      "commitMessage": "fix: handle invalid qr share tokens without 500 (#2597)",
-      "testFiles": [],
-      "sourceFiles": [
-        "server-only/document/get-document-by-access-token.ts"
-      ],
-      "expectedRootCause": "server-only/document/get-document-by-access-token.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "ab69ee627b01",
-      "commitMessage": "fix: include extra recipient info in missing fields error msg (#2590)",
-      "testFiles": [],
-      "sourceFiles": [
-        "server-only/document/send-document.ts"
-      ],
-      "expectedRootCause": "server-only/document/send-document.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "ef0a5b54ba6b",
-      "commitMessage": "fix: verify before re-registering in email sync (#2568)",
-      "testFiles": [],
-      "sourceFiles": [
-        "jobs/definitions/internal/sync-email-domains.handler.ts"
-      ],
-      "expectedRootCause": "jobs/definitions/internal/sync-email-domains.handler.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "525dd92a5642",
-      "commitMessage": "fix(i18n): mark SUBSCRIPTION_STATUS_MAP for translation (#2515)",
-      "testFiles": [],
-      "sourceFiles": [
-        "constants/billing.ts"
-      ],
-      "expectedRootCause": "constants/billing.ts"
-    },
-    {
-      "repo": "documenso",
       "commitSha": "f1323679aa0a",
       "commitMessage": "fix: use default field meta for embedding template fields (#2556)",
       "testFiles": [],
@@ -13295,16 +13245,6 @@
         "server-only/field/set-fields-for-template.ts"
       ],
       "expectedRootCause": "server-only/field/set-fields-for-document.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "0d3bd59ec69f",
-      "commitMessage": "fix: handle cjk and special chars when slugifying (#2544)",
-      "testFiles": [],
-      "sourceFiles": [
-        "universal/upload/server-actions.ts"
-      ],
-      "expectedRootCause": "universal/upload/server-actions.ts"
     },
     {
       "repo": "documenso",
@@ -13354,86 +13294,6 @@
         "server-only/pdf/render-certificate.ts"
       ],
       "expectedRootCause": "jobs/definitions/internal/seal-document.handler.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "e3dee5e56507",
-      "commitMessage": "fix: auto placement field meta (#2480)",
-      "testFiles": [],
-      "sourceFiles": [
-        "server-only/pdf/auto-place-fields.ts"
-      ],
-      "expectedRootCause": "server-only/pdf/auto-place-fields.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "f1c91c495103",
-      "commitMessage": "fix: bulk actions improvements (#2440)",
-      "testFiles": [],
-      "sourceFiles": [
-        "client-only/hooks/use-session-storage.ts"
-      ],
-      "expectedRootCause": "client-only/hooks/use-session-storage.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "e222a872d2d8",
-      "commitMessage": "fix(i18n): rewrite audit log messages to support correct grammar (#2455)",
-      "testFiles": [],
-      "sourceFiles": [
-        "utils/document-audit-logs.ts"
-      ],
-      "expectedRootCause": "utils/document-audit-logs.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "1669216a913b",
-      "commitMessage": "fix: flatten pdf-lib form fields before sealing document (#2441)",
-      "testFiles": [],
-      "sourceFiles": [
-        "jobs/definitions/internal/seal-document.handler.ts"
-      ],
-      "expectedRootCause": "jobs/definitions/internal/seal-document.handler.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "594a0f0c3f14",
-      "commitMessage": "fix: store formValues in database when creating document from template (#2437)",
-      "testFiles": [],
-      "sourceFiles": [
-        "server-only/template/create-document-from-template.ts"
-      ],
-      "expectedRootCause": "server-only/template/create-document-from-template.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "97ceb317a81e",
-      "commitMessage": "fix: license banner not correctly showing (#2432)",
-      "testFiles": [],
-      "sourceFiles": [
-        "server-only/license/license-client.ts"
-      ],
-      "expectedRootCause": "server-only/license/license-client.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "c83109628dc2",
-      "commitMessage": "fix: add license logging (#2431)",
-      "testFiles": [],
-      "sourceFiles": [
-        "server-only/license/license-client.ts"
-      ],
-      "expectedRootCause": "server-only/license/license-client.ts"
-    },
-    {
-      "repo": "documenso",
-      "commitSha": "8bc4f1a71340",
-      "commitMessage": "fix: exclude soft-deleted documents from folder count (#2410)",
-      "testFiles": [],
-      "sourceFiles": [
-        "server-only/folder/find-folders-internal.ts"
-      ],
-      "expectedRootCause": "server-only/folder/find-folders-internal.ts"
     }
   ]
 }

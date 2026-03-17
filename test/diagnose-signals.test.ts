@@ -2,7 +2,7 @@
 // directory locality, error classification, entry point detection, symbol filtering.
 
 import { describe, expect, it } from "vitest";
-import * as Q from "../src/mcp/queries.js";
+import * as Q from "../src/mcp/queries/index.js";
 import { handlePlanChange } from "../src/mcp/tools.js";
 import type { PackageAnalysis, StructuredAnalysis } from "../src/types.js";
 

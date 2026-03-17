@@ -5,7 +5,7 @@
 import { resolve } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 import { analyze } from "../../src/index.js";
-import * as Q from "../../src/mcp/queries.js";
+import * as Q from "../../src/mcp/queries/index.js";
 import * as tools from "../../src/mcp/tools.js";
 import type { StructuredAnalysis } from "../../src/types.js";
 
@@ -80,9 +80,9 @@ describe("MCP accuracy: analyze_impact", () => {
       scope: "imports",
     });
     const text = result.content[0].text;
-    // analysis-builder.ts and queries.ts are known heavy importers of types.ts
+    // analysis-builder.ts and queries/ submodules are known heavy importers of types.ts
     expect(text).toContain("analysis-builder.ts");
-    expect(text).toContain("queries.ts");
+    expect(text).toContain("queries/");
     // Should show symbol counts
     expect(text).toMatch(/\d+ symbols/);
   });

@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import ts from "typescript";
 import type { StructuredAnalysis } from "../types.js";
-import * as Q from "./queries.js";
+import * as Q from "./queries/index.js";
 
 type ToolResult = { content: { type: "text"; text: string }[] };
 

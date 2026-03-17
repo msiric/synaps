@@ -447,10 +447,12 @@ export function buildSuspectList(
 
   const allCandidates = new Set([...upstreamSymbols.keys(), ...downstreamSymbols.keys(), ...candidateCoupling.keys()]);
 
-  // Directory locality candidate discovery: when test imports entry point (unselective),
+  // Directory locality candidate discovery: when the test file is disconnected from source
+  // (either imports the entry point or has very few candidates from import graph),
   // scan all known files for directory-name matches with the test file.
   // This adds candidates that the import graph can't reach.
-  if (testImportsEntryPoint && testFile) {
+  const testDisconnected = testFile && (testImportsEntryPoint || allCandidates.size < 5);
+  if (testDisconnected && testFile) {
     const allKnownFiles = new Set<string>();
     for (const edge of chain) {
       allKnownFiles.add(edge.importer);

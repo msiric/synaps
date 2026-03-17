@@ -28897,16 +28897,6 @@
     },
     {
       "repo": "payload",
-      "commitSha": "ef507a690771",
-      "commitMessage": "fix: use Sec-Fetch-Site header for cookie authentication validation (#15751)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/auth/extractJWT.ts"
-      ],
-      "expectedRootCause": "src/auth/extractJWT.ts"
-    },
-    {
-      "repo": "payload",
       "commitSha": "f30d34f9fcc3",
       "commitMessage": "fix: improved request origin retrieval (#15919)",
       "testFiles": [
@@ -28934,76 +28924,6 @@
     },
     {
       "repo": "payload",
-      "commitSha": "17aa1b570f6e",
-      "commitMessage": "fix: update broken custom components docs link in config types jsdoc (#15794)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/config/types.ts"
-      ],
-      "expectedRootCause": "src/config/types.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "dc049fe00fb5",
-      "commitMessage": "fix: run `sanitizeWhereQuery` for join query access result (#15891)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/database/sanitizeJoinQuery.ts"
-      ],
-      "expectedRootCause": "src/database/sanitizeJoinQuery.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "c6054c5601c5",
-      "commitMessage": "fix: early return out of me access (#15883)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/auth/operations/me.ts"
-      ],
-      "expectedRootCause": "src/auth/operations/me.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "e89918266d24",
-      "commitMessage": "fix: restoreVersion validation for localized required fields (#15821)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/collections/operations/restoreVersion.ts"
-      ],
-      "expectedRootCause": "src/collections/operations/restoreVersion.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "f47069900d0f",
-      "commitMessage": "fix: draft doc validation when duplicating docs (#15816)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/collections/endpoints/duplicate.ts"
-      ],
-      "expectedRootCause": "src/collections/endpoints/duplicate.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "9f0c10180335",
-      "commitMessage": "fix: getFieldsToSign crashes when user missing group/tab fields (#15775)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/auth/getFieldsToSign.ts"
-      ],
-      "expectedRootCause": "src/auth/getFieldsToSign.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "7a3f43ff5126",
-      "commitMessage": "fix: prevent silent data overwrites on concurrent edits (#15749)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/admin/forms/Form.ts"
-      ],
-      "expectedRootCause": "src/admin/forms/Form.ts"
-    },
-    {
-      "repo": "payload",
       "commitSha": "6557292b3f94",
       "commitMessage": "fix: preserve block metadata in mergeLocalizedData and filterDataToSelectedLocales (#15715)",
       "testFiles": [
@@ -29018,66 +28938,6 @@
     },
     {
       "repo": "payload",
-      "commitSha": "4861fa10bc3b",
-      "commitMessage": "fix: return 400 for malformed JSON request bodies (#15706)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/utilities/addDataAndFileToRequest.ts"
-      ],
-      "expectedRootCause": "src/utilities/addDataAndFileToRequest.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "df17cb18e19c",
-      "commitMessage": "fix: globals not updating updatedAt when saving drafts (#15764)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/versions/saveVersion.ts"
-      ],
-      "expectedRootCause": "src/versions/saveVersion.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "c05ace22b321",
-      "commitMessage": "fix(richtext-lexical): strip server-only properties from blocks in lexical client schema map (#15756)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/index.ts"
-      ],
-      "expectedRootCause": "src/index.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "8791a726d6c7",
-      "commitMessage": "templates: fix cloudflare logger error in with-cloudflare-d1 template (#15752)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/index.ts"
-      ],
-      "expectedRootCause": "src/index.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "23d52a0d7d57",
-      "commitMessage": "fix: return early if pasteURL is not defined (#15748)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/uploads/endpoints/getFileFromURL.ts"
-      ],
-      "expectedRootCause": "src/uploads/endpoints/getFileFromURL.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "2baea2e070ca",
-      "commitMessage": "fix: prevent req.file leak between sequential duplicate() calls on upload collections (#15620)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/uploads/generateFileData.ts"
-      ],
-      "expectedRootCause": "src/uploads/generateFileData.ts"
-    },
-    {
-      "repo": "payload",
       "commitSha": "45bd2f1786f2",
       "commitMessage": "fix: sanitize filenames in storage adapters (#15746)",
       "testFiles": [],
@@ -29086,16 +28946,6 @@
         "src/utilities/sanitizeFilename.ts"
       ],
       "expectedRootCause": "src/exports/shared.ts"
-    },
-    {
-      "repo": "payload",
-      "commitSha": "08226db60c38",
-      "commitMessage": "fix: throw error for unknown query operators (#15739)",
-      "testFiles": [],
-      "sourceFiles": [
-        "src/database/queryValidation/validateQueryPaths.ts"
-      ],
-      "expectedRootCause": "src/database/queryValidation/validateQueryPaths.ts"
     }
   ]
 }
