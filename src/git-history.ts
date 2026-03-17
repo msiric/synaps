@@ -25,7 +25,7 @@ const MIN_CO_CHANGES = 3;
 const MAX_EDGES = 50;
 const MAX_RULES = 5;
 const MAX_DISPLAY_PARTNERS = 3;
-const RECENCY_DAYS = 45; // co-change pair must have at least 1 co-change within this window
+const RECENCY_DAYS = 180; // co-change pair must have at least 1 co-change within this window (6 months)
 const MIN_CLUSTER_SIZE = 3; // minimum files to form a co-change cluster
 
 // ─── Types ───────────────────────────────────────────────────────────────────

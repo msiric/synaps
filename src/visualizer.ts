@@ -88,8 +88,8 @@ svg{display:block;width:100%;height:100%}
 .close-btn:hover{color:#888}
 .drawer{position:fixed;bottom:0;left:0;right:0;z-index:10;pointer-events:none}
 .drawer>*{pointer-events:auto}
-.dtoggle{display:flex;justify-content:center;padding:8px}
-.dtoggle button{font-size:11px;padding:4px 16px;border-radius:99px 99px 0 0;border:1px solid #1a1a24;border-bottom:none;background:#0d0d14;color:#666;cursor:pointer}
+.dtoggle{display:flex;justify-content:center}
+.dtoggle button{font-size:11px;padding:4px 16px;border-radius:6px 6px 0 0;border:1px solid #1a1a24;border-bottom:none;background:#0d0d14;color:#666;cursor:pointer}
 .dtoggle button:hover{color:#999}
 .dcontent{background:#0d0d14;border-top:1px solid #1a1a24;max-height:0;overflow:hidden;transition:max-height 0.3s ease}
 .dcontent.open{max-height:300px;overflow-y:auto}
@@ -117,6 +117,8 @@ svg{display:block;width:100%;height:100%}
   <span><i class="leg-imp"></i>import</span>
   <span><i class="leg-coc" style="border:1px dashed #c59a28;height:0;width:20px"></i>co-change</span>
   <span><i class="leg-impl" style="border:1px dotted #b44e8a;height:0;width:20px"></i>implicit coupling</span>
+  <span style="margin-left:8px;opacity:0.6">|</span>
+  <span>colored nodes = co-change cluster</span>
 </div>
 <div class="hint" id="hint">click a module to explore its blast radius</div>
 <svg id="graph"></svg>

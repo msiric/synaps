@@ -215,8 +215,8 @@ describe("computeCoChangeEdges", () => {
   });
 
   it("filters out pairs with no recent co-change (recency filter)", () => {
-    // All co-changes happened > 45 days ago relative to newest commit
-    const oldTimestamp = NOW - 60 * 86400; // 60 days ago
+    // All co-changes happened > 180 days ago relative to newest commit
+    const oldTimestamp = NOW - 200 * 86400; // 200 days ago
     const commits = [
       { hash: "1", timestamp: oldTimestamp, files: ["a.ts", "b.ts"] },
       { hash: "2", timestamp: oldTimestamp + 100, files: ["a.ts", "b.ts"] },
@@ -226,8 +226,8 @@ describe("computeCoChangeEdges", () => {
     ];
 
     const { edges } = computeCoChangeEdges(commits, 30, 0.7, 50, []);
-    // The a-b pair last co-changed 60 days ago, but newest commit is NOW
-    // recencyCutoff = NOW - 45 days. Old pair (60d ago) should be excluded.
+    // The a-b pair last co-changed 200 days ago, but newest commit is NOW
+    // recencyCutoff = NOW - 180 days. Old pair (200d ago) should be excluded.
     const abEdge = edges.find((e) => e.file1 === "a.ts" && e.file2 === "b.ts");
     expect(abEdge).toBeUndefined();
   });
