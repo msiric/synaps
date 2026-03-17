@@ -179,6 +179,7 @@ export interface ExecutionFlow {
   files: string[]; // Ordered file paths (parallel to steps)
   length: number; // steps.length
   confidence: number; // 0-1, mean pairwise adjacent co-change Jaccard
+  qualityScore?: number; // 0-1, architectural significance (file/dir spread, length)
 }
 
 export interface FileImportEdge {

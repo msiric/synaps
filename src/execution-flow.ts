@@ -3,6 +3,7 @@
 // Uses spine-first tracing (full primary chain + fork paths) instead of fixed maxBranching.
 // Co-change Jaccard validates flows — our unique advantage over GitNexus.
 
+import { dirname } from "node:path";
 import type { CallGraphEdge, CoChangeEdge, DependencyInsights, ExecutionFlow, PublicAPIEntry } from "./types.js";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -47,11 +48,11 @@ const TEST_PATTERNS = /^(describe|it|test|beforeEach|afterEach|beforeAll|afterAl
 // Framework-specific: high-value entry points detected from dependencies
 const FRAMEWORK_PATTERNS: Record<string, { patterns: RegExp[]; multiplier: number }> = {
   next: { patterns: [/^(getServerSideProps|getStaticProps|getStaticPaths|loader|action|default)$/], multiplier: 2.5 },
-  express: { patterns: [/Middleware$/i, /Router$/i], multiplier: 2.5 },
-  fastify: { patterns: [/Middleware$/i, /Router$/i], multiplier: 2.5 },
-  hono: { patterns: [/Middleware$/i, /Handler$/i], multiplier: 2.5 },
-  "@nestjs/core": { patterns: [/Controller$/i], multiplier: 2.5 },
-  "@nestjs/common": { patterns: [/Controller$/i], multiplier: 2.5 },
+  express: { patterns: [/Middleware$/i, /Router$/i, /^(listen|use|handle|route)$/], multiplier: 2.5 },
+  fastify: { patterns: [/Middleware$/i, /Router$/i, /^(listen|inject|route|register)$/], multiplier: 2.5 },
+  hono: { patterns: [/Middleware$/i, /Handler$/i, /^(fetch|dispatch|handleEvent|fire)$/], multiplier: 2.5 },
+  "@nestjs/core": { patterns: [/Controller$/i, /^(bootstrap|create|init)$/], multiplier: 2.5 },
+  "@nestjs/common": { patterns: [/Controller$/i, /^(bootstrap|create|init)$/], multiplier: 2.5 },
 };
 
 interface ScoredEntry {
@@ -87,6 +88,7 @@ export function scoreEntryPoints(
   }
 
   const exportedNames = new Set(publicAPI.filter((e) => !e.isTypeOnly).map((e) => e.name));
+  const importCounts = new Map(publicAPI.filter((e) => !e.isTypeOnly).map((e) => [e.name, e.importCount ?? 0]));
   const scored: ScoredEntry[] = [];
 
   for (const nodeId of allNodes) {
@@ -101,7 +103,9 @@ export function scoreEntryPoints(
     const baseScore = (out + 1) / (inD + 1);
 
     // Export boost: exported functions are more likely externally invoked
-    const exportMul = exportedNames.has(fn) ? 1.5 : 1.0;
+    // Centrality: heavily-imported public symbols are more central to the codebase
+    const centralityMul = 1 + Math.min(0.5, (importCounts.get(fn) ?? 0) / 20);
+    const exportMul = exportedNames.has(fn) ? 1.5 * centralityMul : 1.0;
 
     // Zero-caller boost: exported with no internal callers = likely framework-invoked
     const externalOnlyMul = inD === 0 && out >= 2 && exportedNames.has(fn) ? 1.8 : 1.0;
@@ -289,6 +293,20 @@ function computeFlowConfidence(files: string[], coChangeEdges?: CoChangeEdge[]):
   return pairs > 0 ? total / pairs : 0;
 }
 
+// ─── Flow Quality Scoring ─────────────────────────────────────────────────────
+
+/** Score a flow's architectural significance: cross-file, cross-directory, longer = better. */
+function scoreFlow(files: string[], length: number): number {
+  const uniqueFiles = new Set(files).size;
+  const uniqueDirs = new Set(files.map((f) => dirname(f))).size;
+
+  const lengthNorm = Math.min(1, (length - MIN_STEPS) / 5); // saturates at 8 steps
+  const fileSpread = uniqueFiles / length; // 0-1: ratio of unique files to steps
+  const dirSpread = Math.min(1, (uniqueDirs - 1) / 3); // 0 if single dir, saturates at 4+
+
+  return lengthNorm * 0.3 + fileSpread * 0.3 + dirSpread * 0.4;
+}
+
 // ─── Label Generation ────────────────────────────────────────────────────────
 
 function generateLabel(steps: string[], files: string[]): string {
@@ -355,10 +373,13 @@ export function computeExecutionFlows(
       files,
       length: steps.length,
       confidence,
+      qualityScore: scoreFlow(files, steps.length),
     };
   });
 
-  // Sort by confidence descending, then length descending
-  flows.sort((a, b) => b.confidence - a.confidence || b.length - a.length);
+  // Sort by confidence descending, then quality descending, then length descending
+  flows.sort(
+    (a, b) => b.confidence - a.confidence || (b.qualityScore ?? 0) - (a.qualityScore ?? 0) || b.length - a.length,
+  );
   return flows;
 }

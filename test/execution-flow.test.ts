@@ -245,6 +245,161 @@ describe("enrichFlowConfidence", () => {
   });
 });
 
+// ─── Import count centrality ──────────────────────────────────────────────────
+
+describe("scoreEntryPoints — import count centrality", () => {
+  it("boosts heavily-imported public symbols over rarely-imported ones", () => {
+    const graph = [edge("coreFunc", "helper"), edge("obscureFunc", "helper")];
+    const publicAPI: PublicAPIEntry[] = [
+      { name: "coreFunc", kind: "function", sourceFile: "src/coreFunc.ts", isTypeOnly: false, importCount: 15 },
+      { name: "obscureFunc", kind: "function", sourceFile: "src/obscureFunc.ts", isTypeOnly: false, importCount: 0 },
+    ];
+    const scored = scoreEntryPoints(graph, publicAPI);
+    const coreScore = scored.find((s) => s.nodeId.includes("coreFunc"))!.score;
+    const obscureScore = scored.find((s) => s.nodeId.includes("obscureFunc"))!.score;
+    expect(coreScore).toBeGreaterThan(obscureScore);
+  });
+
+  it("centrality boost caps at 1.5x (importCount=20 saturates)", () => {
+    const graph = [edge("a", "helper"), edge("b", "helper")];
+    const publicAPI: PublicAPIEntry[] = [
+      { name: "a", kind: "function", sourceFile: "src/a.ts", isTypeOnly: false, importCount: 20 },
+      { name: "b", kind: "function", sourceFile: "src/b.ts", isTypeOnly: false, importCount: 100 },
+    ];
+    const scored = scoreEntryPoints(graph, publicAPI);
+    const aScore = scored.find((s) => s.nodeId.includes("#a"))!.score;
+    const bScore = scored.find((s) => s.nodeId.includes("#b"))!.score;
+    // Both should be equal since centrality caps at 1.5x (importCount >= 20)
+    expect(aScore).toBe(bScore);
+  });
+});
+
+// ─── Framework entry methods ──────────────────────────────────────────────────
+
+describe("scoreEntryPoints — framework entry methods", () => {
+  it("boosts hono fetch when hono is active framework", () => {
+    const graph = [edge("fetch", "dispatch"), edge("someHelper", "dispatch")];
+    const deps = { runtime: [], frameworks: [{ name: "hono", version: "4.0.0" }] };
+    const scored = scoreEntryPoints(graph, [], deps);
+    const fetchScore = scored.find((s) => s.nodeId.includes("fetch"))!.score;
+    const helperScore = scored.find((s) => s.nodeId.includes("someHelper"))!.score;
+    expect(fetchScore).toBeGreaterThan(helperScore);
+  });
+
+  it("does not boost fetch when hono is NOT active", () => {
+    const graph = [edge("fetch", "dispatch"), edge("handleRequest", "dispatch")];
+    const scored = scoreEntryPoints(graph, []);
+    const fetchScore = scored.find((s) => s.nodeId.includes("fetch"))!.score;
+    const handleScore = scored.find((s) => s.nodeId.includes("handleRequest"))!.score;
+    // Without framework context, handleRequest matches ENTRY_PATTERNS, fetch doesn't
+    expect(handleScore).toBeGreaterThan(fetchScore);
+  });
+
+  it("boosts express listen when express is active framework", () => {
+    const graph = [edge("listen", "bind"), edge("obscure", "bind")];
+    const deps = { runtime: [], frameworks: [{ name: "express", version: "4.0.0" }] };
+    const scored = scoreEntryPoints(graph, [], deps);
+    const listenScore = scored.find((s) => s.nodeId.includes("listen"))!.score;
+    const obscureScore = scored.find((s) => s.nodeId.includes("obscure"))!.score;
+    expect(listenScore).toBeGreaterThan(obscureScore);
+  });
+});
+
+// ─── Flow quality scoring ─────────────────────────────────────────────────────
+
+describe("computeExecutionFlows — flow quality scoring", () => {
+  function crossDirEdge(from: string, to: string, fromDir: string, toDir: string): CallGraphEdge {
+    return {
+      from,
+      to,
+      fromFile: `src/${fromDir}/${from}.ts`,
+      toFile: `src/${toDir}/${to}.ts`,
+      confidence: 0.85,
+      resolution: "export-map",
+    };
+  }
+
+  it("ranks cross-directory flows above single-directory flows", () => {
+    // Build a graph above MIN_CALL_GRAPH_EDGES with two competing paths:
+    // Path A: cross-directory (core → routing → middleware → handlers)
+    // Path B: single-directory (ssg/fetch → ssg/filter → ssg/find → ssg/check)
+    const graph: CallGraphEdge[] = [
+      // Cross-directory path
+      crossDirEdge("entryA", "routeA", "core", "routing"),
+      crossDirEdge("routeA", "middlewareA", "routing", "middleware"),
+      crossDirEdge("middlewareA", "handlerA", "middleware", "handlers"),
+      // Single-directory path
+      {
+        from: "entryB",
+        to: "filterB",
+        fromFile: "src/ssg/entryB.ts",
+        toFile: "src/ssg/filterB.ts",
+        confidence: 0.95,
+        resolution: "same-file",
+      },
+      {
+        from: "filterB",
+        to: "findB",
+        fromFile: "src/ssg/filterB.ts",
+        toFile: "src/ssg/findB.ts",
+        confidence: 0.95,
+        resolution: "same-file",
+      },
+      {
+        from: "findB",
+        to: "checkB",
+        fromFile: "src/ssg/findB.ts",
+        toFile: "src/ssg/checkB.ts",
+        confidence: 0.95,
+        resolution: "same-file",
+      },
+      // Filler edges to hit MIN_CALL_GRAPH_EDGES threshold
+      edge("filler1", "filler2"),
+      edge("filler3", "filler4"),
+      edge("filler5", "filler6"),
+      edge("filler7", "filler8"),
+      edge("filler9", "filler10"),
+    ];
+    const flows = computeExecutionFlows(graph, [api("entryA"), api("entryB")]);
+    const crossDirFlow = flows.find((f) => f.entryPoint === "entryA");
+    const singleDirFlow = flows.find((f) => f.entryPoint === "entryB");
+
+    expect(crossDirFlow).toBeDefined();
+    expect(singleDirFlow).toBeDefined();
+    expect(crossDirFlow!.qualityScore).toBeGreaterThan(singleDirFlow!.qualityScore!);
+  });
+
+  it("single-directory minimum-length flow gets lowest quality score", () => {
+    const graph: CallGraphEdge[] = [
+      // 3-step flow in one directory
+      {
+        from: "a",
+        to: "b",
+        fromFile: "src/helpers/a.ts",
+        toFile: "src/helpers/b.ts",
+        confidence: 0.95,
+        resolution: "same-file",
+      },
+      {
+        from: "b",
+        to: "c",
+        fromFile: "src/helpers/b.ts",
+        toFile: "src/helpers/c.ts",
+        confidence: 0.95,
+        resolution: "same-file",
+      },
+      // Filler
+      ...Array.from({ length: 10 }, (_, i) => edge(`fill${i}`, `fill${i + 1}`)),
+    ];
+    const flows = computeExecutionFlows(graph, [api("a")]);
+    const helperFlow = flows.find((f) => f.entryPoint === "a");
+    if (helperFlow) {
+      // lengthNorm=0, fileSpread=1 (3 unique / 3), dirSpread=0 → 0.3
+      expect(helperFlow.qualityScore).toBeLessThanOrEqual(0.3);
+    }
+  });
+});
+
 // ─── computeExecutionFlows (integration) ─────────────────────────────────────
 
 describe("computeExecutionFlows", () => {
