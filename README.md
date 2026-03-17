@@ -191,7 +191,7 @@ Options:
 
 ## Stats
 
-- 848 tests across 56 files
+- 906 tests across 62 files
 - 16 MCP tools + 5 resources + 2 prompts
 - 13 convention detectors
 - 95-commit diagnose validation corpus (10 repos)
@@ -217,7 +217,7 @@ const agentsMd = generateMinimalAgentsMd(analysis);
 git clone https://github.com/msiric/synaps.git
 cd synaps
 npm install
-npm test          # 848 tests
+npm test          # 906 tests
 npm run typecheck # Zero errors
 npm run build
 ```

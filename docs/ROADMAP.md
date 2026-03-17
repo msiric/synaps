@@ -1,8 +1,8 @@
 # Roadmap
 
-## Current State (v0.10.7, 2026-03-17)
+## Current State (v0.10.8, 2026-03-18)
 
-**848 tests. 16 MCP tools. 13 convention detectors. Zero type errors.**
+**906 tests. 16 MCP tools. 13 convention detectors. Zero type errors.**
 
 - **MCP server** — 16 tools with search, blast radius, co-change analysis, execution flows, diagnose, and next-step hints
 - **Flagship tools**: `plan_change` (import graph + co-change + implicit coupling + registration checklist), `diagnose` (7-signal root cause analysis, 83% R@3 on unit-test repos), `search` (cross-data-source symbol/file/convention discovery)
@@ -60,8 +60,8 @@ The 6-model brainstorm was unanimous: ship and get real users. The engine has be
 
 ### 3. Harden (Parallel with user feedback)
 
-- [ ] **Test coverage** 848→1,000+ — Focus: query functions (`getCoChangesForFile`, `getImplicitCouplingForFile` have zero direct tests), hook edge cases, execution flow edge cases, new detectors
-- [ ] **Diagnose accuracy** 47% R@3 → 60%+ — Expand 95-commit corpus to 200+, add callback/registration detection in scoring
+- [ ] **Test coverage** 906→1,000+ — Focus: hook edge cases, execution flow edge cases, new detectors
+- [ ] **Diagnose accuracy** P@1 39%, R@3 46% → P@1 50%+ — Call graph as first-class candidate discovery signal, content-based similarity for disconnected tests
 - [ ] **Convention enforcement in CI** — `synaps check --conventions` command. Detects convention drift (new files violating established patterns). Every brainstorm model identified convention detection as the strongest technical moat.
 
 ### 4. Expand (Driven by user feedback)

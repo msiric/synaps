@@ -275,6 +275,56 @@ describe("class-method-call-graph", () => {
   });
 });
 
+// ─── Super Method Call Graph ─────────────────────────────────────────────────
+
+describe("super-method-call-graph", () => {
+  it("extracts super.method() call references from subclass", () => {
+    const warnings: Warning[] = [];
+    const pf = parseFile(
+      resolve(FIXTURES, "callgraph-pkg/src/admin-service.ts"),
+      resolve(FIXTURES, "callgraph-pkg"),
+      warnings,
+    );
+
+    // AdminService.fetch calls super.fetch (= UserService.fetch)
+    const superCall = pf.callReferences.find(
+      (cr) => cr.callerName === "AdminService.fetch" && cr.calleeName === "UserService.fetch",
+    );
+    expect(superCall).toBeDefined();
+    expect(superCall!.calleeModule).toBe("./service.js");
+    expect(superCall!.isInternal).toBe(true);
+  });
+
+  it("tracks this.method() in subclass alongside super calls", () => {
+    const warnings: Warning[] = [];
+    const pf = parseFile(
+      resolve(FIXTURES, "callgraph-pkg/src/admin-service.ts"),
+      resolve(FIXTURES, "callgraph-pkg"),
+      warnings,
+    );
+
+    const thisCall = pf.callReferences.find(
+      (cr) => cr.callerName === "AdminService.fetch" && cr.calleeName === "AdminService.addAdminPrefix",
+    );
+    expect(thisCall).toBeDefined();
+    expect(thisCall!.calleeModule).toBe(".");
+  });
+
+  it("produces cross-file edges for super.method() in call graph", () => {
+    const warnings: Warning[] = [];
+    const pkgDir = resolve(FIXTURES, "callgraph-pkg");
+    const files = discoverFiles(pkgDir, [], warnings);
+    const parsed = files.map((f) => parseFile(f, pkgDir, warnings));
+    const graph = buildSymbolGraph(parsed, pkgDir, warnings);
+
+    const superEdge = graph.callGraph.find((e) => e.from === "AdminService.fetch" && e.to === "UserService.fetch");
+    expect(superEdge).toBeDefined();
+    expect(superEdge!.resolution).toBe("super-method");
+    expect(superEdge!.confidence).toBe(0.9);
+    expect(superEdge!.fromFile).not.toBe(superEdge!.toFile); // cross-file
+  });
+});
+
 // ─── Improvement 4: Existing Docs Detection & Merge ─────────────────────────
 
 describe("existing-docs", () => {

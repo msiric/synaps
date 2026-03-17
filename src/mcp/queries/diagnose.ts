@@ -56,7 +56,11 @@ function testToSourceScore(
 
   // Signal 1 (primary): naming convention — "this test is ABOUT this file"
   const stripped = testFile.replace(/\.(test|spec)\.(ts|tsx|js|jsx)$/, ".$2").replace(/^(test|__tests__)\//, "src/");
-  if (candidateFile === stripped) return 1;
+  if (candidateFile === stripped) {
+    // Barrel/index files are re-export hubs, rarely the root cause — reduce signal
+    const isBarrel = candidateFile.endsWith("/index.ts") || candidateFile === "index.ts";
+    return isBarrel ? 0.1 : 1;
+  }
 
   // Signal 2 (tiebreaker): import graph — "the test uses this file"
   const testImports = importByImporter.get(testFile);
@@ -400,14 +404,13 @@ export function buildSuspectList(
 
   // Multi-hop upstream traversal: BFS through imports up to depth 2
   // Depth 1 = direct dependency (full score), depth 2 = transitive (half score)
-  // Corpus analysis: depth 3 makes 18 more root causes reachable but floods the candidate pool
-  // (R@3 drops from 47% to 46% due to signal dilution), so depth 2 remains optimal
+  // Depth 3 was tested but floods the candidate pool, causing signal dilution (P@1 -2pp).
   const MAX_CANDIDATE_DEPTH = 2;
   const visited = new Set(errorFiles);
 
   let frontier = new Set(errorFiles);
   for (let depth = 1; depth <= MAX_CANDIDATE_DEPTH; depth++) {
-    const depthFactor = 1 / depth; // 1.0, 0.5, 0.33
+    const depthFactor = 1 / depth; // 1.0, 0.5
     const nextFrontier = new Set<string>();
 
     for (const file of frontier) {
@@ -551,6 +554,11 @@ export function buildSuspectList(
       w.workflow * signals.workflow +
       w.testMapping * signals.testMapping +
       w.directoryLocality * signals.directoryLocality;
+
+    // Root barrel penalty: top-level index.ts/src/index.ts are re-export hubs, rarely root causes
+    // Deep index files (src/plugins/astro/index.ts) are often real implementations — don't penalize
+    const isRootBarrel = file === "index.ts" || file === "src/index.ts";
+    if (isRootBarrel) score *= 0.5;
 
     // Call graph bonus: 1.5x if call edge exists, but NOT for the error site itself
     const neighbors = callGraphByFile.get(file);

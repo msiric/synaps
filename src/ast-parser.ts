@@ -793,6 +793,21 @@ function scanClassMethods(
   const className = classDecl.name?.text;
   if (!className) return;
 
+  // Resolve parent class name from extends clause (for super.method() tracking)
+  let parentClassName: string | undefined;
+  let parentModule: string | undefined; // "." if same-file, import specifier if imported
+  if (classDecl.heritageClauses) {
+    for (const clause of classDecl.heritageClauses) {
+      if (clause.token === ts.SyntaxKind.ExtendsKeyword && clause.types.length > 0) {
+        const expr = clause.types[0].expression;
+        if (ts.isIdentifier(expr)) {
+          parentClassName = expr.text;
+          parentModule = importedNameToModule.get(parentClassName) ?? ".";
+        }
+      }
+    }
+  }
+
   // Collect all method names in this class (MethodDeclaration + arrow PropertyDeclaration)
   const methodNames = new Set<string>();
   const methodBodies: { name: string; body: ts.Node }[] = [];
@@ -809,24 +824,26 @@ function scanClassMethods(
     }
   }
 
-  // Walk each method body for this.X() calls + imported symbol calls
+  // Walk each method body for this.X(), super.X(), and imported symbol calls
   for (const { name, body } of methodBodies) {
     const callerName = `${className}.${name}`;
 
     // Track imported symbol calls within class methods (same as standalone functions)
     findCallsInBody(body, callerName, importedNameToModule, callRefs);
 
-    // Track this.method() calls within the same class
+    // Track this.method() and super.method() calls
     const seen = new Set<string>();
-    function walkThis(node: ts.Node): void {
+    function walkMethodCalls(node: ts.Node): void {
       if (
         ts.isCallExpression(node) &&
         ts.isPropertyAccessExpression(node.expression) &&
-        node.expression.expression.kind === ts.SyntaxKind.ThisKeyword &&
         ts.isIdentifier(node.expression.name)
       ) {
         const methodName = node.expression.name.text;
-        if (methodNames.has(methodName) && methodName !== name) {
+        const exprKind = node.expression.expression.kind;
+
+        // this.method() — same-class call
+        if (exprKind === ts.SyntaxKind.ThisKeyword && methodNames.has(methodName) && methodName !== name) {
           const key = `${callerName}->${className}.${methodName}`;
           if (!seen.has(key)) {
             seen.add(key);
@@ -838,9 +855,24 @@ function scanClassMethods(
             });
           }
         }
+
+        // super.method() — parent class call
+        if (exprKind === ts.SyntaxKind.SuperKeyword && parentClassName) {
+          const calleeName = `${parentClassName}.${methodName}`;
+          const key = `${callerName}->${calleeName}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            callRefs.push({
+              callerName,
+              calleeName,
+              calleeModule: parentModule ?? ".",
+              isInternal: parentModule ? parentModule.startsWith(".") : true,
+            });
+          }
+        }
       }
-      ts.forEachChild(node, walkThis);
+      ts.forEachChild(node, walkMethodCalls);
     }
-    walkThis(body);
+    walkMethodCalls(body);
   }
 }

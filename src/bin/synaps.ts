@@ -35,6 +35,7 @@ Usage:
   synaps check                  Check if AGENTS.md needs regeneration (for CI)
   synaps analyze [paths...]     Analyze specific packages (advanced)
   synaps serve [path]           Start MCP server for live codebase intelligence
+  synaps visualize [path]       Generate interactive HTML topology report
   synaps benchmark [path]       Measure AGENTS.md effectiveness (A/B testing)
 
 Arguments:

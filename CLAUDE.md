@@ -18,7 +18,7 @@ Standard `npm` scripts — see `package.json` for details.
 
 ## Conventions
 
-- **DO**: Tests use Vitest (53 test files, 770 tests)
+- **DO**: Tests use Vitest (62 test files, 906 tests)
 - **DO**: Use kebab-case for filenames (99% consistency)
 - **DO**: Import Node builtins with `node:` protocol (e.g., `node:fs`, `node:path`)
 - **DO**: Use typed error subclasses (ToolError, FileNotFoundError, LLMError)
@@ -33,7 +33,7 @@ Standard `npm` scripts — see `package.json` for details.
 - `src/mcp/` — Feature: MCP server (16 tools + 5 resources + 2 prompts), queries, cache, hooks
 - `src/templates/` — Feature: AGENTS.md, CLAUDE.md, cursorrules templates
 - `hooks/` — Claude Code PreToolUse/PostToolUse hook scripts
-- `test/fixtures/diagnose-corpus/` — 95 bug-fix commits across 10 repos for diagnose validation
+- `test/fixtures/diagnose-corpus/` — 132 bug-fix commits across 14 repos for diagnose validation
 
 > **Example**: See `src/detectors/build-tool.ts` for the canonical detector pattern (register in `src/convention-extractor.ts`).
 

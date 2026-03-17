@@ -745,7 +745,7 @@ function buildCallGraph(parsedFiles: ParsedFile[], _packageDir: string, _warning
     for (const ref of pf.callReferences) {
       if (!ref.isInternal) continue; // Only track internal calls
 
-      // Same-class this.method() calls: calleeModule "." means same-file class method
+      // Same-file class method calls (this.method() or same-file super.method())
       if (ref.calleeModule === ".") {
         const key = `${ref.callerName}:${pf.relativePath}->${ref.calleeName}:${pf.relativePath}`;
         if (seen.has(key)) continue;
@@ -758,6 +758,28 @@ function buildCallGraph(parsedFiles: ParsedFile[], _packageDir: string, _warning
           confidence: 0.95,
           resolution: "this-method",
         });
+        continue;
+      }
+
+      // Cross-file super.method() calls: calleeName is "ParentClass.method", resolve via class name
+      const dotIdx = ref.calleeName.indexOf(".");
+      if (dotIdx > 0) {
+        const parentName = ref.calleeName.slice(0, dotIdx);
+        const toFile = exportNameToFile.get(parentName);
+        if (toFile && toFile !== pf.relativePath) {
+          const key = `${ref.callerName}:${pf.relativePath}->${ref.calleeName}:${toFile}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            edges.push({
+              from: ref.callerName,
+              to: ref.calleeName,
+              fromFile: pf.relativePath,
+              toFile,
+              confidence: 0.9,
+              resolution: "super-method",
+            });
+          }
+        }
         continue;
       }
 
