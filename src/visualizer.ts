@@ -105,6 +105,7 @@ svg{display:block;width:100%;height:100%}
 .cv-no{border-color:#f87171;background:rgba(248,113,113,0.05);color:#777}
 .cd{font-size:9px;color:#555}
 .hint{position:fixed;bottom:50px;left:50%;transform:translateX(-50%);font-size:12px;color:#333;z-index:5;transition:opacity 0.5s}
+.file-label{font-size:9px;fill:#666;pointer-events:none}
 </style>
 </head>
 <body>
@@ -120,7 +121,7 @@ svg{display:block;width:100%;height:100%}
   <span style="margin-left:8px;opacity:0.6">|</span>
   <span>colored nodes = co-change cluster</span>
 </div>
-<div class="hint" id="hint">click a module to explore its blast radius</div>
+<div class="hint" id="hint">click a module to explore &middot; double-click to expand into files</div>
 <svg id="graph"></svg>
 <div class="panel" id="panel">
   <button class="close-btn" onclick="closePanel()">&times;</button>
@@ -221,8 +222,158 @@ function closePanel(){
   node.select('circle').attr('opacity',1).attr('filter',null).attr('stroke-width',1.5);
   link.attr('opacity',d=>d.type==='import'?.35:.5);
 }
-svg.on('click',()=>closePanel());
+svg.on('click',()=>{closePanel();if(expandedDir)collapseDir()});
 function toggleDrawer(){document.getElementById('drawer').classList.toggle('open')}
+
+// ── Expandable directory clusters ──
+let expandedDir=null;
+let expandedGroup=null;
+let fileNodes=null;
+let fileLinks=null;
+let clusterBg=null;
+
+node.on('dblclick',(e,d)=>{
+  e.stopPropagation();
+  e.preventDefault();
+  if(expandedDir===d.id){collapseDir();return}
+  if(expandedDir)collapseDir();
+  expandDir(d);
+});
+
+function expandDir(d){
+  const dirFiles=G.filesByDir[d.id];
+  if(!dirFiles||dirFiles.length<2)return;
+  expandedDir=d.id;
+  const cx=d.x,cy=d.y;
+  const color=d.group>=0?PAL[d.group%PAL.length]:'#444';
+  const maxImp=Math.max(1,...dirFiles.map(f=>f.importedBy));
+
+  // Hide the directory node
+  node.filter(n=>n.id===d.id).attr('opacity',0).style('pointer-events','none');
+
+  // Create file node data with positions around the directory center
+  const fileData=dirFiles.map((f,i)=>{
+    const angle=(2*Math.PI*i)/dirFiles.length;
+    const spread=Math.min(80,20+dirFiles.length*8);
+    return{...f,x:cx+Math.cos(angle)*spread,y:cy+Math.sin(angle)*spread,fx:null,fy:null};
+  });
+
+  // Cluster background
+  clusterBg=svg.insert('ellipse','g')
+    .attr('cx',cx).attr('cy',cy)
+    .attr('rx',10).attr('ry',10)
+    .attr('fill',color).attr('opacity',0)
+    .transition().duration(400)
+    .attr('rx',Math.min(120,40+dirFiles.length*12))
+    .attr('ry',Math.min(100,35+dirFiles.length*10))
+    .attr('opacity',0.06);
+
+  // File-level edges (within the expanded directory)
+  const dirPrefix=d.id+'/';
+  const internalImports=IM.filter(e=>{
+    const s=e[0],t=e[1];
+    return(s.startsWith(dirPrefix)||s===d.id)&&(t.startsWith(dirPrefix)||t===d.id);
+  });
+  const internalCochange=CC.filter(e=>{
+    return(e[0].startsWith(dirPrefix)||e[0]===d.id)&&(e[1].startsWith(dirPrefix)||e[1]===d.id);
+  });
+
+  const fileEdgeData=[];
+  for(const e of internalImports){
+    const sf=fileData.find(f=>f.path===e[0]||f.path===e[1]);
+    const tf=fileData.find(f=>f.path===(e[0]===sf?.path?e[1]:e[0]));
+    if(sf&&tf&&sf!==tf)fileEdgeData.push({source:sf,target:tf,type:'import',w:e[2]});
+  }
+  for(const e of internalCochange){
+    const sf=fileData.find(f=>f.path===e[0]);
+    const tf=fileData.find(f=>f.path===e[1]);
+    if(sf&&tf)fileEdgeData.push({source:sf,target:tf,type:'cochange',w:e[2]});
+  }
+
+  fileLinks=svg.append('g').attr('class','file-edges').selectAll('line').data(fileEdgeData).join('line')
+    .attr('stroke',e=>e.type==='cochange'?'#c59a28':'#333')
+    .attr('stroke-width',e=>e.type==='cochange'?1.5:0.8)
+    .attr('stroke-dasharray',e=>e.type==='cochange'?'4,3':'none')
+    .attr('opacity',0).transition().duration(400).attr('opacity',e=>e.type==='cochange'?0.7:0.3);
+
+  // File nodes
+  expandedGroup=svg.append('g').attr('class','file-nodes');
+  fileNodes=expandedGroup.selectAll('g').data(fileData).join('g')
+    .call(d3.drag()
+      .on('start',(e,f)=>{if(!e.active)fileSim.alphaTarget(.3).restart();f.fx=f.x;f.fy=f.y})
+      .on('drag',(e,f)=>{f.fx=e.x;f.fy=e.y})
+      .on('end',(e,f)=>{if(!e.active)fileSim.alphaTarget(0);f.fx=null;f.fy=null}))
+    .on('click',(e,f)=>{e.stopPropagation();selectFile(f,d)})
+    .style('cursor','pointer');
+
+  fileNodes.append('circle')
+    .attr('r',0)
+    .attr('fill',color+'44')
+    .attr('stroke',color)
+    .attr('stroke-width',1)
+    .transition().duration(400)
+    .attr('r',f=>4+Math.sqrt(f.importedBy/maxImp)*10);
+
+  fileNodes.append('text')
+    .attr('class','file-label')
+    .text(f=>f.name.replace(/.[^.]+$/,''))
+    .attr('text-anchor','middle')
+    .attr('dy',f=>-(8+Math.sqrt(f.importedBy/maxImp)*12))
+    .attr('paint-order','stroke').attr('stroke','#0a0a0f').attr('stroke-width',3)
+    .attr('opacity',0).transition().duration(400).attr('opacity',1);
+
+  // Mini force simulation for file nodes
+  const fileSim=d3.forceSimulation(fileData)
+    .force('center',d3.forceCenter(cx,cy).strength(0.08))
+    .force('charge',d3.forceManyBody().strength(-60))
+    .force('collision',d3.forceCollide().radius(f=>8+Math.sqrt(f.importedBy/maxImp)*12))
+    .force('link',d3.forceLink(fileEdgeData).distance(40).strength(0.3))
+    .on('tick',()=>{
+      fileData.forEach(f=>{f.x=Math.max(pad,Math.min(W-pad,f.x));f.y=Math.max(pad,Math.min(H-pad,f.y))});
+      fileNodes.attr('transform',f=>\`translate(\${f.x},\${f.y})\`);
+      svg.select('.file-edges').selectAll('line')
+        .attr('x1',e=>e.source.x).attr('y1',e=>e.source.y)
+        .attr('x2',e=>e.target.x).attr('y2',e=>e.target.y);
+      // Update cluster background position
+      if(clusterBg){
+        const mx=d3.mean(fileData,f=>f.x);
+        const my=d3.mean(fileData,f=>f.y);
+        clusterBg.attr('cx',mx).attr('cy',my);
+      }
+    });
+  window._fileSim=fileSim;
+}
+
+function collapseDir(){
+  if(!expandedDir)return;
+  // Remove file elements
+  if(expandedGroup)expandedGroup.remove();
+  if(fileLinks)svg.select('.file-edges').remove();
+  if(clusterBg)clusterBg.remove();
+  if(window._fileSim)window._fileSim.stop();
+  expandedGroup=null;fileLinks=null;fileNodes=null;clusterBg=null;
+  // Show directory node again
+  node.filter(n=>n.id===expandedDir).attr('opacity',1).style('pointer-events','auto');
+  expandedDir=null;
+}
+
+function selectFile(f,parentDir){
+  // Show file-level detail in panel
+  const path=f.path;
+  const imp=IM.filter(e=>e[0]===path);
+  const impBy=IM.filter(e=>e[1]===path);
+  const coc=CC.filter(e=>e[0]===path||e[1]===path);
+  const seen=new Set();const ucoc=coc.filter(e=>{const k=e[0]+e[1];if(seen.has(k))return false;seen.add(k);return true});
+
+  let h='<h2>'+f.name+'</h2>';
+  h+='<div class="sub">'+path+'</div>';
+  h+='<div class="sub">Imported by '+f.importedBy+' files</div>';
+  if(imp.length){h+='<h3>Imports ('+imp.length+')</h3><ul>';imp.slice(0,8).forEach(e=>{h+='<li><code>'+e[0].split('/').pop()+'</code><span class="badge badge-b">'+e[2]+'</span></li>'});h+='</ul>'}
+  if(impBy.length){h+='<h3>Imported by ('+impBy.length+')</h3><ul>';impBy.slice(0,8).forEach(e=>{h+='<li><code>'+e[1].split('/').pop()+'</code><span class="badge badge-b">'+e[2]+'</span></li>'});h+='</ul>'}
+  if(ucoc.length){h+='<h3>Co-changes</h3><ul>';ucoc.slice(0,6).forEach(e=>{const p=e[0]===path?e[1]:e[0];h+='<li><code>'+p.split('/').pop()+'</code><span class="badge badge-a">'+e[2]+'%</span></li>'});h+='</ul>'}
+  document.getElementById('panel-content').innerHTML=h;
+  document.getElementById('panel').classList.add('open');
+}
 </script>
 </body>
 </html>`;
@@ -244,7 +395,11 @@ interface GEdge {
   type: "import" | "cochange" | "implicit";
 }
 
-function buildGraphData(pkg: Pkg): { nodes: GNode[]; edges: GEdge[] } {
+function buildGraphData(pkg: Pkg): {
+  nodes: GNode[];
+  edges: GEdge[];
+  filesByDir: Record<string, { name: string; path: string; importedBy: number }[]>;
+} {
   const importEdges = pkg.importChain ?? [];
   const coChangeEdges = pkg.gitHistory?.coChangeEdges ?? [];
   const implicitEdges = pkg.implicitCoupling ?? [];
@@ -323,6 +478,20 @@ function buildGraphData(pkg: Pkg): { nodes: GNode[]; edges: GEdge[] } {
     group: dc.get(id) ?? -1,
   }));
 
+  // Per-directory file lists for expandable clusters
+  const filesByDir: Record<string, { name: string; path: string; importedBy: number }[]> = {};
+  for (const [dirId, s] of ds) {
+    const importCounts = new Map<string, number>();
+    for (const e of importEdges) {
+      if (s.files.has(e.source)) importCounts.set(e.source, (importCounts.get(e.source) ?? 0) + 1);
+    }
+    filesByDir[dirId] = [...s.files].sort().map((f) => ({
+      name: f.split("/").pop()!,
+      path: f,
+      importedBy: importCounts.get(f) ?? 0,
+    }));
+  }
+
   const edges: GEdge[] = [];
   for (const [k, w] of de) {
     const [s, t] = k.split("|");
@@ -342,7 +511,7 @@ function buildGraphData(pkg: Pkg): { nodes: GNode[]; edges: GEdge[] } {
     }
   }
 
-  return { nodes, edges };
+  return { nodes, edges, filesByDir };
 }
 
 function esc(s: string): string {
