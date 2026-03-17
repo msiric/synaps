@@ -1,10 +1,10 @@
-# Roadmap — autodocs-engine
+# Roadmap — synaps
 
 Last updated: March 2026
 
 ## Where We Are
 
-autodocs-engine is a TypeScript/JavaScript codebase intelligence engine with 13 MCP tools, 21K LOC, and 713 tests. It analyzes codebases via AST parsing + git history mining and serves intelligence to AI coding agents.
+synaps is a TypeScript/JavaScript codebase intelligence engine with 13 MCP tools, 21K LOC, and 713 tests. It analyzes codebases via AST parsing + git history mining and serves intelligence to AI coding agents.
 
 **Our differentiators vs competitors (GitNexus, Repomix, etc.):**
 - Git co-change mining with Jaccard similarity — finds file coupling invisible to static analysis
@@ -50,7 +50,7 @@ Everything below is complete in code but not published or documented.
 - [ ] Bump version (0.9.9 → 1.0.0 or 0.10.0 — decide based on breaking changes)
 - [ ] Run full test suite on CI (Node 18/20/22 matrix)
 - [ ] Verify npm publish includes hooks/ directory
-- [ ] Test `npx autodocs-engine setup-hooks` after global install
+- [ ] Test `npx synaps setup-hooks` after global install
 
 ### 1.3 Dogfood on Real Projects
 - [ ] Run on 3 external repos (Express app, Next.js app, CLI tool)
@@ -97,7 +97,7 @@ Features that strengthen what's already unique about us.
 ### 3.1 Convention Enforcement in CI
 **Why:** Our convention detectors are unique. A `check` command that fails CI when conventions drift is recurring value.
 
-**Approach:** `autodocs-engine check --conventions` compares current conventions against a baseline. Reports new violations, drift, and regressions. GitHub Action wrapper.
+**Approach:** `synaps check --conventions` compares current conventions against a baseline. Reports new violations, drift, and regressions. GitHub Action wrapper.
 
 **Effort:** Medium (baseline comparison logic + CI integration)
 
@@ -194,7 +194,7 @@ Features that grow the addressable market.
 ### 4.2 Web UI for Exploration
 **Why:** Visual exploration of the codebase graph helps developers understand architecture. GitNexus has a full React+Sigma.js UI.
 
-**Approach:** Start minimal — a simple HTML page served by `autodocs-engine serve --web` that shows the import graph and execution flows. No React dependency.
+**Approach:** Start minimal — a simple HTML page served by `synaps serve --web` that shows the import graph and execution flows. No React dependency.
 
 **Effort:** Large (new frontend, even if minimal)
 
@@ -254,7 +254,7 @@ Tested on 5 external repos via published npm package + 1 self-analysis:
 
 | Repo | Type | Files | Flows | Conventions | Implicit Coupling | Call Graph | Verdict |
 |------|------|-------|-------|-------------|-------------------|------------|---------|
-| autodocs-engine | TS library | 140 | 10 | 6 | 20 | 93 | Excellent |
+| synaps | TS library | 140 | 10 | 6 | 20 | 93 | Excellent |
 | knip | TS CLI monorepo | 881 | 21 | 4 | 9 | 370 | Excellent |
 | valibot | TS validation lib | 1,043 | 22 | 6 | 7 | 345 | Excellent |
 | ofetch | Small TS library | 10 | 0 | 3 | 1 | 8 | Correct (below threshold) |

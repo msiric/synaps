@@ -6,7 +6,7 @@ You are a senior developer tools engineer reviewing the REVISED implementation p
 
 ## Background
 
-`autodocs-engine` is a TypeScript codebase intelligence engine with 12 MCP tools, published on npm (v0.7.3). We're adding a 13th tool: `diagnose` — backward tracing from test failures/errors to likely root cause using import graphs, call graphs, git co-change history, and uncommitted changes.
+`synaps` is a TypeScript codebase intelligence engine with 12 MCP tools, published on npm (v0.7.3). We're adding a 13th tool: `diagnose` — backward tracing from test failures/errors to likely root cause using import graphs, call graphs, git co-change history, and uncommitted changes.
 
 ### What Changed From v1 to v2
 

@@ -13,7 +13,7 @@ You are reviewing an implementation plan for adding lightweight telemetry to an 
 
 ## Context
 
-**Project:** autodocs-engine — TypeScript codebase intelligence engine serving 13 MCP tools via Model Context Protocol. Published on npm (v0.8.1). Tools include: get_commands, get_architecture, get_conventions, diagnose (root cause analysis), plan_change (blast radius), etc.
+**Project:** synaps — TypeScript codebase intelligence engine serving 13 MCP tools via Model Context Protocol. Published on npm (v0.8.1). Tools include: get_commands, get_architecture, get_conventions, diagnose (root cause analysis), plan_change (blast radius), etc.
 
 **Current state:** 565 tests, 0 type errors, 83% accuracy on real bug-fix commit validation. MCP server communicates via JSON-RPC over stdio.
 
@@ -88,7 +88,7 @@ Please address these specific questions and any other issues you identify:
 
 5. **The fundamental question:** This telemetry measures "how much token/time overhead do our tools add" — not "how much do they save." To answer "do tools save tokens," we'd need a counterfactual: what would the AI have done WITHOUT the tools? Is our approach sufficient for the marketing claim we want to make?
 
-6. **stderr noise:** The session summary prints on every server shutdown. For users who run `npx autodocs-engine serve` frequently (e.g., restart Claude Code often), this could get noisy. Should it only print when there were actual tool calls?
+6. **stderr noise:** The session summary prints on every server shutdown. For users who run `npx synaps serve` frequently (e.g., restart Claude Code often), this could get noisy. Should it only print when there were actual tool calls?
 
 7. **Integration test feasibility:** Testing that stderr contains the session summary requires spawning the server, making calls, then killing it and reading stderr. The existing integration test spawns a server — can we reliably capture stderr after SIGTERM?
 

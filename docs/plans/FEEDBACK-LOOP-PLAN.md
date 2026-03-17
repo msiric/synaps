@@ -191,7 +191,7 @@ test/benchmark/
 ## CLI Command
 
 ```
-autodocs-engine benchmark [repo-path] [options]
+synaps benchmark [repo-path] [options]
 
 Options:
   --quick               Quick mode: 3-5 tasks, directional only (default)
@@ -223,8 +223,8 @@ Does NOT claim: general code quality improvement, help with all task types, repl
 
 1. `npm run typecheck` — 0 errors
 2. `npm test` — all existing 355+ tests + ~30 new tests pass
-3. `autodocs-engine benchmark . --dry-run` — shows tasks, prompts, sibling selection, no LLM
-4. `autodocs-engine benchmark . --quick` — runs on autodocs-engine itself
+3. `synaps benchmark . --dry-run` — shows tasks, prompts, sibling selection, no LLM
+4. `synaps benchmark . --quick` — runs on synaps itself
 5. Negative control: shuffled AGENTS.md scores similar to or worse than Condition B
 6. Token counts reported per condition in results.json
 7. REPORT.md has properly scoped claims, per-condition breakdowns, and sibling file disclosure

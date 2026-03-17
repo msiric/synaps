@@ -267,7 +267,7 @@ Rewrite `BENCHMARK-RESULTS-20-REPOS.md` to:
 | `src/benchmark/task-generator.ts` | Seeded shuffle for task names, 2 cmd tasks, min 10 tasks |
 | `src/benchmark/scorer.ts` | Better architecture/command scoring |
 | `src/bin/benchmark.ts` | `--mode pr|synthetic|both` flag |
-| `src/bin/autodocs-engine.ts` | Updated help text |
+| `src/bin/synaps.ts` | Updated help text |
 
 ## Implementation Order
 
@@ -287,7 +287,7 @@ Rewrite `BENCHMARK-RESULTS-20-REPOS.md` to:
 ## Verification Plan
 
 1. **Unit tests**: All new modules have dedicated test files
-2. **Integration test**: Run PR-based benchmark on autodocs-engine itself (self-benchmark)
+2. **Integration test**: Run PR-based benchmark on synaps itself (self-benchmark)
 3. **Pilot run**: 3 repos (zod, astro, medusa) with PR mode — verify sensible results
 4. **Comparison**: Run both modes on the 3 pilot repos, check if they directionally agree
 5. **Full run**: All 20 repos with both modes

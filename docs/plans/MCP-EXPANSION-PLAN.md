@@ -2,7 +2,7 @@
 
 ## Context
 
-autodocs-engine v0.5.0 is published on npm. The MCP server has 8 tools and works with Claude Code. The analysis pipeline computes significantly more data than is currently exposed. This plan identifies the highest-impact additions that would make the MCP server indispensable — meaning the AI performs *noticeably worse* without it.
+synaps v0.5.0 is published on npm. The MCP server has 8 tools and works with Claude Code. The analysis pipeline computes significantly more data than is currently exposed. This plan identifies the highest-impact additions that would make the MCP server indispensable — meaning the AI performs *noticeably worse* without it.
 
 ## Current State
 

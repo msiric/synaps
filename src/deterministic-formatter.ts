@@ -778,7 +778,7 @@ function formatTeamKnowledge(analysis: StructuredAnalysis): string {
   }
 
   const lines = ["## Team Knowledge", ""];
-  lines.push("_autodocs-engine detected these patterns but needs your input:_");
+  lines.push("_synaps detected these patterns but needs your input:_");
   lines.push("");
   for (const q of selected) {
     lines.push(`- [ ] ${q}`);

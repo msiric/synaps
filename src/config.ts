@@ -131,18 +131,18 @@ function loadConfigFile(configPath: string | undefined, warnings: Warning[]): Pa
   // Search for config file
   const cwd = process.cwd();
 
-  // autodocs.config.json
-  const jsonConfig = join(cwd, "autodocs.config.json");
+  // synaps.config.json
+  const jsonConfig = join(cwd, "synaps.config.json");
   if (existsSync(jsonConfig)) {
     return parseConfigFile(jsonConfig, warnings);
   }
 
-  // autodocs key in package.json
+  // synaps key in package.json
   const pkgJson = join(cwd, "package.json");
   if (existsSync(pkgJson)) {
     try {
       const pkg = JSON.parse(readFileSync(pkgJson, "utf-8"));
-      if (pkg.autodocs) return pkg.autodocs;
+      if (pkg.synaps) return pkg.synaps;
     } catch {
       // Invalid package.json
     }

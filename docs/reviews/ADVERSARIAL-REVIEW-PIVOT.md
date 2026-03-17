@@ -4,7 +4,7 @@ You are a senior principal engineer and product strategist conducting an adversa
 
 ## Background
 
-`autodocs-engine` is a TypeScript codebase intelligence engine that generates AGENTS.md context files for AI coding tools (Claude Code, Cursor, Copilot). It analyzes codebases via AST parsing and produces 16-section output files with conventions, contribution patterns, commands, workflow rules, change impact analysis, and more.
+`synaps` is a TypeScript codebase intelligence engine that generates AGENTS.md context files for AI coding tools (Claude Code, Cursor, Copilot). It analyzes codebases via AST parsing and produces 16-section output files with conventions, contribution patterns, commands, workflow rules, change impact analysis, and more.
 
 The engine is at a critical inflection point. We built a benchmark system to measure whether AGENTS.md actually helps AI tools write better code. The results challenged our core assumptions.
 
@@ -20,7 +20,7 @@ Results:
 
 | Repo | A (AGENTS.md) | B (Source only) | C (Listing) | N (Shuffled) | A - B |
 |------|:---:|:---:|:---:|:---:|:---:|
-| autodocs-engine (52 files) | 76.8% | 78.2% | 36.4% | 62.4% | **-1.4%** |
+| synaps (52 files) | 76.8% | 78.2% | 36.4% | 62.4% | **-1.4%** |
 | knip (2,427 files) | 50.0% | 41.0% | 0.0% | 41.0% | **+9.0%** |
 | Vercel AI SDK (355 files) | — | — | — | — | *no patterns found* |
 
@@ -63,7 +63,7 @@ Attack the reasoning. Specifically:
 
 Tell us where this project should go for maximum utility. Consider:
 
-1. **Product positioning:** Is autodocs-engine a document generator, a codebase intelligence API (MCP), a CI quality gate, or something else entirely? What's the right primary identity?
+1. **Product positioning:** Is synaps a document generator, a codebase intelligence API (MCP), a CI quality gate, or something else entirely? What's the right primary identity?
 
 2. **The MCP server vs leaner AGENTS.md tradeoff:** Should we invest in making the static file better, or skip straight to MCP? The static file is a compression problem (fit value into limited tokens). MCP eliminates the compression problem entirely. Is optimizing the static file the wrong focus?
 
@@ -71,11 +71,11 @@ Tell us where this project should go for maximum utility. Consider:
 
 4. **The target user question:** Who benefits most from this tool? Developers writing code with AI tools? Open-source maintainers making their repo AI-friendly? Engineering leaders standardizing documentation? The pivot should be informed by who we're building for.
 
-5. **Competitive landscape:** What else exists in this space? Are there tools that do what autodocs-engine does? If we pivot to MCP, who are we competing with? What's the defensible advantage?
+5. **Competitive landscape:** What else exists in this space? Are there tools that do what synaps does? If we pivot to MCP, who are we competing with? What's the defensible advantage?
 
 6. **The honesty angle:** We have benchmark data showing our own output has ~zero marginal value for patterns. Is publishing this a strength (credibility, scientific rigor) or a weakness (undermining our own product)? How do we frame it?
 
-7. **What would you build?** If you were starting from scratch with the same insight ("AI tools can infer code patterns from source but can't infer operational workflows"), what product would you build? Would it look like autodocs-engine, or something completely different?
+7. **What would you build?** If you were starting from scratch with the same insight ("AI tools can infer code patterns from source but can't infer operational workflows"), what product would you build? Would it look like synaps, or something completely different?
 
 ## Output Format
 

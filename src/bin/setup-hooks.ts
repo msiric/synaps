@@ -1,5 +1,5 @@
 // src/bin/setup-hooks.ts — Install PreToolUse/PostToolUse hooks for Claude Code
-// Copies hook script to ~/.claude/hooks/autodocs/ and merges config into settings.json.
+// Copies hook script to ~/.claude/hooks/synaps/ and merges config into settings.json.
 // Idempotent — safe to run multiple times.
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -10,16 +10,16 @@ export async function runSetupHooks(): Promise<void> {
   const claudeDir = join(homedir(), ".claude");
   const settingsPath = join(claudeDir, "settings.json");
 
-  // 1. Copy hook script to ~/.claude/hooks/autodocs/
-  const hooksDir = join(claudeDir, "hooks", "autodocs");
+  // 1. Copy hook script to ~/.claude/hooks/synaps/
+  const hooksDir = join(claudeDir, "hooks", "synaps");
   mkdirSync(hooksDir, { recursive: true });
 
-  const hookSrc = resolve(import.meta.dirname, "..", "..", "hooks", "autodocs-hook.cjs");
-  const hookDest = join(hooksDir, "autodocs-hook.cjs");
+  const hookSrc = resolve(import.meta.dirname, "..", "..", "hooks", "synaps-hook.cjs");
+  const hookDest = join(hooksDir, "synaps-hook.cjs");
 
   if (!existsSync(hookSrc)) {
-    process.stderr.write(`[autodocs] Hook script not found at ${hookSrc}\n`);
-    process.stderr.write("[autodocs] Try reinstalling: npm install -g autodocs-engine\n");
+    process.stderr.write(`[synaps] Hook script not found at ${hookSrc}\n`);
+    process.stderr.write("[synaps] Try reinstalling: npm install -g synaps\n");
     process.exit(1);
   }
 
@@ -31,7 +31,7 @@ export async function runSetupHooks(): Promise<void> {
     try {
       settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
     } catch {
-      process.stderr.write(`[autodocs] Warning: Could not parse ${settingsPath}, creating new config\n`);
+      process.stderr.write(`[synaps] Warning: Could not parse ${settingsPath}, creating new config\n`);
     }
   }
 
@@ -42,13 +42,13 @@ export async function runSetupHooks(): Promise<void> {
 
   const hookCommand = `node "${hookDest}"`;
 
-  ensureHookEntry(hooks, "PreToolUse", "Grep|Glob|Bash", hookCommand, "Enriching with autodocs context...");
-  ensureHookEntry(hooks, "PostToolUse", "Bash", hookCommand, "Checking autodocs freshness...");
+  ensureHookEntry(hooks, "PreToolUse", "Grep|Glob|Bash", hookCommand, "Enriching with synaps context...");
+  ensureHookEntry(hooks, "PostToolUse", "Bash", hookCommand, "Checking synaps freshness...");
 
   mkdirSync(claudeDir, { recursive: true });
   writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 
-  process.stderr.write("[autodocs] Hooks installed for Claude Code\n");
+  process.stderr.write("[synaps] Hooks installed for Claude Code\n");
   process.stderr.write("  PreToolUse: search augmentation (Grep, Glob, Bash)\n");
   process.stderr.write("  PostToolUse: staleness detection (git mutations)\n");
   process.stderr.write(`  Hook script: ${hookDest}\n`);
@@ -67,7 +67,7 @@ function ensureHookEntry(
   // Idempotent: check if already registered
   const entries = hooks[event] as unknown[];
   const alreadyRegistered = entries.some((entry: any) =>
-    entry?.hooks?.some((h: any) => h?.command?.includes("autodocs-hook")),
+    entry?.hooks?.some((h: any) => h?.command?.includes("synaps-hook")),
   );
   if (alreadyRegistered) return;
 

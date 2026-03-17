@@ -7,7 +7,7 @@ import { diffAnalyses } from "../diff-analyzer.js";
 import { analyze } from "../index.js";
 import type { StructuredAnalysis } from "../types.js";
 
-const DEFAULT_BASELINE = ".autodocs-baseline.json";
+const DEFAULT_BASELINE = ".synaps-baseline.json";
 
 interface CheckOptions {
   baseline?: string;
@@ -83,7 +83,7 @@ export async function runCheck(options: CheckOptions = {}): Promise<boolean> {
       stderr(`    Major version changes: ${diff.dependencyChanges.majorVersionChanged.join(", ")}`);
     }
     stderr("");
-    stderr(`  Run \`npx autodocs-engine init\` to regenerate.`);
+    stderr(`  Run \`npx synaps init\` to regenerate.`);
   } else {
     if (!options.quiet) stderr(`  AGENTS.md is up to date.`);
   }

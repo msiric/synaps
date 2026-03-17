@@ -149,10 +149,10 @@ Why: Monorepo navigation is non-obvious. Which package handles what is valuable 
 
 ```bash
 # Minimal mode (default in future)
-autodocs-engine init --minimal
+synaps init --minimal
 
 # Full mode (legacy, for backward compatibility)
-autodocs-engine init --full
+synaps init --full
 
 # The MCP server always uses the full analysis internally
 # but --minimal controls the static file output

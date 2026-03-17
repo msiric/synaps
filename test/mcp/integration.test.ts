@@ -29,12 +29,12 @@ function sendNotification(method: string, params: Record<string, unknown> = {}):
 
 beforeAll(async () => {
   // Build must be up-to-date — run npm run build before these tests
-  const serverPath = resolve("dist/bin/autodocs-engine.js");
+  const serverPath = resolve("dist/bin/synaps.js");
   const projectPath = resolve("test/fixtures/minimal-pkg");
 
   serverProcess = spawn("node", [serverPath, "serve", projectPath], {
     stdio: ["pipe", "pipe", "pipe"],
-    env: { ...process.env, AUTODOCS_DEBUG: "0" },
+    env: { ...process.env, SYNAPS_DEBUG: "0" },
   });
 
   serverProcess.stdout!.on("data", (chunk: Buffer) => {
@@ -67,7 +67,7 @@ beforeAll(async () => {
     clientInfo: { name: "integration-test", version: "1.0.0" },
   });
   expect(initResp.result).toBeTruthy();
-  expect(initResp.result.serverInfo.name).toBe("autodocs-engine");
+  expect(initResp.result.serverInfo.name).toBe("synaps");
 
   sendNotification("notifications/initialized");
 
@@ -110,7 +110,7 @@ describe("MCP server integration", () => {
   });
 
   it("reads a resource without error", async () => {
-    const resp = await sendRequest("resources/read", { uri: "autodocs://schema" });
+    const resp = await sendRequest("resources/read", { uri: "synaps://schema" });
     expect(resp.result.contents).toBeDefined();
     expect(resp.result.contents[0].text).toContain("Analysis Schema");
   });
@@ -251,8 +251,8 @@ describe("MCP server integration", () => {
     await exitPromise;
 
     // The session summary should appear on stderr (we made 13+ tool calls above)
-    expect(stderrBuffer).toContain("[autodocs] Session:");
-    expect(stderrBuffer).toContain("[autodocs] Tools:");
+    expect(stderrBuffer).toContain("[synaps] Session:");
+    expect(stderrBuffer).toContain("[synaps] Tools:");
     expect(stderrBuffer).toMatch(/\d+ calls/);
   });
 });

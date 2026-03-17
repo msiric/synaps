@@ -1,7 +1,7 @@
 # Research Synthesis: Do Context Files Help AI Coding Agents? (2026)
 
 **Date compiled:** 2026-02-23
-**Purpose:** Inform autodocs-engine benchmark v2 design and product positioning
+**Purpose:** Inform synaps benchmark v2 design and product positioning
 
 ## The Key Paper: "Evaluating AGENTS.md" (arxiv 2602.11988, Feb 2026)
 
@@ -30,7 +30,7 @@
 ### Authors' Recommendation
 > Omit LLM-generated context files entirely. If using developer-written files, include only minimal critical requirements.
 
-### Implications for autodocs-engine
+### Implications for synaps
 - Our 14/16 deterministic approach avoids the "LLM hallucination/over-specification" problem
 - The inferability gating (skip sections for standard repos) directly addresses "unnecessary instructions"
 - We need to prove our output is more like developer-written (+4%) than LLM-generated (-2%)

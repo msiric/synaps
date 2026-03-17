@@ -30,7 +30,7 @@ Thanks for the thorough analysis and the 10 improvement recommendations. We impl
 
 ## The Engine Now: 249 Tests, ~8,000+ Lines
 
-The codebase on GitHub (github.com/msiric/autodocs-engine) has grown significantly from when you reviewed it. The analysis pipeline is mature and accurate.
+The codebase on GitHub (github.com/msiric/synaps) has grown significantly from when you reviewed it. The analysis pipeline is mature and accurate.
 
 ## The Benchmark Journey (The Hard Truth)
 
@@ -89,7 +89,7 @@ The validator catches SOME hallucinations (it caught GraphQL, jest, biome in San
 
 ## What I'm Asking For
 
-Please review the latest codebase on GitHub (github.com/msiric/autodocs-engine) — it's changed significantly since your first review. Then give me your honest, fresh perspective:
+Please review the latest codebase on GitHub (github.com/msiric/synaps) — it's changed significantly since your first review. Then give me your honest, fresh perspective:
 
 1. **Given the benchmark data, is the fundamental approach (AST analysis → structured data → LLM formatting) sound? Or should we pivot?**
 2. **The LLM hallucination problem persists despite extensive mitigation. What would you try that we haven't?**

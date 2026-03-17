@@ -1,8 +1,8 @@
-# Session Handoff 3: autodocs-engine (2026-02-24)
+# Session Handoff 3: synaps (2026-02-24)
 
 ## What This Project Is
 
-TypeScript codebase intelligence engine that serves live queries via MCP (Model Context Protocol). Published on npm as `autodocs-engine` (v0.7.3). Analyzes codebases via AST parsing and provides 12 MCP tools for AI coding assistants.
+TypeScript codebase intelligence engine that serves live queries via MCP (Model Context Protocol). Published on npm as `synaps` (v0.7.3). Analyzes codebases via AST parsing and provides 12 MCP tools for AI coding assistants.
 
 **Status:** 506 tests, 0 type errors, published on npm, MCP server working with Claude Code.
 
@@ -22,7 +22,7 @@ TypeScript codebase intelligence engine that serves live queries via MCP (Model 
 - Mines real git commits as ground truth (eliminates v1 circularity)
 - Time-travel reads via `git show` (no HEAD contamination)
 - File placement as primary metric
-- Piloted on 3 repos: autodocs-engine (+0%), nitro (-8.3%), vitest (+0%)
+- Piloted on 3 repos: synaps (+0%), nitro (-8.3%), vitest (+0%)
 - Key finding: file placement is at ceiling (77% ties), barrel updates showed positive signal
 
 ### 3. MCP Server Expansion (8 → 12 tools)

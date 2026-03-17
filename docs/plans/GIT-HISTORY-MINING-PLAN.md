@@ -1,4 +1,4 @@
-# Plan: Git History Mining for autodocs-engine (v2 — Post-Adversarial Review)
+# Plan: Git History Mining for synaps (v2 — Post-Adversarial Review)
 
 ## Context
 
@@ -183,7 +183,7 @@ Co-change rules are WorkflowRule entries in the same array. They render automati
 ### Step 5: Threshold calibration (BEFORE finalizing implementation)
 
 Run the algorithm on 3 benchmark repos with different characteristics:
-- **autodocs-engine itself** (36 commits, single author, young repo)
+- **synaps itself** (36 commits, single author, young repo)
 - **knip** (2,427 files, active development, likely squash-merge)
 - **sanity** (3,746 files, large team, long history)
 
@@ -261,8 +261,8 @@ Adjust MIN_JACCARD and other thresholds based on findings.
 
 1. `npm run typecheck` -- zero type errors
 2. `npm test` -- all existing tests pass + ~25 new tests pass
-3. Threshold calibration on 3 benchmark repos (autodocs-engine, knip, sanity)
-4. Manual test: `npx tsx src/bin/autodocs-engine.ts analyze . --format json --dry-run` -- verify gitHistory field
+3. Threshold calibration on 3 benchmark repos (synaps, knip, sanity)
+4. Manual test: `npx tsx src/bin/synaps.ts analyze . --format json --dry-run` -- verify gitHistory field
 5. Manual test: `--format agents.md` -- verify co-change rules in Workflow Rules section
 6. Graceful degradation: temp directory without `.git` -- no errors
 7. Monorepo test: run on a benchmark monorepo (wave3-workspace fixture or turbo-monorepo fixture)

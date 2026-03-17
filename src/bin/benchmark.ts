@@ -1,5 +1,5 @@
 // src/bin/benchmark.ts — CLI entry point for the benchmark command
-// Usage: autodocs-engine benchmark [repo-path] [options]
+// Usage: synaps benchmark [repo-path] [options]
 // Modes: --mode synthetic (v1, default) or --mode pr (v2, PR-based ground truth)
 
 import { mkdirSync, writeFileSync } from "node:fs";

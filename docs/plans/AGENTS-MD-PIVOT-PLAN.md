@@ -14,7 +14,7 @@ Results across 3 repos:
 
 | Repo | Files | A (AGENTS.md) | B (Source only) | C (Listing) | N (Shuffled) | A - B |
 |------|-------|:---:|:---:|:---:|:---:|:---:|
-| autodocs-engine | 52 | 76.8% | 78.2% | 36.4% | 62.4% | **-1.4%** |
+| synaps | 52 | 76.8% | 78.2% | 36.4% | 62.4% | **-1.4%** |
 | knip | 2,427 | 50.0% | 41.0% | 0.0% | 41.0% | **+9.0%** |
 | Vercel AI SDK | 355 | — | — | — | — | *no patterns* |
 
@@ -151,6 +151,6 @@ Research shows AI models attend most strongly to the beginning and end of contex
 - Static AGENTS.md = summary of what matters always. MCP = deep dive on demand.
 
 ### Validation
-- Re-run benchmark after pivot on autodocs-engine + knip
+- Re-run benchmark after pivot on synaps + knip
 - Compare: does the leaner output score the same or better on contribution pattern tasks?
 - Test new hypothesis: does the leaner output leave more context window for the AI to use on the actual task?

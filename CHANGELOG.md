@@ -9,7 +9,7 @@
 - **`get_module_doc` MCP tool** — Structured per-directory documentation: files with exports, dependencies, dependents, internal call graph, execution flows, co-change partners, cluster membership, and contribution patterns. Deterministic (no LLM required).
 - **MCP Resources (5)** — `autodocs://conventions`, `autodocs://processes`, `autodocs://clusters`, `autodocs://packages`, `autodocs://schema`. Static data accessible without tool calls, reducing token overhead.
 - **MCP Prompts (2)** — `analyze-impact` (guided blast radius workflow) and `onboard` (guided codebase understanding workflow).
-- **Multi-repo support** — Single MCP server serves multiple repositories. `autodocs-engine serve /repo1 /repo2`. All tools accept optional `repo` parameter. Cache registry with per-repo git invalidation.
+- **Multi-repo support** — Single MCP server serves multiple repositories. `synaps serve /repo1 /repo2`. All tools accept optional `repo` parameter. Cache registry with per-repo git invalidation.
 
 ### Improvements
 
@@ -20,7 +20,7 @@
 
 ### Visualization
 
-- **`autodocs-engine visualize`** — Full-viewport interactive codebase topology. Dark canvas with D3 force-directed graph showing three edge types simultaneously: imports (solid), co-change (dashed amber), implicit coupling (dotted pink). Click any module to see blast radius in a slide-in panel. Collapsible drawer for execution flows and conventions. Self-contained HTML file, no framework.
+- **`synaps visualize`** — Full-viewport interactive codebase topology. Dark canvas with D3 force-directed graph showing three edge types simultaneously: imports (solid), co-change (dashed amber), implicit coupling (dotted pink). Click any module to see blast radius in a slide-in panel. Collapsible drawer for execution flows and conventions. Self-contained HTML file, no framework.
 
 ### Benchmarks
 
@@ -58,7 +58,7 @@
 
 - **Execution flow tracing** — Detects execution paths from entry points through the call graph. Spine-first BFS with framework-aware entry point scoring (Express, Next.js, NestJS multipliers). Flows scored by co-change confidence — our unique advantage.
 - **Symbol-level filtering in plan_change** — `plan_change({ files, symbols: ["Convention"] })` narrows dependents to files importing specific symbols. 98→25 dependents for shared type files.
-- **PreToolUse/PostToolUse hooks for Claude Code** — Automatic search augmentation: when you grep for a function, hooks show callers, co-change partners, and execution flows alongside results. Post-commit staleness detection. Install via `npx autodocs-engine setup-hooks`.
+- **PreToolUse/PostToolUse hooks for Claude Code** — Automatic search augmentation: when you grep for a function, hooks show callers, co-change partners, and execution flows alongside results. Post-commit staleness detection. Install via `npx synaps setup-hooks`.
 - **4 new convention detectors** (13 total) — Error handling (typed error hierarchies, Result/Either patterns), async patterns (Promise.all, sequential-await-in-loops, AbortController), state management (Redux, Zustand, Jotai, MobX, Signals, Context API), API patterns (Express, Fastify, Hono, NestJS, tRPC, GraphQL — framework-aware).
 - **Implicit coupling detection** — Finds co-change pairs with no import relationship. Computed in the pipeline, stored in PackageAnalysis, surfaced in plan_change and MCP tools.
 - **Type-aware analysis** — Opt-in `--type-checking` creates ts.Program for resolved parameter/return types. Handles re-exports via TypeChecker symbol resolution. 93% enrichment on own codebase.
@@ -105,7 +105,7 @@
 
 ### Improvements
 
-- **`init` defaults to minimal** — `npx autodocs-engine init` now produces focused AGENTS.md (~300 tokens, no API key). Use `--full` for comprehensive output. Research-backed: focused files improve AI performance by 4% and reduce runtime by 29%.
+- **`init` defaults to minimal** — `npx synaps init` now produces focused AGENTS.md (~300 tokens, no API key). Use `--full` for comprehensive output. Research-backed: focused files improve AI performance by 4% and reduce runtime by 29%.
 - **Session telemetry** — Opt-in per-call JSONL logging (`--telemetry` or `AUTODOCS_TELEMETRY=1`). Session summary on stderr at shutdown. Writes to `~/.autodocs/telemetry/`.
 - **MCP integration tests** — Real ESM server process over JSON-RPC stdio, verifying all 13 tools work in production.
 - **Diagnose hardening** — Broader error parsing (any relative path, not just `src/`), empirical validation (83% hit rate on real bug-fix commits), adaptive co-change thresholds for young repos.
@@ -195,7 +195,7 @@ Together these create a closed self-correction loop: the AI creates code → rev
 
 ### Major Features
 
-- **MCP Server** — Live codebase intelligence API via Model Context Protocol. Run `npx autodocs-engine serve` to expose 8 tools that AI coding tools (Claude Code, Cursor) query on demand. Tools: get_commands, get_architecture, analyze_impact, get_workflow_rules, list_packages, get_contribution_guide, get_exports, get_conventions. Hardened through 2 rounds of adversarial review (10 reviews total).
+- **MCP Server** — Live codebase intelligence API via Model Context Protocol. Run `npx synaps serve` to expose 8 tools that AI coding tools (Claude Code, Cursor) query on demand. Tools: get_commands, get_architecture, analyze_impact, get_workflow_rules, list_packages, get_contribution_guide, get_exports, get_conventions. Hardened through 2 rounds of adversarial review (10 reviews total).
 
 - **Git Co-change Analysis** — Mines git history to identify file pairs that frequently change together. Uses Jaccard similarity with cluster detection, recency filtering, hub-file exclusion, and large-commit filtering. Produces workflow rules: "When modifying src/types.ts → also check src/pipeline.ts (co-changed in 56% of commits)."
 
@@ -203,7 +203,7 @@ Together these create a closed self-correction loop: the AI creates code → rev
 
 - **CONTRIBUTING.md Extraction** — Micro-LLM extracts 4-6 workflow rules from CONTRIBUTING.md files.
 
-- **Staleness Detection** — `autodocs-engine check` command compares current analysis against baseline. `--save-baseline` creates baseline, exit code 1 if stale. For CI integration.
+- **Staleness Detection** — `synaps check` command compares current analysis against baseline. `--save-baseline` creates baseline, exit code 1 if stale. For CI integration.
 
 ### MCP Server Details
 

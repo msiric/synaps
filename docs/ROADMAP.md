@@ -11,7 +11,7 @@
 - **Type-aware analysis** — Opt-in `--type-checking` for resolved TypeScript parameter/return types
 - **Minimal mode** (`--minimal`) — <500 token AGENTS.md matching developer-written file characteristics
 - **Staleness detection** — `check` command for CI pipelines
-- **Published on npm** — `npx autodocs-engine serve` / `npx autodocs-engine init`
+- **Published on npm** — `npx synaps serve` / `npx synaps init`
 
 ### What was built (Sessions 1-5)
 
@@ -31,7 +31,7 @@
 
 | Repo | Type | Files | Call Graph | Flows | Verdict |
 |------|------|:-----:|:----------:|:-----:|---------|
-| autodocs-engine | TS library | 140 | 93 | 10 | Excellent |
+| synaps | TS library | 140 | 93 | 10 | Excellent |
 | knip | TS CLI monorepo | 881 | 370 | 21 | Excellent |
 | valibot | TS validation lib | 1,043 | 345 | 22 | Excellent |
 | ofetch | Small TS library | 10 | 8 | 0 | Correct (below threshold) |
@@ -62,7 +62,7 @@ The 6-model brainstorm was unanimous: ship and get real users. The engine has be
 
 - [ ] **Test coverage** 730→1,000+ — Focus: query functions (`getCoChangesForFile`, `getImplicitCouplingForFile` have zero direct tests), hook edge cases, execution flow edge cases, new detectors
 - [ ] **Diagnose accuracy** 47% R@3 → 60%+ — Expand 95-commit corpus to 200+, add callback/registration detection in scoring
-- [ ] **Convention enforcement in CI** — `autodocs-engine check --conventions` command. Detects convention drift (new files violating established patterns). Every brainstorm model identified convention detection as the strongest technical moat.
+- [ ] **Convention enforcement in CI** — `synaps check --conventions` command. Detects convention drift (new files violating established patterns). Every brainstorm model identified convention detection as the strongest technical moat.
 
 ### 4. Expand (Driven by user feedback)
 

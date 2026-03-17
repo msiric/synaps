@@ -1,4 +1,4 @@
-# autodocs-engine
+# synaps
 
 CLI tool — Codebase intelligence engine for generating AI context files
 
@@ -68,7 +68,7 @@ Example: `src/benchmark/code-generator.ts`
 
 ### bin
 
-Example: `src/bin/autodocs-engine.ts`
+Example: `src/bin/synaps.ts`
 
 1. Create `{name}.ts` in `src/bin/`
 1. Import `analyze, format, formatDeterministic, formatAsHierarchy, formatHierarchicalDeterministic` from `../index.js` (4/5 siblings)
@@ -145,7 +145,7 @@ Complex functions — these call many other functions:
 
 ## Team Knowledge
 
-_autodocs-engine detected these patterns but needs your input:_
+_synaps detected these patterns but needs your input:_
 
 - [ ] The codebase has 76 cross-file call relationships. Are there changes that require updating multiple files together?
 - [ ] Are there CLI-specific behaviors, flags, or output formats that AI tools should know about?

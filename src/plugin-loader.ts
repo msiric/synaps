@@ -1,6 +1,6 @@
 // src/plugin-loader.ts — W5-C2: Plugin System for Org-Specific Detectors
 // Allows organizations to add custom convention detectors without modifying the core engine.
-// Plugin discovery: package.json "autodocs.plugins", .autodocs/plugins/ directory, --plugin CLI flag.
+// Plugin discovery: package.json "synaps.plugins", .synaps/plugins/ directory, --plugin CLI flag.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { extname, isAbsolute, relative, resolve } from "node:path";
@@ -21,8 +21,8 @@ export interface DetectorPlugin {
  * Discover and load plugins from all configured sources.
  * Sources (checked in order):
  * 1. Explicit paths from CLI --plugin flags
- * 2. package.json "autodocs.plugins" field
- * 3. .autodocs/plugins/ directory
+ * 2. package.json "synaps.plugins" field
+ * 3. .synaps/plugins/ directory
  */
 export function loadPlugins(rootDir: string, explicitPaths: string[] = [], warnings: Warning[] = []): DetectorPlugin[] {
   const plugins: DetectorPlugin[] = [];
@@ -38,14 +38,14 @@ export function loadPlugins(rootDir: string, explicitPaths: string[] = [], warni
     }
   }
 
-  // 2. package.json "autodocs.plugins" field
+  // 2. package.json "synaps.plugins" field
   const pkgJsonPath = resolve(rootDir, "package.json");
   if (existsSync(pkgJsonPath)) {
     try {
       const pkgJson = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
-      const autodocs = pkgJson.autodocs;
-      if (autodocs?.plugins && Array.isArray(autodocs.plugins)) {
-        for (const pluginPath of autodocs.plugins) {
+      const synaps = pkgJson.synaps;
+      if (synaps?.plugins && Array.isArray(synaps.plugins)) {
+        for (const pluginPath of synaps.plugins) {
           const abs = resolve(rootDir, pluginPath);
           const plugin = loadPlugin(abs, warnings, rootDir);
           if (plugin && !loaded.has(plugin.name)) {
@@ -59,8 +59,8 @@ export function loadPlugins(rootDir: string, explicitPaths: string[] = [], warni
     }
   }
 
-  // 3. .autodocs/plugins/ directory
-  const pluginDir = resolve(rootDir, ".autodocs", "plugins");
+  // 3. .synaps/plugins/ directory
+  const pluginDir = resolve(rootDir, ".synaps", "plugins");
   if (existsSync(pluginDir)) {
     try {
       const files = readdirSync(pluginDir).filter((f) => {
@@ -79,7 +79,7 @@ export function loadPlugins(rootDir: string, explicitPaths: string[] = [], warni
       warnings.push({
         level: "warn",
         module: "plugin-loader",
-        message: `Could not read plugin directory .autodocs/plugins/: ${err instanceof Error ? err.message : String(err)}`,
+        message: `Could not read plugin directory .synaps/plugins/: ${err instanceof Error ? err.message : String(err)}`,
       });
     }
   }

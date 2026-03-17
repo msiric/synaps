@@ -1,4 +1,4 @@
-// test/hooks.test.ts — Tests for the Claude Code hook script (autodocs-hook.cjs)
+// test/hooks.test.ts — Tests for the Claude Code hook script (synaps-hook.cjs)
 // Tests pattern extraction, augmentation logic, and staleness detection.
 // Does NOT test actual Claude Code integration (requires running Claude Code).
 
@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const HOOK_SCRIPT = resolve(import.meta.dirname, "..", "hooks", "autodocs-hook.cjs");
+const HOOK_SCRIPT = resolve(import.meta.dirname, "..", "hooks", "synaps-hook.cjs");
 
 // ─── Helper: run hook with simulated input ──────────────────────────────────
 
@@ -41,7 +41,7 @@ function createTempSnapshot(cwd: string, data: Record<string, unknown>): void {
   const crypto = require("node:crypto");
   const os = require("node:os");
   const hash = crypto.createHash("sha256").update(cwd).digest("hex").slice(0, 12);
-  const cacheDir = join(os.homedir(), ".autodocs", "cache");
+  const cacheDir = join(os.homedir(), ".synaps", "cache");
   mkdirSync(cacheDir, { recursive: true });
   writeFileSync(join(cacheDir, `${hash}.json`), JSON.stringify(data));
 }
@@ -51,7 +51,7 @@ function cleanupTempSnapshot(cwd: string): void {
   const os = require("node:os");
   const hash = crypto.createHash("sha256").update(cwd).digest("hex").slice(0, 12);
   try {
-    rmSync(join(os.homedir(), ".autodocs", "cache", `${hash}.json`));
+    rmSync(join(os.homedir(), ".synaps", "cache", `${hash}.json`));
   } catch {
     /* */
   }
@@ -59,8 +59,8 @@ function cleanupTempSnapshot(cwd: string): void {
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
-describe("autodocs-hook.cjs", () => {
-  const tempDir = mkdtempSync(join(tmpdir(), "autodocs-hook-test-"));
+describe("synaps-hook.cjs", () => {
+  const tempDir = mkdtempSync(join(tmpdir(), "synaps-hook-test-"));
 
   const sampleSnapshot = {
     projectPath: tempDir,
@@ -148,7 +148,7 @@ describe("autodocs-hook.cjs", () => {
 
       const result = parseHookOutput(output);
       expect(result).not.toBeNull();
-      expect(result!.additionalContext).toContain("[autodocs]");
+      expect(result!.additionalContext).toContain("[synaps]");
       expect(result!.additionalContext).toContain("runPipeline");
       expect(result!.additionalContext).toContain("parseFile"); // callee
     } finally {

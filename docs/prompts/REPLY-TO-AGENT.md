@@ -75,6 +75,6 @@ You evaluated based on our benchmark scores, but there's a methodological issue 
 
 4. **Ship.** After verifying the deterministic approach eliminates hallucinations on our benchmark repos.
 
-5. **Get users.** Community posts, GitHub Action, `npx autodocs-engine init` convenience command.
+5. **Get users.** Community posts, GitHub Action, `npx synaps init` convenience command.
 
 We'll share the results of the deterministic template approach if you're interested in seeing whether it closes the accuracy gap as predicted. Thanks again for the honest analysis — the "fill in blanks, don't generate prose" insight is exactly what we needed to hear.

@@ -1,5 +1,5 @@
 [allowlist]
-description = "autodocs-engine allowlist"
+description = "synaps allowlist"
 paths = [
   "node_modules",
   "dist",

@@ -4,7 +4,7 @@ You are a senior principal engineer conducting an adversarial review of a featur
 
 ## Your Role
 
-You are reviewing a plan to build a **benchmark system** for `autodocs-engine` -- a TypeScript codebase intelligence engine that generates AGENTS.md context files for AI coding tools (Claude, Cursor, Copilot).
+You are reviewing a plan to build a **benchmark system** for `synaps` -- a TypeScript codebase intelligence engine that generates AGENTS.md context files for AI coding tools (Claude, Cursor, Copilot).
 
 The benchmark system answers the existential question: **"Does AGENTS.md actually help AI tools write better code?"**
 
@@ -39,7 +39,7 @@ Attack this plan on every dimension. Specifically:
 - Tasks are derived from ContributionPattern objects. But these patterns represent EXISTING code structure -- they're not necessarily the RIGHT way to add code. What if the contribution pattern is wrong or suboptimal?
 - The plan says "task prompt is carefully designed to NOT leak the answer." But the prompt includes the package name and expected directory. Isn't that already a significant hint? Would an AI without AGENTS.md also look at the directory structure and infer patterns?
 - `deriveTaskName` creates plausible names that don't collide with existing exports. How hard is this? What if the directory has generic export names (e.g., `index.ts`, `utils.ts`) where naming a new plausible item is ambiguous?
-- How many Tier A patterns does a typical repo produce? If most repos produce 0-1 Tier A patterns, the benchmark only works on repos like autodocs-engine that happen to have rich patterns. Is this representative?
+- How many Tier A patterns does a typical repo produce? If most repos produce 0-1 Tier A patterns, the benchmark only works on repos like synaps that happen to have rich patterns. Is this representative?
 
 ### 4. Prompt Design Fairness
 - The control condition gives a directory listing. But a real AI tool (e.g., Claude Code, Cursor) would have access to the FULL file contents, not just a listing. The control is actually WORSE than what an AI would normally have. Does this artificially inflate the delta?
@@ -110,7 +110,7 @@ For reference, the engine's relevant architecture:
 - **Convention** (scoring input): `{ category, name, description, confidence: { matched, total, percentage }, examples[], impact?, source? }`. Detected by 8 built-in detectors in `src/detectors/`.
 - **parseFile()** in `src/ast-parser.ts`: AST-parses a TypeScript file, returns exports, imports, content signals, syntax errors. This is the core scorer primitive.
 - **callLLMWithRetry()** in `src/llm/client.ts`: Anthropic API client with 1 retry, 2s delay, 120s timeout, temperature 0.
-- **CLI structure** in `src/bin/`: `autodocs-engine.ts` (main), `init.ts`, `check.ts`. The `benchmark` subcommand follows this pattern.
+- **CLI structure** in `src/bin/`: `synaps.ts` (main), `init.ts`, `check.ts`. The `benchmark` subcommand follows this pattern.
 - **analyze()** in `src/index.ts`: Runs the full 18-stage pipeline, returns StructuredAnalysis.
 - **formatDeterministic()** in `src/index.ts`: Generates AGENTS.md with 13 deterministic + 3 micro-LLM sections.
 

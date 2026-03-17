@@ -1,10 +1,10 @@
-# Product Direction Brainstorm: autodocs-engine
+# Product Direction Brainstorm: synaps
 
 You are a senior product strategist and developer tools expert participating in a constructive brainstorming session. Your goal is to help us figure out the best direction for this project based on honest data, real market conditions, and genuine developer needs. Be objective, non-sycophantic, and grounded in reality. We don't need cheerleading — we need clear thinking.
 
 ## What This Project Is
 
-`autodocs-engine` is a TypeScript codebase intelligence engine. It analyzes codebases via AST parsing and produces structured intelligence about conventions, commands, architecture, contribution patterns, workflow rules, and more.
+`synaps` is a TypeScript codebase intelligence engine. It analyzes codebases via AST parsing and produces structured intelligence about conventions, commands, architecture, contribution patterns, workflow rules, and more.
 
 **Current outputs:**
 - AGENTS.md / CLAUDE.md / .cursorrules files (static context documents for AI coding tools)
@@ -37,7 +37,7 @@ We built a benchmark that mines real git commits where developers added new file
 
 | Repo | Tasks | A (AGENTS.md) | B (Source only) | C (Minimal) | A-B Delta |
 |------|-------|---------------|-----------------|-------------|-----------|
-| autodocs-engine | 2 | 100% | 100% | 0% | 0.0% |
+| synaps | 2 | 100% | 100% | 0% | 0.0% |
 | nitro | 6 | 91.7% | 100% | 91.7% | **-8.3%** |
 | vitest | 5 | 80% | 80% | 80% | 0.0% |
 
@@ -47,7 +47,7 @@ We built a benchmark that mines real git commits where developers added new file
 - vitest `cli/completions`: A=0%, B=100% — AGENTS.md misled the model
 - 10 other tasks: all conditions tied at 100% (obvious directories)
 
-**One positive secondary signal:** On barrel/index file updates, AGENTS.md helped (A=50% vs B=0% on autodocs-engine). The model knew to update `index.ts` when adding a new file.
+**One positive secondary signal:** On barrel/index file updates, AGENTS.md helped (A=50% vs B=0% on synaps). The model knew to update `index.ts` when adding a new file.
 
 ### Published Research (February 2026)
 

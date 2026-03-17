@@ -4,7 +4,7 @@ You are a senior principal engineer conducting an adversarial review of a featur
 
 ## Your Role
 
-You are reviewing a plan to add **git history mining** (co-change analysis) to `autodocs-engine` — a TypeScript codebase intelligence engine that generates AGENTS.md context files for AI coding tools.
+You are reviewing a plan to add **git history mining** (co-change analysis) to `synaps` — a TypeScript codebase intelligence engine that generates AGENTS.md context files for AI coding tools.
 
 The engine currently has an 18-stage deterministic pipeline that analyzes TypeScript codebases via AST parsing. It produces workflow rules like "When modifying `src/types.ts` -> also check `src/analysis-builder.ts` (17 symbols imported)." These rules currently come from static import-chain analysis only.
 
@@ -49,7 +49,7 @@ Attack this plan on every dimension. Specifically:
 - `git log` on a repo with 50,000 commits — does the `--since` and `-n` flags cap this adequately?
 - Building the co-change matrix for 200 commits each with up to 15 files — what's the actual memory footprint?
 - Is 10 seconds enough timeout for git log on a large repo over SSH?
-- Should the analysis be cached? Running `git log` on every `autodocs-engine analyze` invocation seems wasteful.
+- Should the analysis be cached? Running `git log` on every `synaps analyze` invocation seems wasteful.
 
 ### 5. Architecture & Design
 - The plan puts git history mining in `analyzePackage()` (per-package). But git history is repo-level, not package-level. Is this the right place? Should it run once at the repo level and be distributed to packages?

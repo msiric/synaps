@@ -1,10 +1,10 @@
-# autodocs-engine
+# synaps
 
 Codebase intelligence for AI coding agents. Analyzes TypeScript/JavaScript codebases and serves actionable intelligence via MCP.
 
-[![npm version](https://img.shields.io/npm/v/autodocs-engine)](https://www.npmjs.com/package/autodocs-engine)
+[![npm version](https://img.shields.io/npm/v/synaps)](https://www.npmjs.com/package/synaps)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/node/v/autodocs-engine)](https://nodejs.org)
+[![Node.js](https://img.shields.io/node/v/synaps)](https://nodejs.org)
 
 ## What It Does
 
@@ -19,13 +19,13 @@ Gives AI coding agents deep understanding of your codebase — not just what fil
 
 ```bash
 # MCP server for Claude Code
-claude mcp add autodocs -- npx autodocs-engine serve
+claude mcp add autodocs -- npx synaps serve
 
 # Install Claude Code hooks (automatic search augmentation)
-npx autodocs-engine setup-hooks
+npx synaps setup-hooks
 
 # Or generate a focused AGENTS.md (no API key needed)
-npx autodocs-engine init
+npx synaps init
 ```
 
 ## MCP Tools (16)
@@ -72,7 +72,7 @@ Every tool response includes **next-step hints** guiding the agent to the logica
 
 Serve multiple repositories from a single MCP server:
 ```bash
-claude mcp add autodocs -- npx autodocs-engine serve /path/to/repo1 /path/to/repo2
+claude mcp add autodocs -- npx synaps serve /path/to/repo1 /path/to/repo2
 ```
 All tools accept an optional `repo` parameter. Single-repo usage is unchanged.
 
@@ -117,7 +117,7 @@ Tested against **95 real bug-fix commits across 10 repos**:
 
 ### Claude Code Hooks
 ```bash
-npx autodocs-engine setup-hooks
+npx synaps setup-hooks
 ```
 Installs PreToolUse + PostToolUse hooks:
 - **PreToolUse**: When you grep for "validateUser", automatically shows callers, co-change partners, and execution flows alongside results
@@ -127,15 +127,15 @@ Installs PreToolUse + PostToolUse hooks:
 
 ```bash
 # Add MCP server
-claude mcp add autodocs -- npx autodocs-engine serve
+claude mcp add autodocs -- npx synaps serve
 
 # Install hooks for automatic search augmentation
-npx autodocs-engine setup-hooks
+npx synaps setup-hooks
 ```
 
 With `--type-checking` for resolved TypeScript types:
 ```bash
-claude mcp add autodocs -- npx autodocs-engine serve --type-checking
+claude mcp add autodocs -- npx synaps serve --type-checking
 ```
 
 ## AGENTS.md Generation
@@ -143,8 +143,8 @@ claude mcp add autodocs -- npx autodocs-engine serve --type-checking
 For tools without MCP support:
 
 ```bash
-npx autodocs-engine init                         # Focused (~300 tokens, no API key)
-npx autodocs-engine init --full                  # Comprehensive (needs API key)
+npx synaps init                         # Focused (~300 tokens, no API key)
+npx synaps init --full                  # Comprehensive (needs API key)
 ```
 
 Research-backed: focused context files improve AI accuracy by +4% and reduce runtime by 29%. LLM-generated comprehensive files hurt by -2%.
@@ -152,11 +152,11 @@ Research-backed: focused context files improve AI accuracy by +4% and reduce run
 ## CLI Reference
 
 ```
-autodocs-engine init [--full]                 Generate AGENTS.md
-autodocs-engine serve [path] [options]        Start MCP server
-autodocs-engine setup-hooks                   Install Claude Code hooks
-autodocs-engine check                         Staleness detection for CI
-autodocs-engine analyze [paths...] [options]  Analyze specific packages
+synaps init [--full]                 Generate AGENTS.md
+synaps serve [path] [options]        Start MCP server
+synaps setup-hooks                   Install Claude Code hooks
+synaps check                         Staleness detection for CI
+synaps analyze [paths...] [options]  Analyze specific packages
 
 Options:
   --type-checking    Enable resolved TypeScript types (requires tsconfig.json)
@@ -198,7 +198,7 @@ Options:
 ## Library API
 
 ```typescript
-import { analyze, generateMinimalAgentsMd } from 'autodocs-engine';
+import { analyze, generateMinimalAgentsMd } from 'synaps';
 
 const analysis = await analyze({
   packages: ['./'],
@@ -211,8 +211,8 @@ const agentsMd = generateMinimalAgentsMd(analysis);
 ## Contributing
 
 ```bash
-git clone https://github.com/msiric/autodocs-engine.git
-cd autodocs-engine
+git clone https://github.com/msiric/synaps.git
+cd synaps
 npm install
 npm test          # 713 tests
 npm run typecheck # Zero errors

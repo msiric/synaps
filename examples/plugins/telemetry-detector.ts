@@ -3,10 +3,10 @@
 // Previously part of the core engine, moved to plugin form in W5-C2.
 //
 // Usage:
-//   npx tsx src/bin/autodocs-engine.ts analyze . --plugin ./examples/plugins/telemetry-detector.ts
+//   npx tsx src/bin/synaps.ts analyze . --plugin ./examples/plugins/telemetry-detector.ts
 //
 // Or add to package.json:
-//   { "autodocs": { "plugins": ["./examples/plugins/telemetry-detector.ts"] } }
+//   { "synaps": { "plugins": ["./examples/plugins/telemetry-detector.ts"] } }
 
 import type { DetectorPlugin } from "../../src/plugin-loader.js";
 import type { Convention, ConventionConfidence } from "../../src/types.js";

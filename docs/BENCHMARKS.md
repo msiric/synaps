@@ -27,10 +27,10 @@ Comprehensive AGENTS.md can hurt through "directory anchoring" — the AI treats
 
 ```bash
 # PR-based benchmark (recommended)
-ANTHROPIC_API_KEY=sk-... npx tsx src/bin/autodocs-engine.ts benchmark . --mode pr --verbose
+ANTHROPIC_API_KEY=sk-... npx tsx src/bin/synaps.ts benchmark . --mode pr --verbose
 
 # Synthetic benchmark (legacy)
-ANTHROPIC_API_KEY=sk-... npx tsx src/bin/autodocs-engine.ts benchmark . --verbose
+ANTHROPIC_API_KEY=sk-... npx tsx src/bin/synaps.ts benchmark . --verbose
 
 # Calibrate inferability on a repo
 npx tsx scripts/calibrate-inferability.ts /path/to/repo

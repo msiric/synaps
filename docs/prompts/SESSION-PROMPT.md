@@ -1,13 +1,13 @@
 # Session Prompt — Deterministic Template Implementation
 
-Open a new Claude Code session from: `/Users/mariosiric/Documents/autodocs-engine/`
+Open a new Claude Code session from: `/Users/mariosiric/Documents/synaps/`
 
 Then paste everything between the triple-backtick block below.
 
 ---
 
 ```
-# autodocs-engine — Deterministic Template Generation
+# synaps — Deterministic Template Generation
 
 The engine's JSON analysis is accurate but the LLM formatting layer hallucinates. The fix: generate 13 of 15 AGENTS.md sections deterministically in code. Use the LLM only for 2 sections that genuinely need synthesis (architecture capabilities + domain terminology).
 
@@ -74,7 +74,7 @@ Both have fallbacks if no API key or LLM fails.
 2. Extend `src/existing-docs.ts` — `extractReadmeContext()` function
 3. `src/llm/adapter.ts` — `formatDeterministic()`, `synthesizeArchitecture()`, `synthesizeDomainTerms()`
 4. `src/llm/hierarchical.ts` — deterministic hierarchical output
-5. `src/config.ts` + `src/bin/autodocs-engine.ts` — `--llm-synthesis` flag
+5. `src/config.ts` + `src/bin/synaps.ts` — `--llm-synthesis` flag
 6. Tests — `test/deterministic-formatter.test.ts`
 
 ## Testing
@@ -83,11 +83,11 @@ Both have fallbacks if no API key or LLM fails.
 
 After implementation:
 ```bash
-export ANTHROPIC_API_KEY=$(cat /Users/mariosiric/Documents/teams-modular-packages/tools/autodocs-engine/experiments/04-ab-comparison/.env 2>/dev/null | cut -d= -f2)
+export ANTHROPIC_API_KEY=$(cat /Users/mariosiric/Documents/teams-modular-packages/tools/synaps/experiments/04-ab-comparison/.env 2>/dev/null | cut -d= -f2)
 
 # Knip — MUST have NO React (deterministic tech stack)
 mkdir -p /tmp/deterministic-test/knip
-npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/knip/packages/knip \
+npx tsx src/bin/synaps.ts analyze /tmp/final-benchmark/knip/packages/knip \
   --root /tmp/final-benchmark/knip --format agents.md \
   --output /tmp/deterministic-test/knip --verbose
 grep -i "react" /tmp/deterministic-test/knip/AGENTS.md && echo "FAIL" || echo "PASS: No React"
@@ -95,13 +95,13 @@ wc -w -l /tmp/deterministic-test/knip/AGENTS.md
 
 # Sanity — MUST have NO jest.mock (deterministic conventions)
 mkdir -p /tmp/deterministic-test/sanity
-npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/sanity/packages/sanity \
+npx tsx src/bin/synaps.ts analyze /tmp/final-benchmark/sanity/packages/sanity \
   --root /tmp/final-benchmark/sanity --format agents.md \
   --output /tmp/deterministic-test/sanity --verbose
 grep -i "jest.mock" /tmp/deterministic-test/sanity/AGENTS.md && echo "FAIL" || echo "PASS: No jest.mock"
 
 # Backward compat — full LLM mode still works
-npx tsx src/bin/autodocs-engine.ts analyze /tmp/final-benchmark/knip/packages/knip \
+npx tsx src/bin/synaps.ts analyze /tmp/final-benchmark/knip/packages/knip \
   --root /tmp/final-benchmark/knip --format agents.md --llm-synthesis full \
   --output /tmp/deterministic-test/knip-full --verbose
 ```

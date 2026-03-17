@@ -7,10 +7,10 @@ Send these prompts to 4-6 diverse models. Each prompt gives full context about t
 ## Prompt 1: Algorithm Design Review
 
 ```
-You are a principal engineer reviewing an execution flow tracing algorithm for a TypeScript codebase intelligence engine called autodocs-engine.
+You are a principal engineer reviewing an execution flow tracing algorithm for a TypeScript codebase intelligence engine called synaps.
 
 WHAT THE TOOL DOES:
-autodocs-engine analyzes TypeScript/JavaScript codebases and serves intelligence via the Model Context Protocol (MCP) to AI coding agents (Claude Code, Cursor, etc). It currently has:
+synaps analyzes TypeScript/JavaScript codebases and serves intelligence via the Model Context Protocol (MCP) to AI coding agents (Claude Code, Cursor, etc). It currently has:
 - 18-stage analysis pipeline producing StructuredAnalysis
 - Call graph: CallGraphEdge[] with {from, to, fromFile, toFile} — 92 edges on a medium project (itself)
 - Import chain: FileImportEdge[] tracking which files import what symbols from where
@@ -106,7 +106,7 @@ Be critical. Challenge every design choice.
 You are a senior product engineer reviewing how execution flows integrate into an existing AI coding assistant tool.
 
 THE TOOL:
-autodocs-engine serves 13 MCP tools to AI agents. When a developer uses Claude Code or Cursor, the agent calls these tools to understand the codebase before making changes. The most important tools are:
+synaps serves 13 MCP tools to AI agents. When a developer uses Claude Code or Cursor, the agent calls these tools to understand the codebase before making changes. The most important tools are:
 
 - plan_change({files, symbols?}): "I'm about to modify these files — what else needs updating?"
   Returns: import dependents, co-change partners from git history, implicit coupling (files that co-change without import relationship), affected workflow rules, registration/barrel files. With optional symbols parameter, narrows dependents from 98 to 25 (only files importing that specific symbol).
@@ -172,7 +172,7 @@ APPROACH A (GitNexus — existing, production):
 - Affected flows in change detection tool
 - Wiki generation uses flows for module documentation
 
-APPROACH B (autodocs-engine — proposed, not yet built):
+APPROACH B (synaps — proposed, not yet built):
 - ~175 LOC target in execution-flow.ts
 - TypeScript/JavaScript only
 - Entry point scoring: callees/(callers+1) × exportMultiplier × nameMultiplier (TS/JS patterns only)

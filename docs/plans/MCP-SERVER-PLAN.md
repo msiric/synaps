@@ -2,7 +2,7 @@
 
 ## Context
 
-autodocs-engine is a TypeScript codebase intelligence engine (18-stage pipeline, 390 tests, ~15K lines). Benchmark data across 3 repos proved AGENTS.md's value is in operational intelligence — Commands +16.7%, Architecture +18.8%, Patterns +6.4%.
+synaps is a TypeScript codebase intelligence engine (18-stage pipeline, 390 tests, ~15K lines). Benchmark data across 3 repos proved AGENTS.md's value is in operational intelligence — Commands +16.7%, Architecture +18.8%, Patterns +6.4%.
 
 The MCP server transforms the engine from a static document generator into a live codebase intelligence API, serving exactly what the AI needs for the current task.
 
@@ -14,7 +14,7 @@ The MCP server transforms the engine from a static document generator into a liv
 ## Architecture
 
 ### Distribution
-Integrated `serve` subcommand: `npx autodocs-engine serve`
+Integrated `serve` subcommand: `npx synaps serve`
 
 ### Transport
 STDIO only (v1). Client spawns process, communicates via stdin/stdout.
@@ -115,7 +115,7 @@ class AnalysisCache {
 ```typescript
 export async function createAutodocsServer(projectPath: string): Promise<McpServer> {
   const cache = new AnalysisCache(projectPath);
-  const server = new McpServer({ name: "autodocs-engine", version: ENGINE_VERSION });
+  const server = new McpServer({ name: "synaps", version: ENGINE_VERSION });
 
   // Register all tools (each handler awaits cache.get())
   registerTools(server, cache);
@@ -271,7 +271,7 @@ src/
     errors.ts           (~50 lines)   ToolError + safeToolHandler (async-safe)
   bin/
     serve.ts            (~60 lines)   CLI entry + connect-then-warm + signal handlers
-    autodocs-engine.ts  (+10 lines)   Route serve subcommand
+    synaps.ts  (+10 lines)   Route serve subcommand
 test/
   mcp/
     tools.test.ts       (~250 lines)  Tool response validation per tool
@@ -316,7 +316,7 @@ process.on("SIGINT", () => {
 
 **Claude Code:**
 ```bash
-claude mcp add --transport stdio autodocs -- npx autodocs-engine serve
+claude mcp add --transport stdio autodocs -- npx synaps serve
 ```
 
 **Project .mcp.json (version-controlled):**
@@ -325,7 +325,7 @@ claude mcp add --transport stdio autodocs -- npx autodocs-engine serve
   "mcpServers": {
     "autodocs": {
       "command": "npx",
-      "args": ["-y", "autodocs-engine", "serve"]
+      "args": ["-y", "synaps", "serve"]
     }
   }
 }

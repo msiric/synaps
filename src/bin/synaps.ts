@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// CLI entry point for autodocs-engine
+// CLI entry point for synaps
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -21,21 +21,21 @@ import {
 import type { StructuredAnalysis } from "../types.js";
 
 const OUTPUT_FILENAMES: Record<string, string> = {
-  json: "autodocs-analysis.json",
+  json: "synaps-analysis.json",
   "agents.md": "AGENTS.md",
   "claude.md": "CLAUDE.md",
   cursorrules: ".cursorrules",
 };
 
 const HELP_TEXT = `
-autodocs-engine v${ENGINE_VERSION}
+synaps v${ENGINE_VERSION}
 
 Usage:
-  autodocs-engine init                   Auto-detect and generate AGENTS.md (zero-config)
-  autodocs-engine check                  Check if AGENTS.md needs regeneration (for CI)
-  autodocs-engine analyze [paths...]     Analyze specific packages (advanced)
-  autodocs-engine serve [path]           Start MCP server for live codebase intelligence
-  autodocs-engine benchmark [path]       Measure AGENTS.md effectiveness (A/B testing)
+  synaps init                   Auto-detect and generate AGENTS.md (zero-config)
+  synaps check                  Check if AGENTS.md needs regeneration (for CI)
+  synaps analyze [paths...]     Analyze specific packages (advanced)
+  synaps serve [path]           Start MCP server for live codebase intelligence
+  synaps benchmark [path]       Measure AGENTS.md effectiveness (A/B testing)
 
 Arguments:
   paths                Package directories to analyze (default: current directory)
@@ -54,7 +54,7 @@ Options:
   --diff <path>        Compare against previous analysis JSON and output a diff report
   --quiet, -q          Suppress warnings
   --verbose, -v        Print detailed timing and budget validation
-  --telemetry          Enable session telemetry (writes to ~/.autodocs/telemetry/)
+  --telemetry          Enable session telemetry (writes to ~/.synaps/telemetry/)
   --dry-run            Print to stdout (no file writes)
   --help               Show this help text
 
@@ -62,11 +62,11 @@ Environment Variables:
   ANTHROPIC_API_KEY    Optional. Enables richer output (architecture + domain synthesis)
 
 Examples:
-  npx autodocs-engine init                              # Focused AGENTS.md, no API key
-  npx autodocs-engine init --full                       # Comprehensive AGENTS.md (needs API key)
-  npx autodocs-engine serve                             # Start MCP server
-  npx autodocs-engine analyze . --minimal --dry-run     # Preview minimal output
-  npx autodocs-engine check                             # CI staleness check
+  npx synaps init                              # Focused AGENTS.md, no API key
+  npx synaps init --full                       # Comprehensive AGENTS.md (needs API key)
+  npx synaps serve                             # Start MCP server
+  npx synaps analyze . --minimal --dry-run     # Preview minimal output
+  npx synaps check                             # CI staleness check
 `.trim();
 
 async function main() {
@@ -120,7 +120,7 @@ async function main() {
   }
 
   // Handle "serve" subcommand — MCP server for live codebase intelligence
-  // Supports multiple paths: autodocs-engine serve /repo1 /repo2
+  // Supports multiple paths: synaps serve /repo1 /repo2
   if (args.packages[0] === "serve") {
     const { runServe } = await import("./serve.js");
     const servePaths = args.packages.slice(1);
@@ -217,7 +217,7 @@ async function main() {
       const msg = err instanceof Error ? err.message : String(err);
       process.stderr.write(`LLM formatting failed: ${msg}\n`);
       process.stderr.write("Falling back to JSON output.\n");
-      const outputPath = resolve(config.output.dir, "autodocs-analysis.json");
+      const outputPath = resolve(config.output.dir, "synaps-analysis.json");
       writeFileSafe(outputPath, JSON.stringify(analysis, mapReplacer, 2));
     }
   }

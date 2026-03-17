@@ -63,12 +63,12 @@ export class AnalysisCache {
    * Eager warmup — call AFTER server.connect() to avoid event loop blocking.
    */
   warm(): void {
-    process.stderr.write("[autodocs] Analyzing in background...\n");
+    process.stderr.write("[synaps] Analyzing in background...\n");
     void this.get()
       .then((analysis) => {
         const pkgs = analysis.packages.length;
         const files = analysis.packages.reduce((n, p) => n + p.files.total, 0);
-        process.stderr.write(`[autodocs] Analysis complete (${pkgs} package(s), ${files} files)\n`);
+        process.stderr.write(`[synaps] Analysis complete (${pkgs} package(s), ${files} files)\n`);
 
         // Warn about shallow clone limiting co-change analysis
         const hasCoChange = analysis.packages.some((p) => (p.gitHistory?.coChangeEdges?.length ?? 0) > 0);
@@ -76,15 +76,15 @@ export class AnalysisCache {
           const isShallow = this.safeGit(["rev-parse", "--is-shallow-repository"]);
           if (isShallow === "true") {
             process.stderr.write(
-              "[autodocs] Note: shallow clone — co-change analysis unavailable. Run `git fetch --unshallow` for richer analysis.\n",
+              "[synaps] Note: shallow clone — co-change analysis unavailable. Run `git fetch --unshallow` for richer analysis.\n",
             );
           }
         }
       })
       .catch((err) => {
         const msg = err instanceof Error ? err.message : String(err);
-        process.stderr.write(`[autodocs] Background analysis failed: ${msg}\n`);
-        process.stderr.write("[autodocs] Will retry on first tool call\n");
+        process.stderr.write(`[synaps] Background analysis failed: ${msg}\n`);
+        process.stderr.write("[synaps] Will retry on first tool call\n");
       });
   }
 
@@ -128,7 +128,7 @@ export class AnalysisCache {
    */
   private persistToDisk(analysis: StructuredAnalysis): void {
     try {
-      const cacheDir = join(homedir(), ".autodocs", "cache");
+      const cacheDir = join(homedir(), ".synaps", "cache");
       mkdirSync(cacheDir, { recursive: true });
 
       const projectHash = createHash("sha256").update(this.projectPath).digest("hex").slice(0, 12);

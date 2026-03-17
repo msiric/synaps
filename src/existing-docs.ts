@@ -203,8 +203,8 @@ function extractFirstParagraph(markdown: string): string | undefined {
 
 // ─── Part B: Merge Mode ─────────────────────────────────────────────────────
 
-const AUTODOCS_START = "<!-- autodocs:start -->";
-const AUTODOCS_END = "<!-- autodocs:end -->";
+const AUTODOCS_START = "<!-- synaps:start -->";
+const AUTODOCS_END = "<!-- synaps:end -->";
 
 /**
  * Wrap engine output in delimiters for first-time generation.
@@ -222,10 +222,10 @@ export function wrapWithDelimiters(content: string): string {
 
 /**
  * Merge new engine output with an existing AGENTS.md file.
- * Preserves human-written content outside the autodocs delimiters.
+ * Preserves human-written content outside the synaps delimiters.
  *
  * If the existing file has delimiters:
- *   Replace content between <!-- autodocs:start --> and <!-- autodocs:end -->.
+ *   Replace content between <!-- synaps:start --> and <!-- synaps:end -->.
  *
  * If the existing file has no delimiters:
  *   Append engine output below existing content with a separator.

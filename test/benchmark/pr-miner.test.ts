@@ -21,7 +21,7 @@ describe("pr-miner", () => {
       const gitRoot = getGitRoot();
       const content = readFileAtCommit(gitRoot, "HEAD", "package.json");
       expect(content).toBeTruthy();
-      expect(content).toContain("autodocs-engine");
+      expect(content).toContain("synaps");
     });
 
     it("returns null for non-existent file", () => {
@@ -47,7 +47,7 @@ describe("pr-miner", () => {
   });
 
   describe("mineCommits", () => {
-    it("mines commits from autodocs-engine itself", () => {
+    it("mines commits from synaps itself", () => {
       const { tasks, stats } = mineCommits(REPO_ROOT, {
         maxTasks: 5,
         maxCommits: 100,

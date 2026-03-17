@@ -1,5 +1,5 @@
 // src/bin/visualize.ts — CLI entry point for visual report generation
-// Usage: autodocs-engine visualize [path] [--open]
+// Usage: synaps visualize [path] [--open]
 
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -8,16 +8,16 @@ import { generateReport } from "../visualizer.js";
 
 export async function runVisualize(args: { path?: string; open?: boolean; verbose?: boolean }): Promise<void> {
   const projectPath = resolve(args.path ?? ".");
-  const outPath = resolve("autodocs-report.html");
+  const outPath = resolve("synaps-report.html");
 
-  process.stderr.write(`[autodocs] Analyzing ${projectPath}...\n`);
+  process.stderr.write(`[synaps] Analyzing ${projectPath}...\n`);
   const analysis = await analyze({ packages: [projectPath] });
 
-  process.stderr.write("[autodocs] Generating visual report...\n");
+  process.stderr.write("[synaps] Generating visual report...\n");
   const html = generateReport(analysis);
 
   writeFileSync(outPath, html);
-  process.stderr.write(`[autodocs] Report written to ${outPath}\n`);
+  process.stderr.write(`[synaps] Report written to ${outPath}\n`);
 
   // Auto-open in browser if requested
   if (args.open !== false) {

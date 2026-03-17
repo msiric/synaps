@@ -4,7 +4,7 @@ You are a senior principal engineer specializing in ML evaluation methodology an
 
 ## Background
 
-`autodocs-engine` is a TypeScript codebase intelligence engine that generates AGENTS.md context files for AI coding tools (Claude Code, Cursor, Copilot). It analyzes codebases via AST parsing and produces output covering conventions, commands, architecture, contribution patterns, workflow rules, etc.
+`synaps` is a TypeScript codebase intelligence engine that generates AGENTS.md context files for AI coding tools (Claude Code, Cursor, Copilot). It analyzes codebases via AST parsing and produces output covering conventions, commands, architecture, contribution patterns, workflow rules, etc.
 
 We built a benchmark (v1) to measure whether AGENTS.md actually helps AI tools write better code. After thorough investigation, we found the benchmark has fundamental problems that make its results unreliable. We're now designing v2.
 

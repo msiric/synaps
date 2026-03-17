@@ -470,7 +470,7 @@ describe("getRegistrationInsertions: nested directory fallback", () => {
 
   beforeAll(() => {
     // Create temp project with a real registration file
-    tmpDir = mkdtempSync(join(tmpdir(), "autodocs-test-"));
+    tmpDir = mkdtempSync(join(tmpdir(), "synaps-test-"));
     mkdirSync(join(tmpDir, "src"), { recursive: true });
     writeFileSync(
       join(tmpDir, "src/index.ts"),

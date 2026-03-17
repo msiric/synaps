@@ -1,6 +1,6 @@
 // src/bin/serve.ts — CLI entry point for MCP server
-// Usage: autodocs-engine serve [path...] [--verbose] [--telemetry]
-// Supports multiple paths for multi-repo: autodocs-engine serve /repo1 /repo2
+// Usage: synaps serve [path...] [--verbose] [--telemetry]
+// Supports multiple paths for multi-repo: synaps serve /repo1 /repo2
 
 import { appendFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -17,11 +17,11 @@ export async function runServe(args: {
 
   // Lazy-load MCP dependencies — users who don't use serve don't pay the cost
   const { StdioServerTransport } = await import("@modelcontextprotocol/sdk/server/stdio.js");
-  const { createAutodocsServer, formatSessionSummary } = await import("../mcp/server.js");
+  const { createSynapsServer, formatSessionSummary } = await import("../mcp/server.js");
 
-  const verbose = args.verbose ?? Boolean(process.env.AUTODOCS_DEBUG);
-  const telemetry = args.telemetry ?? process.env.AUTODOCS_TELEMETRY === "1";
-  const { server, caches, session } = createAutodocsServer(projectPaths, {
+  const verbose = args.verbose ?? Boolean(process.env.SYNAPS_DEBUG);
+  const telemetry = args.telemetry ?? process.env.SYNAPS_TELEMETRY === "1";
+  const { server, caches, session } = createSynapsServer(projectPaths, {
     verbose,
     telemetry,
     typeChecking: args.typeChecking,
@@ -32,7 +32,7 @@ export async function runServe(args: {
   await server.connect(transport);
 
   const repoLabel = projectPaths.length === 1 ? `project: ${projectPaths[0]}` : `${projectPaths.length} projects`;
-  process.stderr.write(`[autodocs] MCP server ready (${repoLabel})\n`);
+  process.stderr.write(`[synaps] MCP server ready (${repoLabel})\n`);
 
   // Defer warmup to next tick — ensures the MCP handshake response is fully
   // flushed before synchronous AST parsing blocks the event loop.
@@ -83,12 +83,12 @@ export async function runServe(args: {
 
   // Crash handlers — finalize before dying
   process.on("uncaughtException", (err) => {
-    process.stderr.write(`[autodocs] Uncaught exception: ${err.message}\n`);
+    process.stderr.write(`[synaps] Uncaught exception: ${err.message}\n`);
     finalize();
     process.exit(1);
   });
   process.on("unhandledRejection", (reason) => {
-    process.stderr.write(`[autodocs] Unhandled rejection: ${reason}\n`);
+    process.stderr.write(`[synaps] Unhandled rejection: ${reason}\n`);
     finalize();
     process.exit(1);
   });

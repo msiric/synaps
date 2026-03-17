@@ -40,14 +40,14 @@ function estimateTokens(text: string): number {
 
 function getTelemetryPath(projectPath: string): string {
   const hash = createHash("sha256").update(projectPath).digest("hex").slice(0, 12);
-  const dir = join(homedir(), ".autodocs", "telemetry");
+  const dir = join(homedir(), ".synaps", "telemetry");
   return join(dir, `${hash}.jsonl`);
 }
 
 function writeTelemetryEvent(session: SessionTelemetry, event: Record<string, unknown>): void {
   if (!session.telemetryPath) return;
   try {
-    mkdirSync(join(homedir(), ".autodocs", "telemetry"), { recursive: true });
+    mkdirSync(join(homedir(), ".synaps", "telemetry"), { recursive: true });
     appendFileSync(session.telemetryPath, `${JSON.stringify(event)}\n`);
   } catch {
     // Disable file telemetry on failure (read-only FS, disk full, etc.)
@@ -59,7 +59,7 @@ function writeTelemetryEvent(session: SessionTelemetry, event: Record<string, un
 // Injected into Claude's system prompt via the MCP initialize handshake.
 // This is what makes Claude actually call our tools instead of using grep/read.
 
-const SERVER_INSTRUCTIONS = `autodocs-engine provides pre-computed codebase intelligence that cannot be derived from reading files or running grep. The tools use import graph analysis, git co-change history (Jaccard similarity), and call graph data to answer structural questions.
+const SERVER_INSTRUCTIONS = `synaps provides pre-computed codebase intelligence that cannot be derived from reading files or running grep. The tools use import graph analysis, git co-change history (Jaccard similarity), and call graph data to answer structural questions.
 
 Recommended workflow:
 
@@ -120,11 +120,11 @@ function getNextStepHint(toolName: string): string {
 }
 
 /**
- * Create an autodocs-engine MCP server with all tools registered.
+ * Create an synaps MCP server with all tools registered.
  * Supports single or multiple project paths (multi-repo).
  * Call server.connect(transport) then warm caches after.
  */
-export function createAutodocsServer(
+export function createSynapsServer(
   projectPaths: string | string[],
   options: ServerOptions = {},
 ): {
@@ -134,13 +134,10 @@ export function createAutodocsServer(
   cache: AnalysisCache;
   session: SessionTelemetry;
 } {
-  const verbose = options.verbose ?? Boolean(process.env.AUTODOCS_DEBUG);
-  const telemetryEnabled = options.telemetry ?? process.env.AUTODOCS_TELEMETRY === "1";
+  const verbose = options.verbose ?? Boolean(process.env.SYNAPS_DEBUG);
+  const telemetryEnabled = options.telemetry ?? process.env.SYNAPS_TELEMETRY === "1";
 
-  const server = new McpServer(
-    { name: "autodocs-engine", version: ENGINE_VERSION },
-    { instructions: SERVER_INSTRUCTIONS },
-  );
+  const server = new McpServer({ name: "synaps", version: ENGINE_VERSION }, { instructions: SERVER_INSTRUCTIONS });
 
   // Build cache registry — one AnalysisCache per project path
   const paths = Array.isArray(projectPaths) ? projectPaths : [projectPaths];
@@ -238,7 +235,7 @@ export function createAutodocsServer(
 
       if (verbose) {
         process.stderr.write(
-          `[autodocs] tool=${toolName} latency=${latencyMs}ms cache=${cacheStatus} in=~${estInputTokens}tok out=~${estOutputTokens}tok${isError ? " ERROR" : ""}\n`,
+          `[synaps] tool=${toolName} latency=${latencyMs}ms cache=${cacheStatus} in=~${estInputTokens}tok out=~${estOutputTokens}tok${isError ? " ERROR" : ""}\n`,
         );
       }
 
@@ -750,12 +747,12 @@ DO NOT CALL:
   // ─── MCP Resources ────────────────────────────────────────────────
   // Static data exposed as resources — cheaper than tool calls for context.
 
-  server.resource("conventions", "autodocs://conventions", { mimeType: "text/markdown" }, async () => {
+  server.resource("conventions", "synaps://conventions", { mimeType: "text/markdown" }, async () => {
     const a = await resolveCache().get();
     const pkg = a.packages[0];
     if (!pkg)
       return {
-        contents: [{ uri: "autodocs://conventions", mimeType: "text/markdown", text: "No analysis available." }],
+        contents: [{ uri: "synaps://conventions", mimeType: "text/markdown", text: "No analysis available." }],
       };
     const lines = ["# Conventions", ""];
     for (const c of pkg.conventions) {
@@ -764,10 +761,10 @@ DO NOT CALL:
     for (const ap of pkg.antiPatterns) {
       lines.push(`- **DON'T:** ${ap.rule} — ${ap.reason}`);
     }
-    return { contents: [{ uri: "autodocs://conventions", mimeType: "text/markdown", text: lines.join("\n") }] };
+    return { contents: [{ uri: "synaps://conventions", mimeType: "text/markdown", text: lines.join("\n") }] };
   });
 
-  server.resource("processes", "autodocs://processes", { mimeType: "text/markdown" }, async () => {
+  server.resource("processes", "synaps://processes", { mimeType: "text/markdown" }, async () => {
     const a = await resolveCache().get();
     const pkg = a.packages[0];
     const flows = pkg?.executionFlows ?? [];
@@ -780,10 +777,10 @@ DO NOT CALL:
         lines.push(`- ${f.label}${conf}`);
       }
     }
-    return { contents: [{ uri: "autodocs://processes", mimeType: "text/markdown", text: lines.join("\n") }] };
+    return { contents: [{ uri: "synaps://processes", mimeType: "text/markdown", text: lines.join("\n") }] };
   });
 
-  server.resource("clusters", "autodocs://clusters", { mimeType: "text/markdown" }, async () => {
+  server.resource("clusters", "synaps://clusters", { mimeType: "text/markdown" }, async () => {
     const a = await resolveCache().get();
     const pkg = a.packages[0];
     const clusters = pkg?.coChangeClusters ?? [];
@@ -802,10 +799,10 @@ DO NOT CALL:
         lines.push("");
       }
     }
-    return { contents: [{ uri: "autodocs://clusters", mimeType: "text/markdown", text: lines.join("\n") }] };
+    return { contents: [{ uri: "synaps://clusters", mimeType: "text/markdown", text: lines.join("\n") }] };
   });
 
-  server.resource("packages", "autodocs://packages", { mimeType: "text/markdown" }, async () => {
+  server.resource("packages", "synaps://packages", { mimeType: "text/markdown" }, async () => {
     const a = await resolveCache().get();
     const lines = ["# Packages", ""];
     for (const pkg of a.packages) {
@@ -813,16 +810,16 @@ DO NOT CALL:
         `- **${pkg.name}** (${pkg.relativePath}) — ${pkg.architecture.packageType}, ${pkg.files.total} files, entry: ${pkg.architecture.entryPoint}`,
       );
     }
-    return { contents: [{ uri: "autodocs://packages", mimeType: "text/markdown", text: lines.join("\n") }] };
+    return { contents: [{ uri: "synaps://packages", mimeType: "text/markdown", text: lines.join("\n") }] };
   });
 
-  server.resource("schema", "autodocs://schema", { mimeType: "text/markdown" }, async () => ({
+  server.resource("schema", "synaps://schema", { mimeType: "text/markdown" }, async () => ({
     contents: [
       {
-        uri: "autodocs://schema",
+        uri: "synaps://schema",
         mimeType: "text/markdown",
         text: [
-          "# autodocs-engine Analysis Schema",
+          "# synaps Analysis Schema",
           "",
           "Each analyzed package contains:",
           "- **publicAPI**: Exported symbols with kind, source file, import count, resolved types",
@@ -857,7 +854,7 @@ DO NOT CALL:
             "",
             "1. Run `git diff --name-only` to identify changed files",
             "2. Call the `plan_change` tool with those files to see dependents, co-change partners, and registration needs",
-            "3. Check the `autodocs://clusters` resource to see if any changed files belong to co-change clusters",
+            "3. Check the `synaps://clusters` resource to see if any changed files belong to co-change clusters",
             "4. Summarize: what's the blast radius? What other files might need updating? What tests should I run?",
           ].join("\n"),
         },
@@ -880,7 +877,7 @@ DO NOT CALL:
               "1. Call `get_commands` for build, test, and lint commands",
               "2. Call `get_architecture` for directory structure, entry points, and execution flows",
               "3. Call `get_conventions` for the project's DO and DON'T rules",
-              "4. Read the `autodocs://schema` resource to understand what analysis data is available",
+              "4. Read the `synaps://schema` resource to understand what analysis data is available",
               "5. Summarize the key things I need to know to start contributing",
             ].join("\n"),
           },
@@ -906,7 +903,7 @@ export function formatSessionSummary(session: SessionTelemetry): string {
   const fmtTokens = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n));
 
   return [
-    `[autodocs] Session: ${totalCalls} calls, ~${fmtTokens(session.totalInputTokens)} input tokens, ~${fmtTokens(session.totalOutputTokens)} output tokens, ${durationSec}s`,
-    `[autodocs] Tools: ${toolList}`,
+    `[synaps] Session: ${totalCalls} calls, ~${fmtTokens(session.totalInputTokens)} input tokens, ~${fmtTokens(session.totalOutputTokens)} output tokens, ${durationSec}s`,
+    `[synaps] Tools: ${toolList}`,
   ].join("\n");
 }

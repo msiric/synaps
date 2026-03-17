@@ -294,7 +294,7 @@ All three query helpers added now (even though no dedicated tool yet) to make fu
 
 ## 12. Validation
 
-Run on autodocs-engine (92 edges), knip (full clone), and one Express app:
+Run on synaps (92 edges), knip (full clone), and one Express app:
 
 | Metric | Target | Kill Switch |
 |--------|--------|-------------|

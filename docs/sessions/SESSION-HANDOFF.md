@@ -1,4 +1,4 @@
-# Session Handoff: autodocs-engine Development Session
+# Session Handoff: synaps Development Session
 
 ## Date: 2026-02-22 to 2026-02-23
 ## Status: Ready for continued development
@@ -165,10 +165,10 @@ All adversarial review prompts and results are saved as .md files at the repo ro
 
 The MCP server can be tested with:
 ```bash
-claude mcp add --transport stdio autodocs -- npx tsx src/bin/autodocs-engine.ts serve
+claude mcp add --transport stdio autodocs -- npx tsx src/bin/synaps.ts serve
 ```
 
 Benchmarks require an Anthropic API key:
 ```bash
-ANTHROPIC_API_KEY=... npx tsx src/bin/autodocs-engine.ts benchmark . --quick
+ANTHROPIC_API_KEY=... npx tsx src/bin/synaps.ts benchmark . --quick
 ```

@@ -1,6 +1,6 @@
 # Architecture
 
-> autodocs-engine analyzes TypeScript/JavaScript codebases via AST parsing and generates lean AI context files (AGENTS.md, CLAUDE.md, .cursorrules) that AI coding tools follow.
+> synaps analyzes TypeScript/JavaScript codebases via AST parsing and generates lean AI context files (AGENTS.md, CLAUDE.md, .cursorrules) that AI coding tools follow.
 
 ## Pipeline
 
@@ -100,7 +100,7 @@ Legacy full-LLM mode is available via `--llm-synthesis full`.
 | `command-extractor.ts` | 325 | Package manager detection, script resolution, workspace scan |
 | `pattern-fingerprinter.ts` | 285 | Parameter/return shapes for top exports |
 | `architecture-detector.ts` | 268 | Directory purposes, package type, file patterns |
-| `bin/autodocs-engine.ts` | 264 | CLI entry point, arg parsing, file I/O |
+| `bin/synaps.ts` | 264 | CLI entry point, arg parsing, file I/O |
 | `dependency-analyzer.ts` | 263 | Framework versions, runtime detection, guidance |
 | `config.ts` | 211 | Config file loading, CLI arg parsing, defaults |
 | `meta-tool-detector.ts` | 175 | 3-signal cascade for analyzer/plugin package detection |

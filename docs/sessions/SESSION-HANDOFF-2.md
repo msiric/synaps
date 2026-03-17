@@ -1,4 +1,4 @@
-# Session Handoff 2: autodocs-engine (2026-02-23)
+# Session Handoff 2: synaps (2026-02-23)
 
 ## What Happened This Session
 

@@ -2,7 +2,7 @@
 
 ## Context
 
-autodocs-engine (v0.8.1) serves 13 MCP tools for AI coding assistants. The tools work — 83% diagnose accuracy on real bug-fix commits, 565 tests, 0 type errors. But we can't answer the fundamental question: **do the tools actually save tokens and time?**
+synaps (v0.8.1) serves 13 MCP tools for AI coding assistants. The tools work — 83% diagnose accuracy on real bug-fix commits, 565 tests, 0 type errors. But we can't answer the fundamental question: **do the tools actually save tokens and time?**
 
 Research reference: arxiv 2601.20404 found focused AGENTS.md reduces runtime by 29% and tokens by 17%. Our MCP tools are even more focused (task-specific queries vs static file). We need data to verify this.
 
@@ -90,7 +90,7 @@ No PII, no code content, no file paths. Just tool names, counts, sizes, timestam
 
 ### Step 4: `--telemetry` CLI flag (~5 lines)
 
-- Parse `--telemetry` in `autodocs-engine.ts`
+- Parse `--telemetry` in `synaps.ts`
 - Pass to `runServe` → `createAutodocsServer` options
 
 ### Step 5: Tests (~30 lines)
@@ -104,7 +104,7 @@ No PII, no code content, no file paths. Just tool names, counts, sizes, timestam
 |------|---------|-------|
 | `src/mcp/server.ts` | Session state, token tracking, JSONL logging, return session | +45 |
 | `src/bin/serve.ts` | Shutdown summary, telemetry passthrough | +20 |
-| `src/bin/autodocs-engine.ts` | Parse --telemetry flag | +5 |
+| `src/bin/synaps.ts` | Parse --telemetry flag | +5 |
 | `test/mcp/integration.test.ts` | Verify session summary on stderr | +10 |
 
 **Total: ~80 lines**

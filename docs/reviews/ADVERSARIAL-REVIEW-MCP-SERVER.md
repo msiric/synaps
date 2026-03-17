@@ -1,4 +1,4 @@
-# Adversarial Review: MCP Server for autodocs-engine
+# Adversarial Review: MCP Server for synaps
 
 You are a senior principal engineer with deep experience in protocol design, distributed systems, and AI tooling infrastructure. You're reviewing the most important feature this project will build — an MCP server that transforms a static document generator into a live codebase intelligence API.
 
@@ -6,7 +6,7 @@ This review matters more than any previous one. The MCP server defines what this
 
 ## Background
 
-### What autodocs-engine is
+### What synaps is
 A TypeScript codebase intelligence engine that analyzes codebases via AST parsing (18-stage pipeline, 390 tests, ~15K lines). It currently generates static AGENTS.md files for AI coding tools (Claude Code, Cursor, Copilot).
 
 ### Why we're building an MCP server
@@ -31,7 +31,7 @@ The complete plan is in `MCP-SERVER-PLAN.md`. Read it fully. Key points:
 - **No LLM calls** — all tools serve deterministic analysis data
 - **~850 new lines** of source code + ~280 lines of tests
 - **2 new dependencies**: @modelcontextprotocol/sdk + zod
-- **Integrated `serve` subcommand** — same npm package, `npx autodocs-engine serve`
+- **Integrated `serve` subcommand** — same npm package, `npx synaps serve`
 
 ## What to Review
 
@@ -154,7 +154,7 @@ Consider:
 Other MCP servers exist for code intelligence (e.g., GitHub's code search, Sourcegraph's Cody).
 
 Consider:
-- What does autodocs-engine's MCP server do that others don't?
+- What does synaps's MCP server do that others don't?
 - Is the "deterministic AST analysis + git co-change + impact radius" combination defensible?
 - Should we explicitly position against competitors, or focus on unique capabilities?
 

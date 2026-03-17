@@ -304,7 +304,7 @@ describe("Bug 5.3: Percentage stats stripped", () => {
 
 describe("Bug 6.2: workspace:* deps skipped", () => {
   it("skips workspace:* deps from framework detection", () => {
-    const tmpDir = mkdtempSync(join(tmpdir(), "autodocs-ws-"));
+    const tmpDir = mkdtempSync(join(tmpdir(), "synaps-ws-"));
     writeFileSync(
       join(tmpDir, "package.json"),
       JSON.stringify({
@@ -403,7 +403,7 @@ describe("Bug 7.3: Meaningless title detection", () => {
 
 describe("Bug 1.3: Config analyzer package-level priority", () => {
   it("prioritizes package-level linter over root-level", () => {
-    const tmpRoot = mkdtempSync(join(tmpdir(), "autodocs-config-"));
+    const tmpRoot = mkdtempSync(join(tmpdir(), "synaps-config-"));
     const tmpPkg = join(tmpRoot, "packages", "api");
     mkdirSync(tmpPkg, { recursive: true });
 

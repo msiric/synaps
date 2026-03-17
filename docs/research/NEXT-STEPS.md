@@ -87,7 +87,7 @@ After benchmarking across 6 repos (expanding to 9), we have clear, data-backed d
 1. `npm publish` — package is configured and ready
 2. Write blog post: "We benchmarked our own product. Commands +10%, Architecture +12%, Patterns -18%. Here's what we learned."
 3. Post to dev.to, agents.md community, X/Twitter
-4. Target: 50 developers run `npx autodocs-engine init` in week 1
+4. Target: 50 developers run `npx synaps init` in week 1
 
 **Estimated effort:** 1 day (publish) + 1 day (blog post)
 

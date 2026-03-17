@@ -22,7 +22,7 @@ describe("createTypeResolver", () => {
 
   it("returns null when no tsconfig.json exists", () => {
     // Isolated temp dir — no tsconfig.json ancestor to find
-    const isolated = mkdtempSync(resolve(tmpdir(), "autodocs-test-"));
+    const isolated = mkdtempSync(resolve(tmpdir(), "synaps-test-"));
     const warnings: Warning[] = [];
     const result = createTypeResolver(isolated, warnings);
     expect(result).toBeNull();

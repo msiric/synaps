@@ -2,7 +2,7 @@
 
 ## Review Context
 
-Four flagship AI models (GPT-5, Claude Opus 4.6, Grok 4, Gemini 3 Pro) reviewed the proposed AGENTS.md content pivot. The pivot was prompted by benchmark results showing AGENTS.md provides -1.4% marginal value for contribution pattern adherence on autodocs-engine (52 files) and +9.0% on knip (2,427 files).
+Four flagship AI models (GPT-5, Claude Opus 4.6, Grok 4, Gemini 3 Pro) reviewed the proposed AGENTS.md content pivot. The pivot was prompted by benchmark results showing AGENTS.md provides -1.4% marginal value for contribution pattern adherence on synaps (52 files) and +9.0% on knip (2,427 files).
 
 All four models returned **REVISE** or equivalent. None approved the pivot as proposed.
 

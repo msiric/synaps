@@ -8,7 +8,7 @@ Be constructive, specific, and grounded in real developer workflows. We want to 
 
 ## Background
 
-`autodocs-engine` is a TypeScript codebase intelligence engine (just published as [npm: autodocs-engine](https://www.npmjs.com/package/autodocs-engine)). It analyzes codebases via AST parsing and serves intelligence through an MCP server with 8 tools. The full expansion plan is in `MCP-EXPANSION-PLAN.md` — **read it fully before responding**.
+`synaps` is a TypeScript codebase intelligence engine (just published as [npm: synaps](https://www.npmjs.com/package/synaps)). It analyzes codebases via AST parsing and serves intelligence through an MCP server with 8 tools. The full expansion plan is in `MCP-EXPANSION-PLAN.md` — **read it fully before responding**.
 
 ### Key Context
 - **18-stage analysis pipeline**: AST parsing, convention detection, git co-change analysis, contribution patterns, call graphs, import chains, inferability scoring

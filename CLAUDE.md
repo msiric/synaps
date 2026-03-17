@@ -1,4 +1,4 @@
-# autodocs-engine
+# synaps
 
 Codebase intelligence engine for AI coding tools
 
@@ -13,7 +13,7 @@ Standard `npm` scripts — see `package.json` for details.
 - When modifying `src/types.ts` → Also check: `src/analysis-builder.ts` (17 symbols), `src/mcp/queries.ts` (13 symbols), `src/ast-parser.ts` (8 symbols), and 11 more
 - When modifying `src/mcp/queries.ts` → Also check: `src/mcp/tools.ts` (co-changed in 44% of commits)
 - When modifying `src/pipeline.ts` → Also check: `src/types.ts` (co-changed in 43% of commits)
-- When modifying `src/bin/autodocs-engine.ts` → Also check: `src/config.ts` (co-changed in 64% of its commits), `src/index.ts` (co-changed in 57% of its commits)
+- When modifying `src/bin/synaps.ts` → Also check: `src/config.ts` (co-changed in 64% of its commits), `src/index.ts` (co-changed in 57% of its commits)
 - Never add Co-Authored-By or any AI attribution to git commits
 
 ## Conventions

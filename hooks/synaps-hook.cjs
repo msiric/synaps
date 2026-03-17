@@ -1,5 +1,5 @@
-// hooks/autodocs-hook.cjs — PreToolUse/PostToolUse handler for Claude Code
-// Reads cached analysis from ~/.autodocs/cache/ and augments search results
+// hooks/synaps-hook.cjs — PreToolUse/PostToolUse handler for Claude Code
+// Reads cached analysis from ~/.synaps/cache/ and augments search results
 // with callers, co-change partners, and execution flows.
 //
 // Design principles:
@@ -28,8 +28,8 @@ function main() {
     if (handler) handler(input);
   } catch {
     // Silent — never break the original tool
-    if (process.env.AUTODOCS_DEBUG) {
-      process.stderr.write("[autodocs-hook] Error in main dispatch\n");
+    if (process.env.SYNAPS_DEBUG) {
+      process.stderr.write("[synaps-hook] Error in main dispatch\n");
     }
   }
 }
@@ -83,7 +83,7 @@ function handlePostToolUse(input) {
 
     emit(
       "PostToolUse",
-      "[autodocs] Analysis cache is stale after git change. The MCP server will re-analyze automatically on the next tool call.",
+      "[synaps] Analysis cache is stale after git change. The MCP server will re-analyze automatically on the next tool call.",
     );
   } catch {
     // Silent
@@ -141,7 +141,7 @@ function extractPattern(toolName, toolInput) {
 function loadSnapshot(cwd) {
   try {
     const hash = crypto.createHash("sha256").update(cwd).digest("hex").slice(0, 12);
-    const cacheFile = path.join(os.homedir(), ".autodocs", "cache", `${hash}.json`);
+    const cacheFile = path.join(os.homedir(), ".synaps", "cache", `${hash}.json`);
     return JSON.parse(fs.readFileSync(cacheFile, "utf-8"));
   } catch {
     return null;
@@ -255,7 +255,7 @@ function augment(snapshot, pattern) {
   }
 
   if (sections.length === 0) return null;
-  return `[autodocs] ${sections.length} result${sections.length > 1 ? "s" : ""} found:\n\n${sections.join("\n\n")}`;
+  return `[synaps] ${sections.length} result${sections.length > 1 ? "s" : ""} found:\n\n${sections.join("\n\n")}`;
 }
 
 // ─── Output ────────────────────────────────────────────────────────────────

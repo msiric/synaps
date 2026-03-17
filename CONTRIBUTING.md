@@ -1,10 +1,10 @@
-# Contributing to autodocs-engine
+# Contributing to synaps
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/msiric/autodocs-engine.git
-cd autodocs-engine
+git clone https://github.com/msiric/synaps.git
+cd synaps
 npm install
 npm test          # 713 tests
 npm run typecheck # 0 errors

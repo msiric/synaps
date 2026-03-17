@@ -208,8 +208,8 @@ describe("merge mode", () => {
     const content = "## Commands\n- build: `npm run build`";
     const wrapped = wrapWithDelimiters(content);
 
-    expect(wrapped).toContain("<!-- autodocs:start -->");
-    expect(wrapped).toContain("<!-- autodocs:end -->");
+    expect(wrapped).toContain("<!-- synaps:start -->");
+    expect(wrapped).toContain("<!-- synaps:end -->");
     expect(wrapped).toContain("## Commands");
     expect(wrapped).toContain("## Team Knowledge");
   });
@@ -218,10 +218,10 @@ describe("merge mode", () => {
     const existing = [
       "# My Package",
       "",
-      "<!-- autodocs:start -->",
+      "<!-- synaps:start -->",
       "## Old Commands",
       "- old stuff",
-      "<!-- autodocs:end -->",
+      "<!-- synaps:end -->",
       "",
       "## Team Knowledge",
       "Important: always use v2 API",
@@ -246,8 +246,8 @@ describe("merge mode", () => {
     expect(merged).toContain("# My Package");
     expect(merged).toContain("Important context here.");
     expect(merged).toContain("---");
-    expect(merged).toContain("<!-- autodocs:start -->");
+    expect(merged).toContain("<!-- synaps:start -->");
     expect(merged).toContain("## Commands");
-    expect(merged).toContain("<!-- autodocs:end -->");
+    expect(merged).toContain("<!-- synaps:end -->");
   });
 });

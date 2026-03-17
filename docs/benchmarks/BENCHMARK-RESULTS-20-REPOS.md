@@ -56,7 +56,7 @@ Scoring is deterministic (AST parsing, string matching, directory comparison). N
 | 8 | astro | Framework | 2,500+ | **+11.3%** | +0.0% | — | +15.0% |
 | 9 | effect | Functional library | 958 | **+6.0%** | +0.0% | — | +9.0% |
 | 10 | es-toolkit | Utility library | <150 | **+3.2%** | +0.0% | — | +4.0% |
-| 11 | autodocs-engine | Library | 52 | **+2.2%** | +0.0% | +0.0% | +3.7% |
+| 11 | synaps | Library | 52 | **+2.2%** | +0.0% | +0.0% | +3.7% |
 | 12 | prisma | ORM/infrastructure | 3,500+ | **+0.4%** | +0.0% | +13.0% | -3.7% |
 | 13 | vite | Build tool | ~2,000 | **+0.0%** | +0.0% | — | +0.0% |
 | 14 | ts-eslint | Linting tool | ~1,800 | **+0.0%** | +0.0% | — | +0.0% |
@@ -79,7 +79,7 @@ Scoring is deterministic (AST parsing, string matching, directory comparison). N
 
 | Category | Count | Percentage | Repos |
 |----------|:---:|:---:|---|
-| **Positive (A-B > +2%)** | 12 | 60% | zod, medusa, Vercel AI, knip, radix-ui, puppeteer, vitest, astro, effect, es-toolkit, autodocs-engine, prisma |
+| **Positive (A-B > +2%)** | 12 | 60% | zod, medusa, Vercel AI, knip, radix-ui, puppeteer, vitest, astro, effect, es-toolkit, synaps, prisma |
 | **Neutral (-2% to +2%)** | 2 | 10% | vite, ts-eslint |
 | **Negative (A-B < -2%)** | 6 | 30% | tanstack-query, mcp-sdk, sanity, cal.com, excalidraw, nitro |
 
@@ -117,7 +117,7 @@ Zod (+39.3%), medusa (+29.6%), Vercel AI (+29.3%) — these repos have non-obvio
 | astro | 2,500+ | Multi | library | 0 patterns | Many |
 | effect | 958 | Multi | library | 0 patterns | Many |
 | es-toolkit | <150 | 1 | library | 0 patterns | Few |
-| autodocs-engine | 52 | 1 | library | 4 patterns | Moderate |
+| synaps | 52 | 1 | library | 4 patterns | Moderate |
 | prisma | 3,500+ | Multi | library | 0 patterns | Many |
 | vite | ~2,000 | Multi | library | 0 patterns | Many |
 | ts-eslint | ~1,800 | Multi | library | 0 patterns | Many |
@@ -135,5 +135,5 @@ Zod (+39.3%), medusa (+29.6%), Vercel AI (+29.3%) — these repos have non-obvio
 - Scoring is deterministic — same code produces same score
 - No results were filtered, modified, or selectively included
 - Initial run of 10 repos was discarded due to Anthropic API credit exhaustion errors; all 10 were re-run with verified clean results
-- The engine analyzed itself (autodocs-engine) — included in results without special treatment
+- The engine analyzed itself (synaps) — included in results without special treatment
 - Negative results are published alongside positive results

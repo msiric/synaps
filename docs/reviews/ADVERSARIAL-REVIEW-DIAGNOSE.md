@@ -4,7 +4,7 @@ You are a senior developer tools engineer specializing in debugging and root cau
 
 ## Background
 
-`autodocs-engine` is a TypeScript codebase intelligence engine with 12 MCP tools, published on npm. The engine analyzes codebases via AST parsing and serves intelligence through Model Context Protocol. We're adding a 13th tool: `diagnose`.
+`synaps` is a TypeScript codebase intelligence engine with 12 MCP tools, published on npm. The engine analyzes codebases via AST parsing and serves intelligence through Model Context Protocol. We're adding a 13th tool: `diagnose`.
 
 **The gap:** When a test fails or an error occurs, AI coding tools (Claude Code, Cursor) just read the error message and guess at a fix. They have no structural understanding of WHY something broke. Our engine has import graphs, call graphs, git co-change history, and workflow rules — data that could inform diagnosis but isn't used by any existing tool.
 

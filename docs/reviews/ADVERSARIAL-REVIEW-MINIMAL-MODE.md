@@ -4,7 +4,7 @@ You are a senior AI/ML engineer and developer tools expert conducting an adversa
 
 ## Background
 
-`autodocs-engine` generates AGENTS.md context files for AI coding tools from deterministic codebase analysis. After extensive benchmarking and literature review, we found:
+`synaps` generates AGENTS.md context files for AI coding tools from deterministic codebase analysis. After extensive benchmarking and literature review, we found:
 
 - **Comprehensive AGENTS.md files hurt** (research: -0.5% to -2%; our benchmark: -3.1% on file placement)
 - **Focused developer-written files help** (+4% accuracy, -29% runtime, -17% tokens)

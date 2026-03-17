@@ -1,5 +1,5 @@
 // test/mcp/accuracy.test.ts — MCP tool accuracy validation
-// Calls each tool on autodocs-engine itself and verifies responses
+// Calls each tool on synaps itself and verifies responses
 // against known ground truth (we KNOW what our own codebase contains).
 
 import { resolve } from "node:path";
@@ -9,7 +9,7 @@ import * as Q from "../../src/mcp/queries.js";
 import * as tools from "../../src/mcp/tools.js";
 import type { StructuredAnalysis } from "../../src/types.js";
 
-// ─── Setup: analyze autodocs-engine itself ───────────────────────────────────
+// ─── Setup: analyze synaps itself ───────────────────────────────────
 
 let analysis: StructuredAnalysis;
 
@@ -38,7 +38,7 @@ describe("MCP accuracy: get_commands", () => {
   it("includes tech stack summary", () => {
     const result = tools.handleGetCommands(analysis, {});
     const text = result.content[0].text;
-    // We know autodocs-engine uses TypeScript and Node
+    // We know synaps uses TypeScript and Node
     expect(text.toLowerCase()).toMatch(/node|typescript/);
   });
 });
@@ -49,7 +49,7 @@ describe("MCP accuracy: get_architecture", () => {
   it("identifies correct package type", () => {
     const result = tools.handleGetArchitecture(analysis, {});
     const text = result.content[0].text;
-    // autodocs-engine is a CLI library
+    // synaps is a CLI library
     expect(text).toMatch(/library|cli/);
   });
 
@@ -140,16 +140,16 @@ describe("MCP accuracy: get_workflow_rules", () => {
 // ─── list_packages accuracy ──────────────────────────────────────────────────
 
 describe("MCP accuracy: list_packages", () => {
-  it("returns autodocs-engine as the package", () => {
+  it("returns synaps as the package", () => {
     const result = tools.handleListPackages(analysis);
     const text = result.content[0].text;
-    expect(text).toContain("autodocs-engine");
+    expect(text).toContain("synaps");
   });
 
   it("shows correct package count (single package)", () => {
     const packages = Q.listPackages(analysis);
     expect(packages).toHaveLength(1);
-    expect(packages[0].name).toBe("autodocs-engine");
+    expect(packages[0].name).toBe("synaps");
   });
 });
 
@@ -196,7 +196,7 @@ describe("MCP accuracy: get_conventions", () => {
   it("detects kebab-case naming convention", () => {
     const result = tools.handleGetConventions(analysis, {});
     const text = result.content[0].text;
-    // autodocs-engine uses 98% kebab-case filenames
+    // synaps uses 98% kebab-case filenames
     expect(text.toLowerCase()).toContain("kebab");
   });
 });
@@ -332,7 +332,7 @@ describe("MCP accuracy: data consistency", () => {
   it("commands reference real package manager", () => {
     const commands = Q.getCommands(analysis);
     expect(["npm", "yarn", "pnpm", "bun", "unknown"]).toContain(commands.packageManager);
-    // We know autodocs-engine has build and test scripts
+    // We know synaps has build and test scripts
     expect(commands.build).toBeTruthy();
     expect(commands.test).toBeTruthy();
   });
@@ -340,6 +340,6 @@ describe("MCP accuracy: data consistency", () => {
   it("package resolution works for single-package repo", () => {
     // Should resolve without packagePath for single-package repos
     const pkg = Q.resolvePackage(analysis);
-    expect(pkg.name).toBe("autodocs-engine");
+    expect(pkg.name).toBe("synaps");
   });
 });

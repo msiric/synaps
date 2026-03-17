@@ -16,7 +16,7 @@ Three parallel research agents investigated: (1) MCP protocol specification, (2)
 - Default timeout: 60 seconds. Output limit: 25,000 tokens
 
 ### Integration with AI Tools
-- **Claude Code**: Configure in `.mcp.json` (project) or `~/.claude.json` (user). Add via `claude mcp add --transport stdio autodocs -- npx autodocs-engine serve`
+- **Claude Code**: Configure in `.mcp.json` (project) or `~/.claude.json` (user). Add via `claude mcp add --transport stdio autodocs -- npx synaps serve`
 - **Cursor**: Supports MCP via `~/.cursor/mcp.json`
 - Both support STDIO and HTTP transports
 - Claude Code has `MCP_TIMEOUT` and `MAX_MCP_OUTPUT_TOKENS` env vars
@@ -33,7 +33,7 @@ Three parallel research agents investigated: (1) MCP protocol specification, (2)
 - **Transport**: STDIO default, HTTP optional
 - **Caching**: In-memory + disk, invalidate on git HEAD change
 - **Security**: Read-only, path validation, API key via env var only
-- **Distribution**: Same npm package, `npx autodocs-engine serve`
+- **Distribution**: Same npm package, `npx synaps serve`
 
 ---
 
@@ -86,7 +86,7 @@ await server.connect(transport);
 - 5 tools: get-commands, get-architecture, analyze-impact, get-co-changes, get-workflow-rules
 - STDIO transport
 - In-memory analysis cache (re-analyze on first query, cache for session)
-- `npx autodocs-engine serve` entry point
+- `npx synaps serve` entry point
 
 ### Phase 2 (Polish — 1 week): Caching + More Tools
 - Disk cache with git HEAD invalidation
