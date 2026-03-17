@@ -500,19 +500,8 @@ function buildFileGraph(pkg: Pkg): { nodes: FNode[]; edges: FEdge[] } {
     edges.push({ source: e.importer, target: e.source, weight: e.symbolCount, type: "import" });
   }
 
-  // Co-change edges (only between files that are in the graph)
-  for (const e of coChangeEdges) {
-    if (fileSet.has(e.file1) && fileSet.has(e.file2)) {
-      edges.push({
-        source: e.file1,
-        target: e.file2,
-        weight: Math.round(e.jaccard * 100),
-        type: "cochange",
-      });
-    }
-  }
-
-  // Implicit coupling edges
+  // Implicit coupling edges (more informative than co-change — no import relationship)
+  const implicitPairs = new Set<string>();
   for (const e of implicitEdges) {
     if (fileSet.has(e.file1) && fileSet.has(e.file2)) {
       edges.push({
@@ -520,6 +509,20 @@ function buildFileGraph(pkg: Pkg): { nodes: FNode[]; edges: FEdge[] } {
         target: e.file2,
         weight: Math.round(e.jaccard * 100),
         type: "implicit",
+      });
+      implicitPairs.add(`${e.file1}|${e.file2}`);
+      implicitPairs.add(`${e.file2}|${e.file1}`);
+    }
+  }
+
+  // Co-change edges — skip pairs already covered by implicit coupling
+  for (const e of coChangeEdges) {
+    if (fileSet.has(e.file1) && fileSet.has(e.file2) && !implicitPairs.has(`${e.file1}|${e.file2}`)) {
+      edges.push({
+        source: e.file1,
+        target: e.file2,
+        weight: Math.round(e.jaccard * 100),
+        type: "cochange",
       });
     }
   }
