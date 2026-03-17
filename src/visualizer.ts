@@ -222,7 +222,7 @@ function closePanel(){
   node.select('circle').attr('opacity',1).attr('filter',null).attr('stroke-width',1.5);
   link.attr('opacity',d=>d.type==='import'?.35:.5);
 }
-svg.on('click',()=>{closePanel();if(expandedDir)collapseDir()});
+svg.on('click',()=>{if(expandedDir)collapseDir();closePanel()});
 function toggleDrawer(){document.getElementById('drawer').classList.toggle('open')}
 
 // ── Expandable directory clusters ──
@@ -346,15 +346,18 @@ function expandDir(d){
 
 function collapseDir(){
   if(!expandedDir)return;
+  const wasExpanded=expandedDir;
+  expandedDir=null;
   // Remove file elements
   if(expandedGroup)expandedGroup.remove();
   if(fileLinks)svg.select('.file-edges').remove();
-  if(clusterBg)clusterBg.remove();
+  if(clusterBg){clusterBg.remove();clusterBg=null}
   if(window._fileSim)window._fileSim.stop();
-  expandedGroup=null;fileLinks=null;fileNodes=null;clusterBg=null;
-  // Show directory node again
-  node.filter(n=>n.id===expandedDir).attr('opacity',1).style('pointer-events','auto');
-  expandedDir=null;
+  expandedGroup=null;fileLinks=null;fileNodes=null;
+  // Restore directory node fully
+  const restored=node.filter(n=>n.id===wasExpanded);
+  restored.attr('opacity',1).style('pointer-events','auto');
+  restored.select('circle').attr('opacity',0.9).attr('filter',null).attr('stroke-width',1.5);
 }
 
 function selectFile(f,parentDir){
