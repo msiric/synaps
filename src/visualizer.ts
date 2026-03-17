@@ -75,8 +75,9 @@ svg{display:block;width:100%;height:100%}
 .panel .sub{font-size:12px;color:#555;margin-bottom:16px}
 .panel h3{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#444;margin:14px 0 6px}
 .panel ul{list-style:none}
-.panel li{font-size:12px;padding:4px 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #111;cursor:pointer;border-radius:4px;padding:4px 6px;transition:background 0.15s}
-.panel li:hover{background:rgba(255,255,255,0.04)}
+.panel li{font-size:12px;padding:4px 6px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #111;border-radius:4px}
+.panel li[onclick]{cursor:pointer;transition:background 0.15s}
+.panel li[onclick]:hover{background:rgba(255,255,255,0.04)}
 .panel li:last-child{border:none}
 .panel code{font-size:11px;color:#8a8a9a}
 .badge{font-size:9px;padding:1px 6px;border-radius:99px;font-weight:600}
