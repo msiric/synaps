@@ -1,6 +1,6 @@
 {
   "name": "autodocs-engine",
-  "version": "0.10.5",
+  "version": "0.10.6",
   "description": "Codebase intelligence for AI coding agents — MCP server with git co-change analysis, convention detection, execution flows, and type-aware analysis",
   "type": "module",
   "main": "dist/index.js",
