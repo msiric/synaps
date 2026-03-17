@@ -4,7 +4,7 @@
 // Uses Jaccard similarity for symmetric, unbiased co-change scoring.
 
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import type { CoChangeEdge, GitHistoryAnalysis, Warning, WorkflowRule } from "./types.js";
 import { SOURCE_EXTENSIONS } from "./types.js";
@@ -56,7 +56,9 @@ export function mineGitHistory(
   warnings: Warning[],
   options: GitHistoryOptions = {},
 ): Map<string, GitHistoryAnalysis> | null {
-  const absRepoDir = resolve(repoDir);
+  // realpathSync resolves symlinks (e.g., macOS /tmp → /private/tmp)
+  // so that relative() works correctly against git's resolved --show-toplevel
+  const absRepoDir = realpathSync(resolve(repoDir));
 
   // Detect shallow clone
   if (isShallowClone(absRepoDir)) {
@@ -97,7 +99,7 @@ export function mineGitHistory(
   const results = new Map<string, GitHistoryAnalysis>();
 
   for (const pkgDir of packageDirs) {
-    const absPkgDir = resolve(pkgDir);
+    const absPkgDir = realpathSync(resolve(pkgDir));
     const pkgPrefix = relative(gitRoot, absPkgDir);
     // Filter commits to only files within this package that still exist
     const existingFiles = new Set<string>();
